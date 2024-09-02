@@ -1,5 +1,5 @@
 #include "kernel.h"
-t_config config_kernel;
+t_config* config_kernel;
 
 char *ip_memoria;
 char *puerto_memoria; 
@@ -9,20 +9,22 @@ char *puerto_cpu_interrupt;
 char *algoritmo_de_planificacion; 
 int quantum; 
 char *log_level; 
-
+t_log *logger_kernel;
 
 int main(int argc, char* argv[]) {
 //int main(){
     
 
+    void levantar_config_kernel();
+    logger_kernel = iniciar_logger("kernel.log", "KERNEL");
 
     if(argc < 3)
     {
-        log_error(configuracion_k.logger_kernel, " re mal vos");
+        log_error(logger_kernel, " re mal vos");
     }
 
     pthread_t t1, t2, t3;
-    inicializar_estructuras_kernel();  //ahora esta en utils.c
+    //inicializar_estructuras_kernel();  //ahora esta en utils.c
 
     pthread_create(&t1, NULL, (void *)conectarMemoria, NULL);
     pthread_create(&t2, NULL, (void *)conectarCpuDispatch, NULL);
@@ -30,26 +32,60 @@ int main(int argc, char* argv[]) {
 
     pthread_join(t3, NULL);
 
-    /*liberar_conexion(conexion_memoria);
+    liberar_conexion(conexion_memoria);
     liberar_conexion(conexion_dispatch);
     liberar_conexion(conexion_interrupt);
-    liberar_conexion(conexion_entradaSalida);*/
+
 
     return 0;
 }
 
 int conectarMemoria()
 {
-
+    conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
 }
 
 int conectarCpuDispatch()
 {
+    
+    conexion_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
+
+
+    if (conexion_dispatch <= 0)
+    {
+        log_error(logger_kernel, " DISPATCH: No se pudo establecer una onexion con la CPU\n");
+    }
+    else
+    {
+        log_info(logger_kernel, "DISPATCH: Conexion con CPU exitosa");
+    }
+
+    handshake_cliente(conexion_dispatch, logger_kernel);
+
+
+  
 
 }
 
 int conectarCpuInterrupt()
 {
+    
+    // Creamos una conexion hacia el servidor (socket y connect)
+
+    conexion_interrupt = crear_conexion(ip_cpu, puerto_cpu_interrupt);
+
+    if (conexion_interrupt <= 0)
+    {
+        log_error(logger_kernel, "INTERRUPT: No se pudo establecer unaconexion con la CPU");
+    }
+    else
+    {
+        log_info(logger_kernel, "INTERRUPT: Conexion con CPU exitosa");
+    }
+
+   
+
+    handshake_cliente(conexion_interrupt, logger_kernel);
 
 }
 
