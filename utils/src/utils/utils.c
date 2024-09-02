@@ -5,7 +5,7 @@ void saludar(char *quien)
 	printf("Hola desde %s!!\n", quien);
 }
 // -------------------------------- KERNEL --------------------------------
-inicializar_estructuras_kernel()
+void inicializar_estructuras_kernel()
 {
 	printf(" :) \n");
 }
@@ -101,11 +101,11 @@ void handshake_cliente(int socket_cliente, t_log *logger)
 
 	if (result == resultOk)
 	{
-		log_info(logger, "Handshake exitoso entre cpu y memoria");
+		log_info(logger, "Handshake exitoso");
 	}
 	else
 	{
-		log_info(logger, "Handshake fallido entre cpu y memoria");
+		log_info(logger, "Handshake fallido");
 	}
 }
 

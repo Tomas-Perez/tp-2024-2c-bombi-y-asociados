@@ -9,7 +9,7 @@ char *ip_memoria;
 char *log_level;
 
 int socket_memoria;
-
+int conexion_dispatch;
 int main(int argc, char *argv[])
 {
 
@@ -22,9 +22,9 @@ int main(int argc, char *argv[])
 
     pthread_create(&t1, NULL, (void *)conectarMemoria, NULL);
     pthread_create(&t2, NULL, (void *)atenderCpuDispatch, NULL);
-    pthread_create(&t3, NULL, (void *)atenderCpuInterrupt, NULL);
+   // pthread_create(&t3, NULL, (void *)atenderCpuInterrupt, NULL);
 
-    pthread_join(t1, NULL); // PRUEBAS
+    pthread_join(t2, NULL); // PRUEBAS
 
     return 0;
 }
@@ -47,6 +47,40 @@ int conectarMemoria()
     int id_modulo = 2;
     send(socket_memoria, &id_modulo, sizeof(int), 0);
 }
+
+int atenderCpuDispatch()
+{
+    
+
+	    int server_cpud = iniciar_servidor(puerto_escucha_dispatch);
+	    log_info(logger, "Servidor listo para recibir al cliente");
+	    conexion_dispatch = esperar_cliente(server_cpud);
+
+	    //t_list* lista;
+	    while (conexion_dispatch) {
+		    int cod_op = recibir_operacion(conexion_dispatch);
+		    switch (cod_op) {
+		    case MENSAJE:
+			   // recibir_mensaje(conexion_dispatch);
+			    break;
+			/*case OP_ENVIO_PCB:
+        	recibir_contexto_ejecucion(conexion_dispatch); // ver que variable manda
+           
+			ejecutando_un_proceso = true;
+			ejecutar_proceso();
+			break;
+		*/
+		    case -1:
+			    log_error(logger, "El cliente se desconecto. Terminando servidor\n");
+			    return EXIT_FAILURE;
+		    default:
+			    log_warning(logger,"Operacion desconocida. No quieras meter la pata\n");
+			    break;
+		        }
+	}
+	return EXIT_SUCCESS;
+    }
+
 
 void levantar_config_cpu()
 { 

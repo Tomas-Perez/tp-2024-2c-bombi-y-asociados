@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 //int main(){
     
 
-    void levantar_config_kernel();
+    levantar_config_kernel();
     logger_kernel = iniciar_logger("kernel.log", "KERNEL");
 
     if(argc < 3)
@@ -47,7 +47,7 @@ int conectarMemoria()
 
 int conectarCpuDispatch()
 {
-    
+    printf("ip_cpu %s puerto_cpu_dispatch %s\n",ip_cpu, puerto_cpu_dispatch);
     conexion_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
 
 
