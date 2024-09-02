@@ -8,6 +8,8 @@
 
 void levantar_config_memoria();
 
-int atenderCpu ();
+int atenderCpu();
+int conectarFS();
+
 
 #endif

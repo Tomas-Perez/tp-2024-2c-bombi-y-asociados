@@ -1,20 +1,25 @@
 #include "kernel.h"
-t_config_kernel configuracion_k;
+t_config config_kernel;
+
+char *ip_memoria;
+char *puerto_memoria; 
+char *ip_cpu; 
+char *puerto_cpu_dispatch; 
+char *puerto_cpu_interrupt; 
+char *algoritmo_de_planificacion; 
+int quantum; 
+char *log_level; 
+
+
 int main(int argc, char* argv[]) {
 //int main(){
     
-    
-    configuracion_k.config_kernel = iniciar_config("kernel.config");
-    configuracion_k.logger_kernel = iniciar_logger("kernel.log","KERNEL");
+
 
     if(argc < 3)
     {
         log_error(configuracion_k.logger_kernel, " re mal vos");
     }
-    configuracion_k.modo_de_planificacion = config_get_string_value(configuracion_k.config_kernel, "ALGORITMO_PLANIFICACION");
-    //configuracion_k.grado_de_multiprogramacion = config_get_int_value(configuracion_k.config_kernel, "MULTIPROGRAMACION");
-
-   printf("Alg de plani %s \n", configuracion_k.modo_de_planificacion);
 
     pthread_t t1, t2, t3;
     inicializar_estructuras_kernel();  //ahora esta en utils.c
@@ -46,4 +51,17 @@ int conectarCpuDispatch()
 int conectarCpuInterrupt()
 {
 
+}
+
+void levantar_config_kernel()
+{ 
+    config_kernel = iniciar_config("kernel.config");
+    ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
+    puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
+    ip_cpu = config_get_string_value(config_kernel, "IP_CPU");    
+    puerto_cpu_dispatch = config_get_string_value(config_kernel, "PUERTO_CPU_DISPATCH");
+    puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
+    algoritmo_de_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
+    quantum = config_get_int_value(config_kernel, "QUANTUM");
+    log_level = config_get_string_value(config_kernel, "LOG_LEVEL");
 }

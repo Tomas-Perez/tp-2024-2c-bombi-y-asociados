@@ -3,4 +3,7 @@
 
 #include <utils/utils.h>
 
+void levantar_config_fs();
+void atenderMemoria();
+
 #endif

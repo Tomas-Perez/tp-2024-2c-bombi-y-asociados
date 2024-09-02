@@ -89,6 +89,26 @@ void liberar_conexion(int socket_cliente)
 	close(socket_cliente);
 }
 
+void handshake_cliente(int socket_cliente, t_log *logger)
+{
+	size_t bytes;
+
+	int32_t handshake = 1;
+	int32_t result;
+	uint32_t resultOk = 0;
+	bytes = send(socket_cliente, &handshake, sizeof(int32_t), 0);
+	bytes = recv(socket_cliente, &result, sizeof(int32_t), MSG_WAITALL);
+
+	if (result == resultOk)
+	{
+		log_info(logger, "Handshake exitoso entre cpu y memoria");
+	}
+	else
+	{
+		log_info(logger, "Handshake fallido entre cpu y memoria");
+	}
+}
+
 // -------------------------------- CONEXIONES: SERVIDOR --------------------------------
 
 int iniciar_servidor(char *puerto)

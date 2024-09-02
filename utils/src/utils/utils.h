@@ -30,7 +30,6 @@
  * @param quien Módulo desde donde se llama a la función
  * @return No devuelve nada
  */
-void saludar(char *quien);
 
 typedef enum
 {
@@ -66,66 +65,25 @@ typedef struct
     int prioridad;
 } tcb;
 
-typedef struct
-{
-    t_config *config_kernel;
-    t_log *logger_kernel;
-    char *modo_de_planificacion;
-    // int grado_de_multiprogramacion;
-    int quantum;
-    char *ip_memoria;
-    int puerto_memoria;
-    char *ip_cpu;
-    int puerto_cpu_dispatch;
-    int puerto_cpu_interrupt;
-    char *log_level;
-} t_config_kernel;
-
 void inicializar_estructuras();
 
 // -------------------------------- CPU --------------------------------
-typedef struct
+typedef struct 
 {
-    t_config *config_cpu;
-    t_log *logger_cpu;
-    /* t_log* logger_cpu_d;
-     t_log* logger_cpu_i;     VER: no se si prefieren tener solo un logger o uno para disp y otro para interr*/
-    char *ip_memoria;
-    int puerto_memoria;
-    int puerto_escucha_dispatch;
-    int puerto_escucha_interrupt;
-    char *log_level;
-} t_config_cpu;
+    uint32_t PC;
+    uint32_t AX;
+    uint32_t BX;
+    uint32_t CX;
+    uint32_t DX;
+    uint32_t EX;
+    uint32_t FX;
+    uint32_t GX;
+    uint32_t HX;
+} t_registros_cpu;
 
 // -------------------------------- MEMORIA --------------------------------
-typedef struct
-{
-    t_config *config_memoria;
-    t_log *logger_memoria;
-    int puerto_escucha;
-    char *ip_fs;
-    int puerto_fs;
-    int tam_memoria;
-    char *path_instrucciones;
-    int retardo_respuesta;
-    char *esquema;
-    char *alg_busqueda;
-    char **particiones; // VER: no se si estoy flasheando
-    char *log_level;
-} t_config_memoria;
 
 // -------------------------------- FILESYSTEM --------------------------------
-typedef struct
-{
-    t_config *config_fs;
-    t_log *logger_fs;
-    int puerto_escucha;
-    char *mount_dir;
-    int block_size;
-    int block_count;
-    int retardo_acc_bloque;
-    char *log_level;
-} t_config_fs;
 
 // -------------------------------- LOGGER --------------------------------
 t_log *iniciar_logger(char *nombreLog, char *proceso);
@@ -136,6 +94,7 @@ t_config *iniciar_config(char *archivo);
 // -------------------------------- CONEXIONES: CLIENTE --------------------------------
 void liberar_conexion(int socket_cliente);
 int crear_conexion(char *ip, char *puerto);
+void handshake_cliente(int socket_cliente, t_log *logger);
 
 
 // -------------------------------- CONEXIONES: SERVIDOR --------------------------------
