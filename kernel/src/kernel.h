@@ -1,6 +1,7 @@
 #ifndef KERNEL_H_
 #define KERNEL_H_
+#include "planificador.h"
 
-#include <utils/utils.h>
+
 
 #endif
