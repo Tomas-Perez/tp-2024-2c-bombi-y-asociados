@@ -83,8 +83,6 @@ int conectarCpuInterrupt()
         log_info(logger_kernel, "INTERRUPT: Conexion con CPU exitosa");
     }
 
-   
-
     handshake_cliente(conexion_interrupt, logger_kernel);
 
 }
