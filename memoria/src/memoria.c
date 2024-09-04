@@ -96,11 +96,11 @@ int conectarFS()
 
     if (socket_fs <= 0)
     {
-        log_info(logger, "No se pudo establecer una conexion con la Memoria");
+        log_info(logger, "No se pudo establecer una conexion con el FS");
     }
     else
     {
-        log_info(logger, "Conexion con Memoria exitosa");
+        log_info(logger, "Conexion con FS exitosa");
     }
 
     handshake_cliente(socket_fs, logger);

@@ -80,7 +80,7 @@ int atenderCpuDispatch()
             break;
         }
     }
-    return EXIT_SUCCESS;
+    //return EXIT_SUCCESS;
 }
 
 int atenderCpuInterrupt()
@@ -106,7 +106,7 @@ int atenderCpuInterrupt()
             break;
         }
     }
-    return EXIT_SUCCESS;
+    //return EXIT_SUCCESS;
 }
 
 void levantar_config_cpu()

@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
     if(argc < 3)
     {
-        log_error(logger_kernel, " re mal vos");
+        log_error(logger_kernel, "Re mal vos");
     }
 
     pthread_t t1, t2, t3;
@@ -46,11 +46,11 @@ int conectarMemoria()
 
     if (conexion_memoria <= 0)
     {
-        log_error(logger_kernel, " DISPATCH: No se pudo establecer una conexion con la CPU\n");
+        log_error(logger_kernel, "No se pudo conectar con Memoria");
     }
     else
     {
-        log_info(logger_kernel, "DISPATCH: Conexion con CPU exitosa");
+        log_info(logger_kernel, "Conexion con memoria exitosa en socket:%i", conexion_memoria);
     }
 
     handshake_cliente(conexion_memoria, logger_kernel);
@@ -61,13 +61,13 @@ int conectarMemoria()
 
 int conectarCpuDispatch()
 {
-    printf("ip_cpu %s puerto_cpu_dispatch %s\n",ip_cpu, puerto_cpu_dispatch);
+    //printf("ip_cpu %s puerto_cpu_dispatch %s\n",ip_cpu, puerto_cpu_dispatch);
     conexion_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
 
 
     if (conexion_dispatch <= 0)
     {
-        log_error(logger_kernel, " DISPATCH: No se pudo establecer una conexion con la CPU\n");
+        log_error(logger_kernel,"DISPATCH: No se pudo establecer una conexion con la CPU");
     }
     else
     {
@@ -87,7 +87,7 @@ int conectarCpuInterrupt()
 
     if (conexion_interrupt <= 0)
     {
-        log_error(logger_kernel, "INTERRUPT: No se pudo establecer unac onexion con la CPU");
+        log_error(logger_kernel, "INTERRUPT: No se pudo establecer una conexion con la CPU");
     }
     else
     {
