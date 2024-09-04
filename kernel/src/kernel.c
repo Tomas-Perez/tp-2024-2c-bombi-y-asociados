@@ -11,19 +11,24 @@ int quantum;
 char *log_level; 
 t_log *logger_kernel;
 
+
 int main(int argc, char* argv[]) {
-//int main(){
-    
+
+    pcb *pcb_inicial;
+    int tam_pcb_inicial;
 
     levantar_config_kernel();
     logger_kernel = iniciar_logger("kernel.log", "KERNEL");
 
     if(argc < 3)
     {
-        log_error(logger_kernel, "Re mal vos");
+        log_error(logger_kernel, "Cantidad incorrecta de argumentos pasados por parametro");
+        return 1;
     }
+   
 
     pthread_t t1, t2, t3;
+    
     //inicializar_estructuras_kernel();  //ahora esta en utils.c
 
     pthread_create(&t1, NULL, (void *)conectarMemoria, NULL);
@@ -31,6 +36,18 @@ int main(int argc, char* argv[]) {
     pthread_create(&t3, NULL, (void *)conectarCpuInterrupt, NULL);
 
     pthread_join(t3, NULL);
+
+    //inicializar_hilos_planificacion();
+
+
+
+     //./bin/kernel [archivo_pseudocodigo] [tamanio_proceso] [...args]
+
+    interpretar_archivo_pseudocodigo(argv[1]);
+    pcb_inicial = crear_pcb();
+    tam_pcb_inicial = atoi(argv[2]);
+
+    // pedir memoria para el pcb Preguntar si esta bien aca
 
     liberar_conexion(conexion_memoria);
     liberar_conexion(conexion_dispatch);
