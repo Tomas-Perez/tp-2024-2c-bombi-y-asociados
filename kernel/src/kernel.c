@@ -43,6 +43,20 @@ int main(int argc, char* argv[]) {
 int conectarMemoria()
 {
     conexion_memoria = crear_conexion(ip_memoria, puerto_memoria);
+
+    if (conexion_memoria <= 0)
+    {
+        log_error(logger_kernel, " DISPATCH: No se pudo establecer una conexion con la CPU\n");
+    }
+    else
+    {
+        log_info(logger_kernel, "DISPATCH: Conexion con CPU exitosa");
+    }
+
+    handshake_cliente(conexion_memoria, logger_kernel);
+
+    int id_modulo = 1;
+    send(conexion_memoria, &id_modulo, sizeof(int), 0);
 }
 
 int conectarCpuDispatch()
@@ -53,7 +67,7 @@ int conectarCpuDispatch()
 
     if (conexion_dispatch <= 0)
     {
-        log_error(logger_kernel, " DISPATCH: No se pudo establecer una onexion con la CPU\n");
+        log_error(logger_kernel, " DISPATCH: No se pudo establecer una conexion con la CPU\n");
     }
     else
     {
@@ -61,9 +75,6 @@ int conectarCpuDispatch()
     }
 
     handshake_cliente(conexion_dispatch, logger_kernel);
-
-
-  
 
 }
 
@@ -76,7 +87,7 @@ int conectarCpuInterrupt()
 
     if (conexion_interrupt <= 0)
     {
-        log_error(logger_kernel, "INTERRUPT: No se pudo establecer unaconexion con la CPU");
+        log_error(logger_kernel, "INTERRUPT: No se pudo establecer unac onexion con la CPU");
     }
     else
     {

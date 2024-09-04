@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
         {
         case 1: // CONEXIONES EFIMERAS
             socket_kernel = socket_cliente;
-            // pthread_create(&t1, NULL, (void *)atenderKernel, &socket_kernel);
+            pthread_create(&t1, NULL, (void *)atenderKernel, &socket_kernel);
             break;
         case 2:
             socket_cpu = socket_cliente;
@@ -68,6 +68,11 @@ int main(int argc, char *argv[])
 int atenderCpu()
 {
     log_info(logger, "Memoria conectada con CPU");
+}
+
+int atenderKernel()
+{
+    log_info(logger, "Memoria conectada con Kernel");
 }
 
 void levantar_config_memoria()

@@ -9,6 +9,7 @@
 void levantar_config_memoria();
 
 int atenderCpu();
+int atenderKernel();
 int conectarFS();
 
 
