@@ -1,7 +1,7 @@
 #include "memoria.h"
 
 t_config *config_memoria;
-t_log *logger;
+t_log *logger_memoria;
 
 char *puerto_escucha;
 char *ip_filesystem;
@@ -21,12 +21,12 @@ int main(int argc, char *argv[])
     int socket_cliente;
 
     levantar_config_memoria();
-    logger = iniciar_logger("memoria.log", "MEMORIA");
+    logger_memoria = iniciar_logger("memoria.log", "MEMORIA");
 
     int socket_memoria = iniciar_servidor(puerto_escucha);
 
     // AVISAR QUE SE CREO EL SV Y ESTA ESPERANDO QUE SE CONECTEN
-    log_info(logger, "Servidor listo para aceptar conexiones");
+    log_info(logger_memoria, "Servidor listo para aceptar conexiones");
 
     // Creacion de hilos
 
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
             pthread_create(&t2, NULL, (void *)atenderCpu, &socket_cpu);
             break;
         default:
-            log_warning(logger, "Modulo no reconocido\n");
+            log_warning(logger_memoria, "Modulo no reconocido\n");
             break;
         }
     }
@@ -67,12 +67,12 @@ int main(int argc, char *argv[])
 
 int atenderCpu()
 {
-    log_info(logger, "Memoria conectada con CPU");
+    log_info(logger_memoria, "Memoria conectada con CPU");
 }
 
 int atenderKernel()
 {
-    log_info(logger, "Memoria conectada con Kernel");
+    log_info(logger_memoria, "Memoria conectada con Kernel");
 }
 
 void levantar_config_memoria()
@@ -96,12 +96,12 @@ int conectarFS()
 
     if (socket_fs <= 0)
     {
-        log_info(logger, "No se pudo establecer una conexion con el FS");
+        log_info(logger_memoria, "No se pudo establecer una conexion con el FS");
     }
     else
     {
-        log_info(logger, "Conexion con FS exitosa");
+        log_info(logger_memoria, "Conexion con FS exitosa");
     }
 
-    handshake_cliente(socket_fs, logger);
+    handshake_cliente(socket_fs, logger_memoria);
 }

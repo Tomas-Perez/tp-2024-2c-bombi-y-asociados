@@ -1,7 +1,7 @@
 #include "cpu.h"
 
 t_config *config_cpu;
-t_log *logger;
+t_log *logger_cpu;
 char *puerto_memoria;
 char *puerto_escucha_dispatch;
 char *puerto_escucha_interrupt;
@@ -15,7 +15,7 @@ int main(int argc, char *argv[])
 {
 
     levantar_config_cpu();
-    logger = iniciar_logger("cpu.log", "CPU");
+    logger_cpu = iniciar_logger("cpu.log", "CPU");
 
     // HILOS PARA CONEXIONES
 
@@ -36,14 +36,14 @@ int conectarMemoria()
 
     if (socket_memoria <= 0)
     {
-        log_info(logger, "No se pudo establecer una conexion con la Memoria");
+        log_info(logger_cpu, "No se pudo establecer una conexion con la Memoria");
     }
     else
     {
-        log_info(logger, "Conexion con Memoria exitosa");
+        log_info(logger_cpu, "Conexion con Memoria exitosa");
     }
 
-    handshake_cliente(socket_memoria, logger);
+    handshake_cliente(socket_memoria, logger_cpu);
 
     int id_modulo = 2;
     send(socket_memoria, &id_modulo, sizeof(int), 0);
@@ -53,7 +53,7 @@ int atenderCpuDispatch()
 {
 
     int server_cpud = iniciar_servidor(puerto_escucha_dispatch);
-    log_info(logger, "Servidor listo para recibir al cliente");
+    log_info(logger_cpu, "Servidor listo para recibir al cliente");
     conexion_dispatch = esperar_cliente(server_cpud);
 
     // t_list* lista;
@@ -73,10 +73,10 @@ int atenderCpuDispatch()
         break;
     */
         case -1:
-            log_error(logger, "El cliente se desconecto. Terminando servidor\n");
+            log_error(logger_cpu, "El cliente se desconecto. Terminando servidor\n");
             return EXIT_FAILURE;
         default:
-            log_warning(logger, "Operacion desconocida. No quieras meter la pata\n");
+            log_warning(logger_cpu, "Operacion desconocida. No quieras meter la pata\n");
             break;
         }
     }
@@ -86,7 +86,7 @@ int atenderCpuDispatch()
 int atenderCpuInterrupt()
 {
     int server_cpui = iniciar_servidor(puerto_escucha_interrupt);
-    log_info(logger, "Servidor listo para recibir al cliente");
+    log_info(logger_cpu, "Servidor listo para recibir al cliente");
     conexion_interrupt = esperar_cliente(server_cpui);
 
     // t_list* lista;
@@ -99,10 +99,10 @@ int atenderCpuInterrupt()
             // recibir_mensaje(conexion_interrupt);
             break;
         case -1:
-            log_error(logger, "El cliente se desconecto. Terminando servidor\n");
+            log_error(logger_cpu, "El cliente se desconecto. Terminando servidor\n");
             return EXIT_FAILURE;
         default:
-            log_warning(logger, "Operacion desconocida. No quieras meter la pata\n");
+            log_warning(logger_cpu, "Operacion desconocida. No quieras meter la pata\n");
             break;
         }
     }
