@@ -96,7 +96,7 @@ void interpretar_archivo_pseudocodigo(char *path_archivo)
 }
 
 // --------------------------- Inicializar ---------------------------
-/*void inicializar_registros(pcb* proc)
+void inicializar_registros(pcb* proc)
 {
         proc->registros_cpu.AX=0;
 	    proc->registros_cpu.BX=0;
@@ -108,8 +108,13 @@ void interpretar_archivo_pseudocodigo(char *path_archivo)
 	    proc->registros_cpu.HX=0;
     	proc->registros_cpu.PC=0;
 
-}*/
+}
 
+void inicializar_estructuras_kernel()
+{
+	int id_counter = 0;
+	printf(" :) \n");
+}
 //  --------------------------- PCB  --------------------------- 
 
 pcb *crear_pcb()

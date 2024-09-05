@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 
     pthread_t t1, t2, t3;
     
-    //inicializar_estructuras_kernel();  //ahora esta en utils.c
+    //inicializar_estructuras();  //ahora esta en utilsKernel.c
 
     pthread_create(&t1, NULL, (void *)conectarMemoria, NULL);
     pthread_create(&t2, NULL, (void *)conectarCpuDispatch, NULL);
