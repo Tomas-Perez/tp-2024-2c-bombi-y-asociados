@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
 
      //./bin/kernel [archivo_pseudocodigo] [tamanio_proceso] [...args]
 
-    interpretar_archivo_pseudocodigo(argv[1]);
+    abrir_e_interpretar_archivo_pseudocodigo(argv[1]);
     pcb_inicial = crear_pcb();
     tam_pcb_inicial = atoi(argv[2]);
 

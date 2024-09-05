@@ -1,4 +1,4 @@
-#include <utils/utils.h>
+#include "utils.h"
 
 void saludar(char *quien)
 {
@@ -7,8 +7,12 @@ void saludar(char *quien)
 // -------------------------------- KERNEL --------------------------------
 void inicializar_estructuras_kernel()
 {
+	int id_counter = 0;
 	printf(" :) \n");
 }
+
+
+/*------------------- funciones para leer consola ACCIONES --------------*/
 
 // -------------------------------- CPU --------------------------------
 

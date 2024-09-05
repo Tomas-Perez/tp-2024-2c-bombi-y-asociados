@@ -50,11 +50,20 @@ typedef struct
     t_buffer *buffer;
 } t_paquete;
 
+typedef struct 
+{
+    int cod_op;
+    t_list* parametros; 
+}t_comando;
+
 // -------------------------------- KERNEL --------------------------------
 typedef struct
 {
     uint32_t pid;
     int *tid;
+    int contador_tid;
+    //t_registros_cpu registros_cpu;
+
     // t_mutex* mutex; // HACER: ver si esta ok
     //  HACER: ver que cosas agregamos
 } pcb;

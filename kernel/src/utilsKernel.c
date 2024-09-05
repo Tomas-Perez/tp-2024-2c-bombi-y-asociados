@@ -2,7 +2,7 @@
 /*#include <stdio.h>
 #include<stdlib.h>*/
 
-#include "utils.h"
+#include "utilsKernel.h"
 // --------------------------- Archivo inicial --------------------------- 
 
 #define MAX_LENGTH 1000 // maximo tamaño de la cadena
@@ -24,7 +24,7 @@ char* generar_path_archivo(char* nombre_archivo)
         strcpy(path_archivo_completo, path_archivo_inicio);
         strcat(path_archivo_completo, path_archivo);
         printf("%s\n", path_archivo_completo);
-
+    
         return path_archivo_completo;
 }
 
@@ -69,9 +69,9 @@ void interpretar_archivo_pseudocodigo(char *path_archivo)
     for (int i = 0; i < contador; i++)
     {
         
-        // printf("%s \n", lineas[i]);
-        interpretar_comando(comando_archivo, lineas[i]);       
-        acciones_archivo(comando_archivo);
+         printf("%s \n", lineas[i]);
+        //interpretar_comando(comando_archivo, lineas[i]);       
+        //acciones_archivo(comando_archivo);
         
 
         // Limpia los parámetros después de cada uso
