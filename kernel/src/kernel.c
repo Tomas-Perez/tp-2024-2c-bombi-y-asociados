@@ -78,7 +78,6 @@ int conectarMemoria()
 
 int conectarCpuDispatch()
 {
-    //printf("ip_cpu %s puerto_cpu_dispatch %s\n",ip_cpu, puerto_cpu_dispatch);
     conexion_dispatch = crear_conexion(ip_cpu, puerto_cpu_dispatch);
 
 
