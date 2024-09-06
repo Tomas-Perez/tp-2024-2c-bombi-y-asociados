@@ -35,6 +35,26 @@ typedef enum
 {
     MENSAJE,
     PAQUETE,
+    SET,
+    READ_MEM,
+    WRITE_MEM,
+    SUM,
+    SUB,
+    JNZ,
+    LOG,
+    DUMP_MEMORY,
+    IO,
+    PROCESS_CREATE,
+    THREAD_CREATE,
+    THREAD_JOIN,
+    THREAD_CANCEL,
+    MUTEX_CREATE,
+    MUTEX_LOCK,
+    MUTEX_UNLOCK,
+    THREAD_EXIT,
+    PROCESS_EXIT,
+    NO_RECONOCIDO,
+    FETCH_INSTRUCCION
 } op_code;
 
 typedef struct
@@ -55,6 +75,12 @@ typedef struct
     int cod_op;
     t_list* parametros; 
 }t_comando;
+
+typedef struct{
+    int identificador; // dice que instruccion es
+	int cant_parametros;
+	t_list* parametros; // lista de parametros (separados entre si), sin contar el identificador
+}instruccion;
 
 // -------------------------------- KERNEL --------------------------------
 typedef struct
@@ -128,5 +154,10 @@ void recibir_mensaje(int socket_cliente,t_log* logger);
 void enviar_mensaje(char* mensaje, int socket_cliente);
 void* serializar_paquete(t_paquete* paquete, int bytes);
 void eliminar_paquete(t_paquete* paquete);
+t_paquete *crear_paquete(int codigo_operacion);
+void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio);
+void agregar_a_paquete_solo(t_paquete *paquete, void *valor, int bytes);
+void enviar_paquete(t_paquete *paquete, int socket_cliente);
+t_buffer *crear_buffer();
 
 #endif
