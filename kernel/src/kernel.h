@@ -21,5 +21,5 @@ extern char *puerto_cpu_interrupt;
 extern char *algoritmo_de_planificacion; 
 extern int quantum; 
 extern char *log_level; 
-extern t_log *logger_kernel;
+//extern t_log *logger_kernel;
 #endif

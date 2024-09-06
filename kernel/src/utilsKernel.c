@@ -3,6 +3,7 @@
 #include<stdlib.h>*/
 
 #include "utilsKernel.h"
+t_log* logger_kernel;
 // --------------------------- Archivo inicial --------------------------- 
 
 #define MAX_LENGTH 1000 // maximo tamaño de la cadena
@@ -113,7 +114,17 @@ void inicializar_registros(pcb* proc)
 void inicializar_estructuras_kernel()
 {
 	int id_counter = 0;
-	printf(" :) \n");
+    
+
+	//mutex 
+	pthread_mutex_init(&m_hilo_en_ejecucion,NULL);
+	pthread_mutex_init(&m_proceso_en_ejecucion,NULL);
+	pthread_mutex_init(&m_proceso_a_ejecutar,NULL);
+	pthread_mutex_init(&m_cola_de_ready,NULL);
+	pthread_mutex_init(&m_regreso_de_cpu,NULL);
+
+	 //cola de procesos
+	 cola_de_ready = queue_create();
 }
 //  --------------------------- PCB  --------------------------- 
 

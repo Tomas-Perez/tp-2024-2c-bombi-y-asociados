@@ -9,7 +9,7 @@ char *puerto_cpu_interrupt;
 char *algoritmo_de_planificacion; 
 int quantum; 
 char *log_level; 
-t_log *logger_kernel;
+//t_log *logger_kernel;
 
 
 int main(int argc, char* argv[]) {
