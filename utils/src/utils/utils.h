@@ -82,26 +82,6 @@ typedef struct{
 	t_list* parametros; // lista de parametros (separados entre si), sin contar el identificador
 }instruccion;
 
-// -------------------------------- KERNEL --------------------------------
-typedef struct
-{
-    uint32_t pid;
-    int *tid;
-    int contador_tid;
-    //t_registros_cpu registros_cpu;
-
-    // t_mutex* mutex; // HACER: ver si esta ok
-    //  HACER: ver que cosas agregamos
-} pcb;
-
-typedef struct
-{
-    int tid;
-    int prioridad;
-} tcb;
-
-void inicializar_estructuras();
-
 // -------------------------------- CPU --------------------------------
 typedef struct 
 {
@@ -115,6 +95,28 @@ typedef struct
     uint32_t GX;
     uint32_t HX;
 } t_registros_cpu;
+
+
+// -------------------------------- KERNEL --------------------------------
+typedef struct
+{
+    uint32_t pid;
+    int *tid;
+    int contador_tid;
+    t_registros_cpu registros_cpu;
+
+    // t_mutex* mutex; // HACER: ver si esta ok
+    //  HACER: ver que cosas agregamos
+} pcb;
+
+typedef struct
+{
+    int tid;
+    int prioridad;
+} tcb;
+
+void inicializar_estructuras();
+
 
 // -------------------------------- MEMORIA --------------------------------
 

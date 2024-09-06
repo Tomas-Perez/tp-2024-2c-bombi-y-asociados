@@ -7,11 +7,10 @@ void saludar(char *quien)
 	printf("Hola desde %s!!\n", quien);
 }
 // -------------------------------- KERNEL --------------------------------
-void inicializar_estructuras_kernel()
+/*void inicializar_estructuras_kernel()
 {
-	int id_counter = 0;
-	printf(" :) \n");
-}
+	
+}*/
 
 /*------------------- funciones para leer consola ACCIONES --------------*/
 
