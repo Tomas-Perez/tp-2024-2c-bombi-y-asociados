@@ -1,8 +1,5 @@
 #include "utilsCpu.h"
 
-t_log* logger_cpu;
-int tid;
-t_registros_cpu registros_cpu;
 
 void mostrar_parametros(instruccion *inst, int cant_parametros)
 {
