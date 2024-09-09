@@ -135,9 +135,123 @@ instruccion *execute(instruccion *inst)
     return inst;
 }
 
+// INSTRUCCIONES
+
+// SET (Registro, Valor): Asigna al registro el valor pasado como parámetro
+void set(instruccion *inst)
+{
+    uint32_t *dir_registro = get_direccion_registro(list_get(inst->parametros, 0));
+    *dir_registro = atoi(list_get(inst->parametros, 1));
+}
+
+// SUM (Registro Destino, Registro Origen): Suma al Registro Destino el Registro Origen y deja el resultado en el Registro Destino.
+void sum(instruccion *inst)
+{
+    char *registro_destino = list_get(inst->parametros, 0);
+    char *registro_origen = list_get(inst->parametros, 1);
+
+    uint32_t *registro_des = get_direccion_registro(registro_destino); // direccion del registro destino
+    uint32_t *registro_ori = get_direccion_registro(registro_origen);  // dreccion del registro origen
+
+    uint32_t aux = *registro_des + *registro_ori;
+
+    *registro_des = aux;
+}
+
+// SUB (Registro Destino, Registro Origen): Resta al Registro Destino el Registro Origen y deja el resultado en el Registro Destino.
+void sub(instruccion *inst)
+{
+    char *registro_destino = list_get(inst->parametros, 0);
+    char *registro_origen = list_get(inst->parametros, 1);
+
+    uint32_t *registro_des = get_direccion_registro(registro_destino); // direccion del registro destino
+    uint32_t *registro_ori = get_direccion_registro(registro_origen);  // direccion del registro origen
+
+    uint32_t aux = *registro_des - *registro_ori;
+
+    *registro_des = aux;
+}
+
+// JNZ (Registro, Instrucción): Si el valor del registro es distinto de cero,
+// actualiza el program counter al número de instrucción pasada por parámetro.
+void jnz(instruccion *inst)
+{
+    uint32_t *dir_registro = get_direccion_registro(list_get(inst->parametros, 0));
+    char *pcf = list_get(inst->parametros, 1);
+
+    if (*dir_registro != 0)
+    {
+        int program_counter_futuro = atoi(pcf);
+        registros_cpu.PC = program_counter_futuro;
+    }
+}
+
+// READ_MEM (Registro Datos, Registro Dirección): Lee el valor de memoria correspondiente a la Dirección Lógica
+// que se encuentra en el Registro Dirección y lo almacena en el Registro Datos.
+void read_mem(instruccion *inst)
+{
+}
+
+// WRITE_MEM (Registro Dirección, Registro Datos): Lee el valor del Registro Datos y lo escribe en la dirección
+// física de memoria obtenida a partir de la Dirección Lógica almacenada en el Registro Dirección.
+void write_mem(instruccion *inst)
+{
+}
+
+// LOG (Registro): Escribe en el archivo de log el valor del registro.
+void log_instruccion(instruccion *inst)
+{
+}
+
+// SYSCALLS
+
+void dump_memory(instruccion *inst)
+{
+}
+
+void io(instruccion *inst)
+{
+}
+
+void process_create(instruccion *inst)
+{
+}
+
+void thread_create(instruccion *inst)
+{
+}
+
+void thread_join(instruccion *inst)
+{
+}
+
+void thread_cancel(instruccion *inst)
+{
+}
+
+void mutex_create(instruccion *inst)
+{
+}
+
+void mutex_lock(instruccion *inst)
+{
+}
+
+void mutex_unlock(instruccion *inst)
+{
+}
+
+void thread_exit(instruccion *inst)
+{
+}
+
+void process_exit(instruccion *inst)
+{
+}
+
 // PARAMETROS
 
-void mostrar_parametros(instruccion *inst, int cant_parametros)
+/*void mostrar_parametros(instruccion *inst, int cant_parametros)
 {
     if (cant_parametros == 0)
     {
@@ -343,120 +457,6 @@ u_int8_t get_cant_parametros(u_int8_t identificador)
         break;
     }
     return cant_parametros;
-}
+}*/
 
 //////////////////////////////////////////////////////// ESTAS FUNCIONES PODRIAN IR A UN UTILS DE CPU
-
-// INSTRUCCIONES
-
-// SET (Registro, Valor): Asigna al registro el valor pasado como parámetro
-void set(instruccion *inst)
-{
-    uint32_t *dir_registro = get_direccion_registro(list_get(inst->parametros, 0));
-    *dir_registro = atoi(list_get(inst->parametros, 1));
-}
-
-// SUM (Registro Destino, Registro Origen): Suma al Registro Destino el Registro Origen y deja el resultado en el Registro Destino.
-void sum(instruccion *inst)
-{
-    char *registro_destino = list_get(inst->parametros, 0);
-    char *registro_origen = list_get(inst->parametros, 1);
-
-    uint32_t *registro_des = get_direccion_registro(registro_destino); // direccion del registro destino
-    uint32_t *registro_ori = get_direccion_registro(registro_origen);  // dreccion del registro origen
-
-    uint32_t aux = *registro_des + *registro_ori;
-
-    *registro_des = aux;
-}
-
-// SUB (Registro Destino, Registro Origen): Resta al Registro Destino el Registro Origen y deja el resultado en el Registro Destino.
-void sub(instruccion *inst)
-{
-    char *registro_destino = list_get(inst->parametros, 0);
-    char *registro_origen = list_get(inst->parametros, 1);
-
-    uint32_t *registro_des = get_direccion_registro(registro_destino); // direccion del registro destino
-    uint32_t *registro_ori = get_direccion_registro(registro_origen);  // direccion del registro origen
-
-    uint32_t aux = *registro_des - *registro_ori;
-
-    *registro_des = aux;
-}
-
-// JNZ (Registro, Instrucción): Si el valor del registro es distinto de cero,
-// actualiza el program counter al número de instrucción pasada por parámetro.
-void jnz(instruccion *inst)
-{
-    uint32_t *dir_registro = get_direccion_registro(list_get(inst->parametros, 0));
-    char *pcf = list_get(inst->parametros, 1);
-
-    if (*dir_registro != 0)
-    {
-        int program_counter_futuro = atoi(pcf);
-        registros_cpu.PC = program_counter_futuro;
-    }
-}
-
-// READ_MEM (Registro Datos, Registro Dirección): Lee el valor de memoria correspondiente a la Dirección Lógica
-// que se encuentra en el Registro Dirección y lo almacena en el Registro Datos.
-void read_mem(instruccion *inst)
-{
-}
-
-// WRITE_MEM (Registro Dirección, Registro Datos): Lee el valor del Registro Datos y lo escribe en la dirección
-// física de memoria obtenida a partir de la Dirección Lógica almacenada en el Registro Dirección.
-void write_mem(instruccion *inst)
-{
-}
-
-// LOG (Registro): Escribe en el archivo de log el valor del registro.
-void log_instruccion(instruccion *inst)
-{
-}
-
-// SYSCALLS
-
-void dump_memory(instruccion *inst)
-{
-}
-
-void io(instruccion *inst)
-{
-}
-
-void process_create(instruccion *inst)
-{
-}
-
-void thread_create(instruccion *inst)
-{
-}
-
-void thread_join(instruccion *inst)
-{
-}
-
-void thread_cancel(instruccion *inst)
-{
-}
-
-void mutex_create(instruccion *inst)
-{
-}
-
-void mutex_lock(instruccion *inst)
-{
-}
-
-void mutex_unlock(instruccion *inst)
-{
-}
-
-void thread_exit(instruccion *inst)
-{
-}
-
-void process_exit(instruccion *inst)
-{
-}
