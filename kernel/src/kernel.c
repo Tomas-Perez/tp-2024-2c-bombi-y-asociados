@@ -31,11 +31,11 @@ int main(int argc, char* argv[]) {
     
     //inicializar_estructuras();  //ahora esta en utilsKernel.c
 
-    pthread_create(&t1, NULL, (void *)conectarMemoria, NULL);
-    pthread_create(&t2, NULL, (void *)conectarCpuDispatch, NULL);
-    pthread_create(&t3, NULL, (void *)conectarCpuInterrupt, NULL);
+   // pthread_create(&t1, NULL, (void *)conectarMemoria, NULL);
+    pthread_create(&t1, NULL, (void *)conectarCpuDispatch, NULL);
+    pthread_create(&t2, NULL, (void *)conectarCpuInterrupt, NULL);
 
-    pthread_join(t3, NULL);
+    pthread_join(t2, NULL);
 
     //inicializar_hilos_planificacion();
 
@@ -74,6 +74,8 @@ int conectarMemoria()
 
     int id_modulo = 1;
     send(conexion_memoria, &id_modulo, sizeof(int), 0);
+    
+    return conexion_memoria;
 }
 
 int conectarCpuDispatch()

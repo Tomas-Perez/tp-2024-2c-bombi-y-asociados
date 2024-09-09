@@ -120,11 +120,11 @@ void inicializar_estructuras_kernel()
 	pthread_mutex_init(&m_hilo_en_ejecucion,NULL);
 	pthread_mutex_init(&m_proceso_en_ejecucion,NULL);
 	pthread_mutex_init(&m_proceso_a_ejecutar,NULL);
-	pthread_mutex_init(&m_cola_de_ready,NULL);
+	pthread_mutex_init(&m_lista_de_ready,NULL);
 	pthread_mutex_init(&m_regreso_de_cpu,NULL);
 
 	 //cola de procesos
-	 cola_de_ready = queue_create();
+	 lista_de_ready = list_create();
 }
 //  --------------------------- PCB  --------------------------- 
 
@@ -132,13 +132,12 @@ pcb *crear_pcb()
 {
     pcb *nuevo_pcb = (pcb *)malloc(sizeof(pcb));
     nuevo_pcb->pid = id_counter;
-    // nuevo_pcb->program_counter = 0;
+    nuevo_pcb-> tid_counter = 0;
     
-    //nuevo_pcb->regreso_de_cpu = 0;
     id_counter++;
     nuevo_pcb->contador_tid = 0;
 
-    //inicializar_registros(nuevo_pcb);
+    inicializar_registros(nuevo_pcb);
     if (nuevo_pcb == NULL)
     {
         
@@ -148,9 +147,22 @@ pcb *crear_pcb()
     return nuevo_pcb;
 }
 
-tcb* crear_tid(pcb* pcb_padre, int prioridad)
+tcb* crear_tcb(pcb* proc_padre, int prioridad)
 {
+    tcb* nuevo_tcb;   
+    nuevo_tcb->tid = proc_padre->contador_tid;
+    nuevo_tcb->pid_padre_tcb = proc_padre->pid;
+    nuevo_tcb->prioridad = prioridad;
 
+    proc_padre->contador_tid++;
+    //inicializar_registros();
+    if (nuevo_tcb == NULL)
+    {
+        
+        free(nuevo_tcb);
+        return NULL;
+    }
+     return nuevo_tcb;
 }
 
 
