@@ -103,6 +103,7 @@ typedef struct
     uint32_t pid;
     int *tid;
     int contador_tid;
+    bool mem_asignada;
     t_registros_cpu registros_cpu;
 
     // t_mutex* mutex; // HACER: ver si esta ok
@@ -113,6 +114,7 @@ typedef struct
 {
     int tid;
     int prioridad;
+    int pid_padre_tcb;
 } tcb;
 
 void inicializar_estructuras();

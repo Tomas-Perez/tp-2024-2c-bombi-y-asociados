@@ -32,7 +32,7 @@ void pasar_a_running_tcb(tcb* tcb_listo)
 }
 
 void mandar_tcb_dispatch(tcb* tcb_listo){
-	// TODO 
+	// TO DO 
 }
 
 void planificador_corto_plazo_pcb()
@@ -48,7 +48,7 @@ void planificador_corto_plazo_pcb()
 
       		log_error(logger_kernel, "Cola de ready está vacía en planificador_corto_plazo\n");
         	pthread_mutex_unlock(&m_lista_de_ready);
-			return 1;
+			exit (1);
 		}
         
         pthread_mutex_lock(&m_proceso_a_ejecutar);
@@ -71,7 +71,7 @@ void planificador_corto_plazo_pcb()
 
 void planificador_corto_plazo_tcb()
 {
-	// semaforos!!!!
+	// semaforos!!!! TO DO -> agus
 	if(strcmp(algoritmo_de_planificacion,"FIFO"))
 	{
 
@@ -92,21 +92,45 @@ void planificador_corto_plazo_tcb()
 void atender_syscall()
 {
 	int motivo;
-	//recibir_contexto_ejecc_de_cpu(proceso_en_ejecucion, &motivo ,instrucc);
+	int socket;
+	int prioridad;
+	//recibir_contexto_ejecc_de_cpu(proceso_en_ejecucion, &motivo ,instrucc); TO DO -> agus? quizas de a 2 o de uno pero con toda la pila xq es muy importante
 	switch(motivo)
 	{
 		case PROCESS_CREATE:
-		/*void* socket;
-		pthread_create(&t1, NULL, (void *)conectarMemoria, NULL);
-		pthread_join(&t1, ); suponemos que se va a usar de uno la conexion a memoria*/
+		socket = conectarMemoria();
+		pcb* proceso_nuevo = crear_pcb(prioridad);
+        pedir_memoria(proceso_nuevo, socket);
+        if(proceso_nuevo->mem_asignada == 1)
+        {
+            //agregar_a_ready(proceso_nuevo);
+        }
+        else
+        {
+            //list_add(proceso_nuevo, bloqueados_por_mem_insuficiente);
+            // habria que preguntar si se quiere crear otro proc nuevo para el que si hay suficiente memoria
+            // hay que ponerlo igual en la lista de bloqueados x 
+            // aca vendria la funcion recursiva (¿recursiva? creo q si para que se llame hasta q se cumpla el caso
+            // base(que la memoria sea suficiente))
+        }
+	
 		
-		int socket = conectarMemoria();
 		// hacemos el pedido
 		close(socket);
 		break;
 		case PROCESS_EXIT:
+		/* esta syscall finalizará el PCB correspondiente al TCB que ejecutó la 
+		instrucción, enviando todos sus TCBs asociados a la cola de EXIT. Esta 
+		instrucción sólo será llamada por el TID 0 del proceso y le deberá indicar 
+		a la memoria la finalización de dicho proceso. */
+
+		
 		break;
 		case THREAD_CREATE:
+			socket = conectarMemoria();
+			tcb* hilo_nuevo;
+			//hilo_nuevo = crear_tcb(proceso_en_ejec, int prioridad); REVISAR, supongo que el proceso padre va a ser el que esta en ejec
+			// una vez que tengamos hecho el rec contexto se puede tener la prioridad
 		break;
 		case THREAD_JOIN:
 		break;

@@ -126,14 +126,26 @@ void inicializar_estructuras_kernel()
 	 //cola de procesos
 	 lista_de_ready = list_create();
 }
+
+void pedir_memoria(pcb* proceso_nuevo, int socket)
+{
+    //TO DO
+    // con el socket sale la conexion
+    // mandar a memoria el motivo PROCESS_CREATE,
+    // mandar en este orden
+    // 1) el pid 2) el tam proc 3) tam path 4) el path, los chicos se van a encargar de verificar si hay suficiente
+    // memoria para abrir el archivo y si no volvemos a 
+    // hacer recv para confirmacion, seguro nos mandan un bool
+}
 //  --------------------------- PCB  --------------------------- 
 
-pcb *crear_pcb()
+pcb *crear_pcb(int prioridad_h_main)
 {
     pcb *nuevo_pcb = (pcb *)malloc(sizeof(pcb));
     nuevo_pcb->pid = id_counter;
-    nuevo_pcb-> tid_counter = 0;
-    
+    nuevo_pcb->contador_tid = 0;
+    // lista de los tids 
+    nuevo_pcb->tid = 0;
     id_counter++;
     nuevo_pcb->contador_tid = 0;
 
@@ -149,7 +161,7 @@ pcb *crear_pcb()
 
 tcb* crear_tcb(pcb* proc_padre, int prioridad)
 {
-    tcb* nuevo_tcb;   
+    tcb* nuevo_tcb = (tcb *)malloc(sizeof(tcb));;   
     nuevo_tcb->tid = proc_padre->contador_tid;
     nuevo_tcb->pid_padre_tcb = proc_padre->pid;
     nuevo_tcb->prioridad = prioridad;

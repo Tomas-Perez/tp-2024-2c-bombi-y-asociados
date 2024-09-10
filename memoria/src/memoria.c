@@ -70,9 +70,83 @@ int atenderCpu()
     log_info(logger_memoria, "Memoria conectada con CPU");
 }
 
-int atenderKernel()
+int atenderKernel(int *socket_kernel)
 {
+    void *buffer;
     log_info(logger_memoria, "Memoria conectada con Kernel");
+
+    int cod_op = recibir_operacion(*socket_kernel);
+
+    switch (cod_op) 
+    {
+        case PROCESS_CREATE: // SIEMPRE EL TID VA A SER 0
+            int size = 0;
+            char *path_kernel;
+			buffer = recibir_buffer(&size, *socket_kernel); // recibimos PCB
+
+			if (buffer == NULL)
+			{
+				log_info(logger_memoria, "Error al recibir el buffer\n");
+				return -1;
+			}
+
+            uint32_t pid = buffer_read_uint32(buffer);
+            uint32_t tamanio_proceso = buffer_read_uint32(buffer);
+
+            /*if (tamanio_proceso > memoria_disponible) {
+                // Devolver que no hay espacio disponible (?)
+            }*/
+
+            uint32_t size_path = buffer_read_uint32(buffer);
+
+            path_kernel = malloc(size_path + 1); // asignamos memoria, +1 para el carácter nulo
+			if (path_kernel == NULL)
+			{
+				log_info(logger_memoria, "Error al asignar memoria para path_kernel\n");
+				return -1;
+			}
+
+            path_kernel = buffer_read_string(buffer, size_path);
+            path_kernel[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+
+            char *path_script_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_kernel) + 1);
+			if (path_script_completo == NULL)
+			{
+				log_info(logger, "Error al asignar memoria para path_script_completo\n");
+				free(path_kernel);
+				return -1;
+			}
+			strcpy(path_script_completo, path_instrucciones);   // copia path_inst en path_script_completo
+			strcat(path_script_completo, path_kernel); // concatena path_kernel a path_script_completo
+
+			usleep(retardo_memoria() * 1000);
+
+			printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
+
+            FILE *f;
+			if (!(f = fopen(path_script_completo, "r")))
+			{ // ABRE EL ARCHIVO PARA LECTURA
+				log_info(logger, "No se encontro el archivo de instrucciones\n");
+				free(path_script_completo);
+				free(path_kernel);
+				return -1;
+			}
+
+			free(path_script_completo);
+			free(path_kernel);
+            free(buffer);
+
+            //agregar_proceso_instrucciones(f, pid); // Ver como remodelamos esta funcion para este TP
+
+            bool confirmacion = true;
+            send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que pudimos reservar espacio
+            break;
+        default:
+            log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
+			printf("Cod Op: %i", cod_op);
+			break;
+    }
+
 }
 
 void levantar_config_memoria()
