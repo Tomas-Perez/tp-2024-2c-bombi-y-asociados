@@ -94,7 +94,10 @@ void atender_syscall()
 	int motivo;
 	int socket;
 	int prioridad;
-	//recibir_contexto_ejecc_de_cpu(proceso_en_ejecucion, &motivo ,instrucc); TO DO -> agus? quizas de a 2 o de uno pero con toda la pila xq es muy importante
+	recibir_syscall_de_cpu(proceso_en_ejecucion, &motivo, instrucc);
+	// es la misma que esta -> recibir_contexto_ejecc_de_cpu(proceso_en_ejecucion, &motivo ,instrucc);
+	// pero sin los registros.  
+	
 	switch(motivo)
 	{
 		case PROCESS_CREATE:
@@ -114,8 +117,6 @@ void atender_syscall()
             // base(que la memoria sea suficiente))
         }
 	
-		
-		// hacemos el pedido
 		close(socket);
 		break;
 		case PROCESS_EXIT:
@@ -123,7 +124,7 @@ void atender_syscall()
 		instrucción, enviando todos sus TCBs asociados a la cola de EXIT. Esta 
 		instrucción sólo será llamada por el TID 0 del proceso y le deberá indicar 
 		a la memoria la finalización de dicho proceso. */
-
+		
 		
 		break;
 		case THREAD_CREATE:

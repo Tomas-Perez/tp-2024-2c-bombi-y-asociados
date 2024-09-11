@@ -196,3 +196,51 @@ void inicializar_hilos_planificacion()
 
 // //  Planificador corto plazo
 
+// Parametros
+void recibir_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc){
+		int cod_op = recibir_operacion(conexion_dispatch);
+		if(cod_op == SYSCALL){
+			desempaquetar_contexto_ejecc_de_cpu(proc, motivo, instrucc);
+			printf("PID: %i, motivo: %i", proc->pid, *motivo);
+		}
+		else printf("Codigo de Operacion de CPU incorrecto\n");
+}
+
+void desempaquetar_parametros_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc){
+		int tam;
+		void* buffer = recibir_buffer(&tam, conexion_dispatch);
+		int desplazamiento = 0;
+
+		/*memcpy(&(proc->program_counter), buffer + desplazamiento, sizeof(uint32_t));
+		desplazamiento+= sizeof(int)*/;
+		memcpy(motivo, buffer + desplazamiento, sizeof(int));
+		desplazamiento+= sizeof(int);
+		printf("PID 2: %i, motivo 2: %i", proc->pid, *motivo);
+		memcpy(&(instrucc->cant_parametros), buffer + desplazamiento, sizeof(int));
+		desplazamiento+= sizeof(int);
+		for(int i = 0; i < instrucc->cant_parametros; i++){
+
+			char* parametro; 
+			int tamanio_parametro;
+			memcpy(&(tamanio_parametro), buffer + desplazamiento, sizeof(int));
+			desplazamiento+= sizeof(int);
+			parametro= (char*) calloc(1,sizeof(tamanio_parametro));
+			//parametro=malloc(size_parametro);
+			if (parametro == NULL) 
+            {
+                // Manejar el error de memoria
+                log_error(logger, "Error al asignar memoria para el parámetro");
+                // Liberar recursos y salir de la función
+                free(buffer);
+                return;
+            }
+			memcpy(parametro, buffer + desplazamiento, tamanio_parametro);
+			desplazamiento+= tamanio_parametro;
+
+			list_add(instrucc->parametros, parametro);
+		}
+
+		free(buffer);
+	}
+
+
