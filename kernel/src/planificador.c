@@ -94,8 +94,11 @@ void atender_syscall()
 	int motivo;
 	int socket;
 	int prioridad;
+
+	instruccion* instrucc = malloc(sizeof(instruccion));
+	instrucc->parametros = list_create();
 	recibir_syscall_de_cpu(proceso_en_ejecucion, &motivo, instrucc);
-	// es la misma que esta -> recibir_contexto_ejecc_de_cpu(proceso_en_ejecucion, &motivo ,instrucc);
+	//BORRAR: es la misma que esta -> recibir_contexto_ejecc_de_cpu(proceso_en_ejecucion, &motivo ,instrucc);
 	// pero sin los registros.  
 	
 	switch(motivo)
@@ -124,7 +127,7 @@ void atender_syscall()
 		instrucción, enviando todos sus TCBs asociados a la cola de EXIT. Esta 
 		instrucción sólo será llamada por el TID 0 del proceso y le deberá indicar 
 		a la memoria la finalización de dicho proceso. */
-		
+
 		
 		break;
 		case THREAD_CREATE:
