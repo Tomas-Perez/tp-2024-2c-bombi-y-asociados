@@ -200,7 +200,7 @@ void inicializar_hilos_planificacion()
 void recibir_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc){
 		int cod_op = recibir_operacion(conexion_dispatch);
 		if(cod_op == SYSCALL){
-			desempaquetar_contexto_ejecc_de_cpu(proc, motivo, instrucc);
+			desempaquetar_parametros_syscall_de_cpu(proc, motivo, instrucc);
 			printf("PID: %i, motivo: %i", proc->pid, *motivo);
 		}
 		else printf("Codigo de Operacion de CPU incorrecto\n");
@@ -229,7 +229,7 @@ void desempaquetar_parametros_syscall_de_cpu(pcb* proc, int* motivo, instruccion
 			if (parametro == NULL) 
             {
                 // Manejar el error de memoria
-                log_error(logger, "Error al asignar memoria para el parámetro");
+                log_error(logger_kernel, "Error al asignar memoria para el parámetro");
                 // Liberar recursos y salir de la función
                 free(buffer);
                 return;

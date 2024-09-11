@@ -54,7 +54,8 @@ typedef enum
     THREAD_EXIT,
     PROCESS_EXIT,
     NO_RECONOCIDO,
-    FETCH_INSTRUCCION
+    FETCH_INSTRUCCION,
+    SYSCALL
 } op_code;
 
 typedef struct

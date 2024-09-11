@@ -27,3 +27,6 @@ extern char *puerto_cpu_interrupt;
 extern char *algoritmo_de_planificacion; 
 extern int quantum; 
 extern char *log_level; 
+extern int conexion_dispatch;
+extern int conexion_interrupt;
+extern int conexion_memoria;

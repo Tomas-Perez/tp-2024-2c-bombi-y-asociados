@@ -10,7 +10,9 @@ char *algoritmo_de_planificacion;
 int quantum; 
 char *log_level; 
 //t_log *logger_kernel;
-
+int conexion_dispatch;
+int conexion_interrupt;
+int conexion_memoria;
 
 int main(int argc, char* argv[]) {
 
