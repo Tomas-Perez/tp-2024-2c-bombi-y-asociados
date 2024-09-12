@@ -5,11 +5,14 @@ void abrir_e_interpretar_archivo_pseudocodigo(char* nombre_archivo);
 pcb *crear_pcb();
 tcb* crear_tcb(pcb* proc_padre, int prioridad);
 void inicializar_registros(pcb* proc);
+void inicializar_registros_tcb(tcb* hilos);
 
 void inicializar_estructuras();
 void pedir_memoria(pcb* proceso_nuevo, int socket);
 void recibir_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc);
 void desempaquetar_parametros_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc);
+
+
 extern t_log* logger_kernel;
 extern int id_counter;
 extern pthread_mutex_t m_hilo_en_ejecucion;

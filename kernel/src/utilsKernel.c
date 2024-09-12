@@ -110,7 +110,19 @@ void inicializar_registros(pcb* proc)
     	proc->registros_cpu.PC=0;
 
 }
+void inicializar_registros_tcb(tcb* hilo)
+{
+        hilo->registros_cpu.AX=0;
+	    hilo->registros_cpu.BX=0;
+	    hilo->registros_cpu.CX=0;
+	    hilo->registros_cpu.DX=0;
+	    hilo->registros_cpu.EX=0;
+	    hilo->registros_cpu.FX=0;
+	    hilo->registros_cpu.GX=0;
+	    hilo->registros_cpu.HX=0;
+    	hilo->registros_cpu.PC=0;
 
+}
 void inicializar_estructuras_kernel()
 {
 	int id_counter = 0;
@@ -129,33 +141,51 @@ void inicializar_estructuras_kernel()
 
 void pedir_memoria(pcb* proceso_nuevo, int socket)
 {
-    //TO DO
+    //TO DO -> mili :) 
     // con el socket sale la conexion
     // mandar a memoria el motivo PROCESS_CREATE,
     // mandar en este orden
     // 1) el pid 2) el tam proc 3) tam path 4) el path, los chicos se van a encargar de verificar si hay suficiente
     // memoria para abrir el archivo y si no volvemos a 
     // hacer recv para confirmacion, seguro nos mandan un bool
+
+        if(proceso_nuevo->mem_asignada == 1)
+        {
+            //agregar_a_ready(proceso_nuevo);
+        }
+        else
+        {
+            // list_add(proceso_nuevo, bloqueados_por_mem_insuficiente); NO
+			// 
+            // habria que preguntar si se quiere crear otro proc nuevo para el que si hay suficiente memoria
+            // hay que ponerlo igual en la lista de bloqueados x mem insuficiente
+            // aca vendria la funcion recursiva (¿recursiva? creo q si para que se llame hasta q se cumpla el caso
+            // base(que la memoria sea suficiente))
+        }
 }
 //  --------------------------- PCB  --------------------------- 
 
 pcb *crear_pcb(int prioridad_h_main)
 {
-    pcb *nuevo_pcb = (pcb *)malloc(sizeof(pcb));
+    pcb* nuevo_pcb = (pcb *)malloc(sizeof(pcb));
+    tcb* hilo_main;
     nuevo_pcb->pid = id_counter;
     nuevo_pcb->contador_tid = 0;
     // lista de los tids 
     nuevo_pcb->tid = 0;
     id_counter++;
     nuevo_pcb->contador_tid = 0;
+    nuevo_pcb->lista_tcb = list_create();
 
-    inicializar_registros(nuevo_pcb);
+   // inicializar_registros(nuevo_pcb); //PREGUNTAR
     if (nuevo_pcb == NULL)
     {
-        
         free(nuevo_pcb);
         return NULL;
     }
+    hilo_main=crear_tcb(nuevo_pcb, prioridad_h_main);
+    list_add(nuevo_pcb->lista_tcb, hilo_main);
+
     return nuevo_pcb;
 }
 
@@ -165,7 +195,7 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
     nuevo_tcb->tid = proc_padre->contador_tid;
     nuevo_tcb->pid_padre_tcb = proc_padre->pid;
     nuevo_tcb->prioridad = prioridad;
-
+    inicializar_registros_tcb(nuevo_tcb);
     proc_padre->contador_tid++;
     //inicializar_registros();
     if (nuevo_tcb == NULL)

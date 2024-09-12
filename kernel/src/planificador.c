@@ -106,19 +106,7 @@ void atender_syscall()
 		case PROCESS_CREATE:
 		socket = conectarMemoria();
 		pcb* proceso_nuevo = crear_pcb(prioridad);
-        pedir_memoria(proceso_nuevo, socket);
-        if(proceso_nuevo->mem_asignada == 1)
-        {
-            //agregar_a_ready(proceso_nuevo);
-        }
-        else
-        {
-            //list_add(proceso_nuevo, bloqueados_por_mem_insuficiente);
-            // habria que preguntar si se quiere crear otro proc nuevo para el que si hay suficiente memoria
-            // hay que ponerlo igual en la lista de bloqueados x 
-            // aca vendria la funcion recursiva (¿recursiva? creo q si para que se llame hasta q se cumpla el caso
-            // base(que la memoria sea suficiente))
-        }
+        pedir_memoria(proceso_nuevo, socket);        
 	
 		close(socket);
 		break;
@@ -127,14 +115,23 @@ void atender_syscall()
 		instrucción, enviando todos sus TCBs asociados a la cola de EXIT. Esta 
 		instrucción sólo será llamada por el TID 0 del proceso y le deberá indicar 
 		a la memoria la finalización de dicho proceso. */
-
 		
 		break;
+
 		case THREAD_CREATE:
 			socket = conectarMemoria();
 			tcb* hilo_nuevo;
+
+			/* THREAD_CREATE, esta syscall recibirá como parámetro de la CPU el nombre del 
+			archivo de pseudocódigo que deberá ejecutar el hilo a crear y su prioridad. 
+			Al momento de crear el nuevo hilo, deberá generar el nuevo TCB con un TID 
+			autoincremental y poner al mismo en el estado READY. */
+
 			//hilo_nuevo = crear_tcb(proceso_en_ejec, int prioridad); REVISAR, supongo que el proceso padre va a ser el que esta en ejec
 			// una vez que tengamos hecho el rec contexto se puede tener la prioridad
+			// algun hilo va a llamar esta syscall, este hilo va a tener un padre y ahora
+			// van a compartir padre el hilo que llama y el que nace
+			close(socket);
 		break;
 		case THREAD_JOIN:
 		break;

@@ -102,11 +102,11 @@ typedef struct
 typedef struct
 {
     uint32_t pid;
-    int *tid;
+    int *tid; // [0,1,2,3] 
     int contador_tid;
     bool mem_asignada;
     t_registros_cpu registros_cpu;
-
+    t_list lista_tcb;
     // t_mutex* mutex; // HACER: ver si esta ok
     //  HACER: ver que cosas agregamos
 } pcb;
