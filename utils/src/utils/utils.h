@@ -106,7 +106,7 @@ typedef struct
     int contador_tid;
     bool mem_asignada;
     t_registros_cpu registros_cpu;
-    t_list lista_tcb;
+    t_list* lista_tcb;
     // t_mutex* mutex; // HACER: ver si esta ok
     //  HACER: ver que cosas agregamos
 } pcb;
@@ -116,6 +116,7 @@ typedef struct
     int tid;
     int prioridad;
     int pid_padre_tcb;
+    t_registros_cpu registros_cpu;
 } tcb;
 
 void inicializar_estructuras();

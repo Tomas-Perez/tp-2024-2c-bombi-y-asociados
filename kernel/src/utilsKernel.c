@@ -110,6 +110,7 @@ void inicializar_registros(pcb* proc)
     	proc->registros_cpu.PC=0;
 
 }
+
 void inicializar_registros_tcb(tcb* hilo)
 {
         hilo->registros_cpu.AX=0;
@@ -139,28 +140,50 @@ void inicializar_estructuras_kernel()
 	 lista_de_ready = list_create();
 }
 
-void pedir_memoria(pcb* proceso_nuevo, int socket)
+void pedir_memoria(pcb* proceso_nuevo, int socket, instruccion* instruccion)
 {
+
+    t_list parametros = instruccion->parametros; 
+   
     //TO DO -> mili :) 
     // con el socket sale la conexion
     // mandar a memoria el motivo PROCESS_CREATE,
     // mandar en este orden
+
     // 1) el pid 2) el tam proc 3) tam path 4) el path, los chicos se van a encargar de verificar si hay suficiente
     // memoria para abrir el archivo y si no volvemos a 
     // hacer recv para confirmacion, seguro nos mandan un bool
+    // el segundo parámetro es el tamaño del proceso en Memoria y 
+    //el tercer parámetro es la prioridad del hilo main (TID 0)
+    
+        int pid = proceso_nuevo->pid;
+        int tamanio = list_get(parametros,1);
+        int motivo = PROCESS_CREATE; //preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
 
-        if(proceso_nuevo->mem_asignada == 1)
+
+        t_paquete* pedido_memoria = crear_paquete(motivo);
+		agregar_a_paquete(pedido_memoria, pid,sizeof(int));
+        agregar_a_paquete(pedido_memoria, tamanio, sizeof(int));
+        //agregar_a_paquete(pedido_memoria, ) PATH PREGUNTAR
+
+        enviar_paquete(pedido_memoria,socket);
+		eliminar_paquete(pedido_memoria);
+
+        int confirmacion = 0;
+        recv(socket,&confirmacion, sizeof(int), MSG_WAITALL);
+
+        if(confirmacion)
         {
-            //agregar_a_ready(proceso_nuevo);
+            agregar_a_ready(proceso_nuevo);
         }
         else
         {
-            // list_add(proceso_nuevo, bloqueados_por_mem_insuficiente); NO
-			// 
-            // habria que preguntar si se quiere crear otro proc nuevo para el que si hay suficiente memoria
-            // hay que ponerlo igual en la lista de bloqueados x mem insuficiente
-            // aca vendria la funcion recursiva (¿recursiva? creo q si para que se llame hasta q se cumpla el caso
-            // base(que la memoria sea suficiente))
+            //esperar un SIGNAL de finalizo un proceso y llamar a la misma funcionn 
+            //pedir_memoria(proceso_nuevo, socket, instruccion)
+            // O
+            // list_add(proceso_nuevo, bloqueados_por_mem_insuficiente); 
+			// Y un hilo que chequee si esta vacia esta lista
+           
         }
 }
 //  --------------------------- PCB  --------------------------- 
@@ -230,17 +253,19 @@ void inicializar_hilos_planificacion()
 void recibir_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc){
 		int cod_op = recibir_operacion(conexion_dispatch);
 		if(cod_op == SYSCALL){
-			desempaquetar_parametros_syscall_de_cpu(proc, motivo, instrucc);
+            desempaquetar_parametros_syscall_de_cpu(proc, motivo, instrucc);
 			printf("PID: %i, motivo: %i", proc->pid, *motivo);
+            
 		}
-		else printf("Codigo de Operacion de CPU incorrecto\n");
+		else {printf("Codigo de Operacion de CPU incorrecto\n");
+               
+        }
 }
 
 void desempaquetar_parametros_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc){
 		int tam;
 		void* buffer = recibir_buffer(&tam, conexion_dispatch);
 		int desplazamiento = 0;
-
 		/*memcpy(&(proc->program_counter), buffer + desplazamiento, sizeof(uint32_t));
 		desplazamiento+= sizeof(int)*/;
 		memcpy(motivo, buffer + desplazamiento, sizeof(int));
@@ -268,8 +293,9 @@ void desempaquetar_parametros_syscall_de_cpu(pcb* proc, int* motivo, instruccion
 			desplazamiento+= tamanio_parametro;
 
 			list_add(instrucc->parametros, parametro);
+            
 		}
-
+        
 		free(buffer);
 	}
 

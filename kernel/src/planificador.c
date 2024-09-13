@@ -98,6 +98,7 @@ void atender_syscall()
 	instruccion* instrucc = malloc(sizeof(instruccion));
 	instrucc->parametros = list_create();
 	recibir_syscall_de_cpu(proceso_en_ejecucion, &motivo, instrucc);
+	prioridad = list_get(instrucc->parametros, 2);
 	//BORRAR: es la misma que esta -> recibir_contexto_ejecc_de_cpu(proceso_en_ejecucion, &motivo ,instrucc);
 	// pero sin los registros.  
 	
@@ -106,7 +107,7 @@ void atender_syscall()
 		case PROCESS_CREATE:
 		socket = conectarMemoria();
 		pcb* proceso_nuevo = crear_pcb(prioridad);
-        pedir_memoria(proceso_nuevo, socket);        
+        pedir_memoria(proceso_nuevo, socket, intrucc);        
 	
 		close(socket);
 		break;
