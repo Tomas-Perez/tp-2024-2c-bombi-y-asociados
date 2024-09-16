@@ -96,7 +96,7 @@ void atender_syscall()
 		char* archivo = list_get(instrucc->parametros, 0);
 		int tamanio = list_get(instrucc->parametros, 1);
 		int prioridad = list_get(instrucc->parametros, 2);
-
+		
 		pcb* proceso_nuevo = crear_proceso_y_pedir_memoria(archivo, tamanio, prioridad, socket);
 		//pcb* proceso_nuevo = crear_proceso_y_pedir_memoria(nombre_arch,tam_proc, prioridad, socket);
 		// TO DO-> si hacemos esto tenemos q sacar los params de instrucc antes 

@@ -53,7 +53,7 @@ void inicializar_estructuras_kernel()
 	 lista_de_ready = list_create();
 }
 
-void pedir_memoria(pcb* proceso_nuevo, int socket, int tamanio)
+void pedir_memoria(pcb* proceso_nuevo, int socket, int tamanio, char* path)
 {
 
      
@@ -76,7 +76,8 @@ void pedir_memoria(pcb* proceso_nuevo, int socket, int tamanio)
         t_paquete* pedido_memoria = crear_paquete(motivo);
 		agregar_a_paquete(pedido_memoria, &pid,sizeof(int));
         agregar_a_paquete(pedido_memoria, &tamanio, sizeof(int));
-        //agregar_a_paquete(pedido_memoria, ) PATH PREGUNTAR
+        //agregar_a_paquete // ponemos el tam del path?
+        agregar_a_paquete(pedido_memoria, path, strlen(path) + 1);// PATH PREGUNTAR
 
         enviar_paquete(pedido_memoria,socket);
 		eliminar_paquete(pedido_memoria);
@@ -145,9 +146,9 @@ pcb* crear_proceso_y_pedir_memoria(char* nombre_arch, int tam_proc, int priorida
  {  
     pcb *pcb_nuevo;
 
-    generar_path_archivo(nombre_arch);
+    char* path = generar_path_archivo(nombre_arch);
     pcb_nuevo = crear_pcb(prioridad); 
-    pedir_memoria(pcb_nuevo, socket, tam_proc);
+    pedir_memoria(pcb_nuevo, socket, tam_proc, path);
 
     return pcb_nuevo;
  }

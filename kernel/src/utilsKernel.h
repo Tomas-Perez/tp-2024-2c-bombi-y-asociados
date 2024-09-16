@@ -3,11 +3,11 @@ char* generar_path_archivo(char* nombre_archivo);
 pcb *crear_pcb();
 tcb* crear_tcb(pcb* proc_padre, int prioridad);
 void inicializar_registros(tcb* hilos);
-pcb* crear_proceso_y_pedir_memoria(char* nombre_arch,int tam_proc, int prioridad, int socket);
+pcb* crear_proceso_y_pedir_memoria(char* nombre_arch, int tam_proc, int prioridad, int socket);
 void finalizar_hilos_proceso(int pid);
 pcb *buscar_proc_lista(t_list *lista, int pid_buscado);
 void inicializar_estructuras();
-void pedir_memoria(pcb* proceso_nuevo, int socket, int tamanio);
+void pedir_memoria(pcb* proceso_nuevo, int socket, int tamanio, char* path);
 void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc);
 void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc);
 
