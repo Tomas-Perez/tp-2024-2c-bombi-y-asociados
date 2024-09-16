@@ -55,7 +55,8 @@ typedef enum
     PROCESS_EXIT,
     NO_RECONOCIDO,
     FETCH_INSTRUCCION,
-    SYSCALL
+    SYSCALL,
+    SUCCESS
 } op_code;
 
 typedef struct
@@ -102,7 +103,6 @@ typedef struct
 typedef struct
 {
     uint32_t pid;
-    int *tid; // [0,1,2,3] 
     int contador_tid;
     bool mem_asignada;
     t_registros_cpu registros_cpu;

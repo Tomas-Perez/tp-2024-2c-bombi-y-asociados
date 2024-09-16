@@ -2,12 +2,10 @@
 int id_counter;
 
 tcb* hilo_en_ejecucion; 
-pcb* proceso_en_ejecucion; //VER SI ESTA BIEN ACA 
 pthread_mutex_t m_hilo_en_ejecucion;
-pthread_mutex_t m_proceso_en_ejecucion;
-pthread_mutex_t m_proceso_a_ejecutar;
 pthread_mutex_t m_lista_de_ready;
 pthread_mutex_t m_regreso_de_cpu;
+pthread_mutex_t m_hilo_a_ejecutar;
 t_list* lista_de_ready;
 
 
@@ -18,73 +16,58 @@ void pasar_a_running_tcb(tcb* tcb_listo)
 	hilo_en_ejecucion = tcb_listo; 
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
     log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Anterior: READY - Estado Actual: EXEC",
-    proceso_en_ejecucion->pid, tcb_listo->tid);
+    hilo_en_ejecucion->pid_padre_tcb, hilo_en_ejecucion->tid);
 }
 
- void pasar_a_running_pcb(pcb* proceso_listo){
-		
-		pthread_mutex_lock(&m_proceso_en_ejecucion);
-		proceso_en_ejecucion = proceso_listo; 
-		pthread_mutex_unlock(&m_proceso_en_ejecucion);
-        log_info(logger_kernel, "PID: <%d> - Estado Anterior: READY - Estado Actual: EXEC", proceso_listo->pid);
-
-        // aca llamar a planificador corto plazo que llame a pasar_a_running_tcb
-}
-
-void mandar_tcb_dispatch(tcb* tcb_listo){
+void mandar_tcb_dispatch(tcb* tcb_listo)
+{
 	// TO DO 
 }
+   
 
-void planificador_corto_plazo_pcb()
-{
-    while(1)
-    {
-		pcb* proceso_a_ejecutar;
-        //sem_wait(&binario_corto_plazo); VER COMO LLAMAMOS SEMAFOROS
-	  	//sem_wait(&cont_procesos_en_ready);
-		pthread_mutex_lock(&m_lista_de_ready);
-        if (list_is_empty(lista_de_ready)) 
-        {
-
-      		log_error(logger_kernel, "Cola de ready está vacía en planificador_corto_plazo\n");
-        	pthread_mutex_unlock(&m_lista_de_ready);
-			exit (1);
-		}
-        
-        pthread_mutex_lock(&m_proceso_a_ejecutar);
-		pthread_mutex_lock(&m_lista_de_ready);
-		proceso_a_ejecutar = list_remove(lista_de_ready,0);
-		pthread_mutex_unlock(&m_lista_de_ready);        
-				
-        if(proceso_a_ejecutar == NULL)
-        {
-            log_error(logger_kernel,"Proceso a ejecutar es NULL en planificador_corto_plazo\n");
-       	    return 1;
-    	}	
-        
-		pasar_a_running_pcb(proceso_a_ejecutar);
-		pthread_mutex_unlock(&m_proceso_a_ejecutar);
-		
-        //solicitud_de_cpu();				
-    }
-}
 
 void planificador_corto_plazo_tcb()
 {
-	// semaforos!!!! TO DO -> agus
+	// semaforos!!!! binario para controlar la ejecucion y un contador para los hilos en ready
+	//TO DO -> agus
+	tcb* hilo_a_ejecutar;
+
+	pthread_mutex_lock(&m_lista_de_ready);
+    if (list_is_empty(lista_de_ready)) 
+    {
+    	log_error(logger_kernel, "Cola de ready está vacía en planificador_corto_plazo\n");
+    	pthread_mutex_unlock(&m_lista_de_ready);
+		exit (1);
+	}
+        
+    pthread_mutex_lock(&m_hilo_a_ejecutar);
+	pthread_mutex_lock(&m_lista_de_ready);
+	hilo_a_ejecutar = list_remove(lista_de_ready,0);
+	pthread_mutex_unlock(&m_lista_de_ready);        
+	
+	if(hilo_a_ejecutar == NULL)
+    {
+        log_error(logger_kernel,"Hilo a ejecutar es NULL en planificador_corto_plazo\n");
+        exit (1);
+    }	
+	pthread_mutex_unlock(&m_hilo_a_ejecutar);
+		
+    //solicitud_de_cpu();				
+    
 	if(strcmp(algoritmo_de_planificacion,"FIFO"))
 	{
-
+		
 	}
 	if(strcmp(algoritmo_de_planificacion,"PRIORIDADES"))
 	{
-
+		
 	}
 	if(strcmp(algoritmo_de_planificacion,"MULTINIVEL"))
 	{
-
+		// muerte TO DO (queda muy sombrio?)
 	}
 	//pasar_a_running_tcb(tcb_listo);
+	
 }
 
 
@@ -97,8 +80,8 @@ void atender_syscall()
 
 	instruccion* instrucc = malloc(sizeof(instruccion));
 	instrucc->parametros = list_create();
-	recibir_syscall_de_cpu(proceso_en_ejecucion, &motivo, instrucc);
-	prioridad = list_get(instrucc->parametros, 2);
+	recibir_syscall_de_cpu(hilo_en_ejecucion, &motivo, instrucc);
+	
 	//BORRAR: es la misma que esta -> recibir_contexto_ejecc_de_cpu(proceso_en_ejecucion, &motivo ,instrucc);
 	// pero sin los registros.  
 	
@@ -106,9 +89,17 @@ void atender_syscall()
 	{
 		case PROCESS_CREATE:
 		socket = conectarMemoria();
-		pcb* proceso_nuevo = crear_pcb(prioridad);
-        pedir_memoria(proceso_nuevo, socket, intrucc);        
-	
+		/*pcb* proceso_nuevo = crear_pcb(prioridad);
+		tamanio = list_get(instrucc->parametros, 0);
+        pedir_memoria(proceso_nuevo, socket, tamanio);  VER: te va reemplazar esto x lo de abajo? */
+
+		char* archivo = list_get(instrucc->parametros, 0);
+		int tamanio = list_get(instrucc->parametros, 1);
+		int prioridad = list_get(instrucc->parametros, 2);
+
+		pcb* proceso_nuevo = crear_proceso_y_pedir_memoria(archivo, tamanio, prioridad, socket);
+		//pcb* proceso_nuevo = crear_proceso_y_pedir_memoria(nombre_arch,tam_proc, prioridad, socket);
+		// TO DO-> si hacemos esto tenemos q sacar los params de instrucc antes 
 		close(socket);
 		break;
 		case PROCESS_EXIT:
@@ -117,12 +108,20 @@ void atender_syscall()
 		instrucción sólo será llamada por el TID 0 del proceso y le deberá indicar 
 		a la memoria la finalización de dicho proceso. */
 		
+		if(hilo_en_ejecucion->tid == 0)
+		{
+			finalizar_hilos_proceso(hilo_en_ejecucion->pid_padre_tcb);
+			//finalizar_proceso(hilo_en_ejecucion->pid_padre_tcb,SUCCESS); VER cual de las 2 usamos
+			// void finalizar_pcb_buscado(int pid, int motivo) tenemos esta funcion del tp anterior
+			// aunque los procesos ahora solo pueden encontrarse en las listas de new, ready o exit
+		}
 		break;
 
 		case THREAD_CREATE:
-			socket = conectarMemoria();
-			tcb* hilo_nuevo;
-
+			prioridad = list_get(instrucc->parametros,1);
+			pcb* proceso = buscar_proc_lista(lista_de_ready,hilo_en_ejecucion->pid_padre_tcb);
+			crear_tcb(proceso, prioridad);
+			
 			/* THREAD_CREATE, esta syscall recibirá como parámetro de la CPU el nombre del 
 			archivo de pseudocódigo que deberá ejecutar el hilo a crear y su prioridad. 
 			Al momento de crear el nuevo hilo, deberá generar el nuevo TCB con un TID 
@@ -132,13 +131,14 @@ void atender_syscall()
 			// una vez que tengamos hecho el rec contexto se puede tener la prioridad
 			// algun hilo va a llamar esta syscall, este hilo va a tener un padre y ahora
 			// van a compartir padre el hilo que llama y el que nace
-			close(socket);
+			
 		break;
 		case THREAD_JOIN:
 		break;
 		case THREAD_CANCEL:
 		break;
 		case THREAD_EXIT:
+			 finalizar_tcb(hilo_en_ejecucion);
 		break;
 		case MUTEX_CREATE:
 		break;

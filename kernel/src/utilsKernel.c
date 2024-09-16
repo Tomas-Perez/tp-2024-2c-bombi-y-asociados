@@ -9,13 +9,6 @@ t_log* logger_kernel;
 #define MAX_LENGTH 1000 // maximo tamaño de la cadena
 #define MAX_LINES 10 
 
-void abrir_e_interpretar_archivo_pseudocodigo(char* nombre_archivo)
-{
-        char* path = generar_path_archivo(nombre_archivo);
-        interpretar_archivo_pseudocodigo(path);
-        free(path);
-        
-}
 
 char* generar_path_archivo(char* nombre_archivo)
 {
@@ -29,89 +22,10 @@ char* generar_path_archivo(char* nombre_archivo)
         return path_archivo_completo;
 }
 
-void interpretar_archivo_pseudocodigo(char *path_archivo)
-{
-    FILE* archivo;
-    char *cadena;
-    char linea[MAX_LENGTH];
-    int contador = 0;
-    t_comando* comando_archivo;
-    comando_archivo = malloc(sizeof(t_comando));
-
-    // creamos una lista y se la asignamos a parametros
-    comando_archivo->parametros = list_create();
-
-    
-    archivo = fopen(path_archivo, "r");
-
-    
-    if (archivo == NULL)
-    {
-        printf("Error al abrir el archivo.\n");
-        return -1;
-    }
-
-    cadena = (char *)malloc(MAX_LENGTH * MAX_LINES * sizeof(char));
-
-    // Lee el archivo li­nea por linea y concatena las lineas en un solo string
-    
-    while (fgets(linea, MAX_LENGTH, archivo) != NULL && contador < MAX_LINES)
-    {
-        strcat(cadena, linea);
-        contador++;
-    }
-
-    fclose(archivo);
-
-  
-    char **lineas = string_split(cadena, "\n");
-
-    printf("Cantidad de comandos en el archivo: %d\n\n", contador);
-    for (int i = 0; i < contador; i++)
-    {
-        
-         printf("%s \n", lineas[i]);
-        //interpretar_comando(comando_archivo, lineas[i]);       
-        //acciones_archivo(comando_archivo);
-        
-
-        // Limpia los parámetros después de cada uso
-        for (int i = 0; i < list_size(comando_archivo->parametros); i++)
-        {
-            char *parametro = list_remove(comando_archivo->parametros, i);
-            free(parametro);
-        }
-        free(lineas[i]); // pensamos que liberar una a una las lineas nos iban a sol el problema
-    }
-
-    // Liberamos la mem
-    for (int i = 0; i < list_size(comando_archivo->parametros); i++)
-    {
-        free(list_get(comando_archivo->parametros, i));
-    }
-    list_destroy(comando_archivo->parametros);
-    free(comando_archivo);
-    free(cadena);
-
-    
-}
 
 // --------------------------- Inicializar ---------------------------
-void inicializar_registros(pcb* proc)
-{
-        proc->registros_cpu.AX=0;
-	    proc->registros_cpu.BX=0;
-	    proc->registros_cpu.CX=0;
-	    proc->registros_cpu.DX=0;
-	    proc->registros_cpu.EX=0;
-	    proc->registros_cpu.FX=0;
-	    proc->registros_cpu.GX=0;
-	    proc->registros_cpu.HX=0;
-    	proc->registros_cpu.PC=0;
 
-}
-
-void inicializar_registros_tcb(tcb* hilo)
+void inicializar_registros(tcb* hilo)
 {
         hilo->registros_cpu.AX=0;
 	    hilo->registros_cpu.BX=0;
@@ -131,19 +45,18 @@ void inicializar_estructuras_kernel()
 
 	//mutex 
 	pthread_mutex_init(&m_hilo_en_ejecucion,NULL);
-	pthread_mutex_init(&m_proceso_en_ejecucion,NULL);
-	pthread_mutex_init(&m_proceso_a_ejecutar,NULL);
 	pthread_mutex_init(&m_lista_de_ready,NULL);
 	pthread_mutex_init(&m_regreso_de_cpu,NULL);
+    pthread_mutex_init(&m_hilo_a_ejecutar, NULL); //TO DO destroy de los mutex
 
 	 //cola de procesos
 	 lista_de_ready = list_create();
 }
 
-void pedir_memoria(pcb* proceso_nuevo, int socket, instruccion* instruccion)
+void pedir_memoria(pcb* proceso_nuevo, int socket, int tamanio)
 {
 
-    t_list parametros = instruccion->parametros; 
+     
    
     //TO DO -> mili :) 
     // con el socket sale la conexion
@@ -157,13 +70,12 @@ void pedir_memoria(pcb* proceso_nuevo, int socket, instruccion* instruccion)
     //el tercer parámetro es la prioridad del hilo main (TID 0)
     
         int pid = proceso_nuevo->pid;
-        int tamanio = list_get(parametros,1);
         int motivo = PROCESS_CREATE; //preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
 
 
         t_paquete* pedido_memoria = crear_paquete(motivo);
-		agregar_a_paquete(pedido_memoria, pid,sizeof(int));
-        agregar_a_paquete(pedido_memoria, tamanio, sizeof(int));
+		agregar_a_paquete(pedido_memoria, &pid,sizeof(int));
+        agregar_a_paquete(pedido_memoria, &tamanio, sizeof(int));
         //agregar_a_paquete(pedido_memoria, ) PATH PREGUNTAR
 
         enviar_paquete(pedido_memoria,socket);
@@ -174,7 +86,7 @@ void pedir_memoria(pcb* proceso_nuevo, int socket, instruccion* instruccion)
 
         if(confirmacion)
         {
-            agregar_a_ready(proceso_nuevo);
+            //agregar_a_ready(proceso_nuevo); TO DO
         }
         else
         {
@@ -186,27 +98,24 @@ void pedir_memoria(pcb* proceso_nuevo, int socket, instruccion* instruccion)
            
         }
 }
-//  --------------------------- PCB  --------------------------- 
+//  --------------------------- crear  --------------------------- 
 
 pcb *crear_pcb(int prioridad_h_main)
 {
     pcb* nuevo_pcb = (pcb *)malloc(sizeof(pcb));
     tcb* hilo_main;
-    nuevo_pcb->pid = id_counter;
+
     nuevo_pcb->contador_tid = 0;
-    // lista de los tids 
-    nuevo_pcb->tid = 0;
     id_counter++;
-    nuevo_pcb->contador_tid = 0;
+
     nuevo_pcb->lista_tcb = list_create();
 
-   // inicializar_registros(nuevo_pcb); //PREGUNTAR
     if (nuevo_pcb == NULL)
     {
         free(nuevo_pcb);
         return NULL;
     }
-    hilo_main=crear_tcb(nuevo_pcb, prioridad_h_main);
+    hilo_main = crear_tcb(nuevo_pcb, prioridad_h_main);
     list_add(nuevo_pcb->lista_tcb, hilo_main);
 
     return nuevo_pcb;
@@ -214,13 +123,15 @@ pcb *crear_pcb(int prioridad_h_main)
 
 tcb* crear_tcb(pcb* proc_padre, int prioridad)
 {
-    tcb* nuevo_tcb = (tcb *)malloc(sizeof(tcb));;   
+    tcb* nuevo_tcb = (tcb *)malloc(sizeof(tcb));  
     nuevo_tcb->tid = proc_padre->contador_tid;
     nuevo_tcb->pid_padre_tcb = proc_padre->pid;
     nuevo_tcb->prioridad = prioridad;
-    inicializar_registros_tcb(nuevo_tcb);
+
+    inicializar_registros(nuevo_tcb);
     proc_padre->contador_tid++;
-    //inicializar_registros();
+    inicializar_registros(nuevo_tcb);
+
     if (nuevo_tcb == NULL)
     {
         
@@ -229,6 +140,17 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
     }
      return nuevo_tcb;
 }
+
+pcb* crear_proceso_y_pedir_memoria(char* nombre_arch, int tam_proc, int prioridad, int socket)
+ {  
+    pcb *pcb_nuevo;
+
+    generar_path_archivo(nombre_arch);
+    pcb_nuevo = crear_pcb(prioridad); 
+    pedir_memoria(pcb_nuevo, socket, tam_proc);
+
+    return pcb_nuevo;
+ }
 
 
 //  Planificador
@@ -250,11 +172,11 @@ void inicializar_hilos_planificacion()
 // //  Planificador corto plazo
 
 // Parametros
-void recibir_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc){
+void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
 		int cod_op = recibir_operacion(conexion_dispatch);
 		if(cod_op == SYSCALL){
-            desempaquetar_parametros_syscall_de_cpu(proc, motivo, instrucc);
-			printf("PID: %i, motivo: %i", proc->pid, *motivo);
+            desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
+			printf("TID: %i, motivo: %i", hilo->tid, *motivo);
             
 		}
 		else {printf("Codigo de Operacion de CPU incorrecto\n");
@@ -262,7 +184,7 @@ void recibir_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc){
         }
 }
 
-void desempaquetar_parametros_syscall_de_cpu(pcb* proc, int* motivo, instruccion* instrucc){
+void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
 		int tam;
 		void* buffer = recibir_buffer(&tam, conexion_dispatch);
 		int desplazamiento = 0;
@@ -270,7 +192,7 @@ void desempaquetar_parametros_syscall_de_cpu(pcb* proc, int* motivo, instruccion
 		desplazamiento+= sizeof(int)*/;
 		memcpy(motivo, buffer + desplazamiento, sizeof(int));
 		desplazamiento+= sizeof(int);
-		printf("PID 2: %i, motivo 2: %i", proc->pid, *motivo);
+		printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
 		memcpy(&(instrucc->cant_parametros), buffer + desplazamiento, sizeof(int));
 		desplazamiento+= sizeof(int);
 		for(int i = 0; i < instrucc->cant_parametros; i++){
@@ -300,3 +222,37 @@ void desempaquetar_parametros_syscall_de_cpu(pcb* proc, int* motivo, instruccion
 	}
 
 
+
+
+// --------------------- finalizar ---------------------
+
+void finalizar_hilos_proceso(int pid)
+{
+    pcb* proceso = buscar_proc_lista(lista_de_ready,pid);
+    tcb* hilo_a_finlizar;
+    while(list_is_empty(proceso->lista_tcb) == 0)
+    {
+        hilo_a_finlizar = list_remove(proceso->lista_tcb,0);
+        finalizar_tcb(hilo_a_finlizar);
+    }
+}
+
+void finalizar_tcb(tcb* hilo_a_finlizar)
+{
+    // TO DO
+}
+
+// --------------------- buscar ---------------------
+pcb *buscar_proc_lista(t_list *lista, int pid_buscado)
+{
+	int elementos = list_size(lista);
+	for (int i = 0; i < elementos; i++)
+	{
+		pcb *pcb = list_get(lista, i);
+		if (pid_buscado == pcb->pid)
+		{
+			return pcb;
+		}
+	}
+	return NULL;
+}

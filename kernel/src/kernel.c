@@ -16,12 +16,11 @@ int conexion_memoria;
 
 int main(int argc, char* argv[]) {
 
-    pcb *pcb_inicial;
-    int tam_pcb_inicial;
+   
 
     levantar_config_kernel();
     logger_kernel = iniciar_logger("kernel.log", "KERNEL");
-
+    int socket = conectarMemoria();
     if(argc < 3)
     {
         log_error(logger_kernel, "Cantidad incorrecta de argumentos pasados por parametro");
@@ -33,7 +32,6 @@ int main(int argc, char* argv[]) {
     
     //inicializar_estructuras();  //ahora esta en utilsKernel.c
 
-   // pthread_create(&t1, NULL, (void *)conectarMemoria, NULL);
     pthread_create(&t1, NULL, (void *)conectarCpuDispatch, NULL);
     pthread_create(&t2, NULL, (void *)conectarCpuInterrupt, NULL);
 
@@ -44,10 +42,9 @@ int main(int argc, char* argv[]) {
 
 
      //./bin/kernel [archivo_pseudocodigo] [tamanio_proceso] [...args]
-
-    abrir_e_interpretar_archivo_pseudocodigo(argv[1]);
-    pcb_inicial = crear_pcb(0); 
-    tam_pcb_inicial = atoi(argv[2]);
+    int tam_proc = atoi(argv[2]);
+    crear_proceso_y_pedir_memoria(argv[1], tam_proc, 0, socket);
+   
 
     // pedir memoria para el pcb Preguntar si esta bien aca
 
