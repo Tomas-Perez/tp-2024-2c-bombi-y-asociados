@@ -7,6 +7,7 @@ u_int8_t get_identificador(char *identificador_leido);
 char *recibir_instruccion(int socket_cliente);
 char *get_motivo(int motivo);
 u_int8_t get_cant_parametros(u_int8_t identificador);
+uint32_t *get_direccion_registro(char *string_registro);
 
 extern t_log* logger_cpu;
 extern int tid;

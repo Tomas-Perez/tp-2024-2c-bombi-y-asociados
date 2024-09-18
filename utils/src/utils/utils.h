@@ -72,20 +72,21 @@ typedef struct
     t_buffer *buffer;
 } t_paquete;
 
-typedef struct 
+typedef struct
 {
     int cod_op;
-    t_list* parametros; 
-}t_comando;
+    t_list *parametros;
+} t_comando;
 
-typedef struct{
+typedef struct
+{
     int identificador; // dice que instruccion es
-	int cant_parametros;
-	t_list* parametros; // lista de parametros (separados entre si), sin contar el identificador
-}instruccion;
+    int cant_parametros;
+    t_list *parametros; // lista de parametros (separados entre si), sin contar el identificador
+} instruccion;
 
 // -------------------------------- CPU --------------------------------
-typedef struct 
+typedef struct
 {
     uint32_t PC;
     uint32_t AX;
@@ -98,15 +99,14 @@ typedef struct
     uint32_t HX;
 } t_registros_cpu;
 
-
 // -------------------------------- KERNEL --------------------------------
 typedef struct
 {
     uint32_t pid;
     int contador_tid;
     bool mem_asignada;
-    t_registros_cpu registros_cpu;
-    t_list* lista_tcb;
+    t_registros_cpu registros_cpu; // ver si conviene q solo este en el tcb, preguntar
+    t_list *lista_tcb;
     // t_mutex* mutex; // HACER: ver si esta ok
     //  HACER: ver que cosas agregamos
 } pcb;
@@ -121,13 +121,37 @@ typedef struct
 
 void inicializar_estructuras();
 
-
 // -------------------------------- MEMORIA --------------------------------
+
+typedef struct
+{
+    uint32_t pid;
+    uint32_t base;
+    uint32_t limite;
+    t_list *tids;
+} t_proceso;
+
+typedef struct
+{
+    uint32_t tid;
+    uint32_t pid_padre;
+    t_list *instrucciones;
+    t_registros_cpu registros_hilo;
+} t_hilo;
+
+typedef struct
+{
+    uint32_t pid;
+    uint32_t tid;
+    uint32_t base;
+    uint32_t limite;
+    t_registros_cpu registros;
+} t_contexto_ejecucion;
 
 // -------------------------------- FILESYSTEM --------------------------------
 
 // -------------------------------- LOGGER --------------------------------
-//extern t_log* logger;
+// extern t_log* logger;
 t_log *iniciar_logger(char *nombreLog, char *proceso);
 
 // -------------------------------- CONFIG --------------------------------
@@ -137,7 +161,6 @@ t_config *iniciar_config(char *archivo);
 void liberar_conexion(int socket_cliente);
 int crear_conexion(char *ip, char *puerto);
 void handshake_cliente(int socket_cliente, t_log *logger);
-
 
 // -------------------------------- CONEXIONES: SERVIDOR --------------------------------
 
@@ -156,10 +179,10 @@ char *buffer_read_string(t_buffer *buffer, uint32_t *length);
 int recibir_operacion(int socket_cliente);
 void *recibir_buffer(int *size, int socket_cliente);
 
-void recibir_mensaje(int socket_cliente,t_log* logger);
-void enviar_mensaje(char* mensaje, int socket_cliente);
-void* serializar_paquete(t_paquete* paquete, int bytes);
-void eliminar_paquete(t_paquete* paquete);
+void recibir_mensaje(int socket_cliente, t_log *logger);
+void enviar_mensaje(char *mensaje, int socket_cliente);
+void *serializar_paquete(t_paquete *paquete, int bytes);
+void eliminar_paquete(t_paquete *paquete);
 t_paquete *crear_paquete(int codigo_operacion);
 void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio);
 void agregar_a_paquete_solo(t_paquete *paquete, void *valor, int bytes);

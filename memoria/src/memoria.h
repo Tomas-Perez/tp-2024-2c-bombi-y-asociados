@@ -2,6 +2,7 @@
 #define MEMORIA_H_
 
 #include <utils/utils.h>
+#include "memoriaInstrucciones.h"
 
 #define PUERTO_MEMORIA "8002"
 

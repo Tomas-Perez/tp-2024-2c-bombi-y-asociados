@@ -93,7 +93,7 @@ int atenderKernel(int *socket_kernel)
             uint32_t pid = buffer_read_uint32(buffer);
             uint32_t tamanio_proceso = buffer_read_uint32(buffer);
 
-            /*if (tamanio_proceso > memoria_disponible) {
+            /*if (tamanio_proceso > memoria_disponible) { // DEPENDE DEL TIPO DE MEMORIA Y DEL ESQUEMA, VEREMOS MAS ADELANTE
                 // Devolver que no hay espacio disponible (?)
             }*/
 
@@ -112,21 +112,21 @@ int atenderKernel(int *socket_kernel)
             char *path_script_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_kernel) + 1);
 			if (path_script_completo == NULL)
 			{
-				log_info(logger, "Error al asignar memoria para path_script_completo\n");
+				log_info(logger_memoria, "Error al asignar memoria para path_script_completo\n");
 				free(path_kernel);
 				return -1;
 			}
 			strcpy(path_script_completo, path_instrucciones);   // copia path_inst en path_script_completo
 			strcat(path_script_completo, path_kernel); // concatena path_kernel a path_script_completo
 
-			usleep(retardo_memoria() * 1000);
+			//usleep(retardo_memoria() * 1000);
 
 			printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
 
             FILE *f;
 			if (!(f = fopen(path_script_completo, "r")))
 			{ // ABRE EL ARCHIVO PARA LECTURA
-				log_info(logger, "No se encontro el archivo de instrucciones\n");
+				log_info(logger_memoria, "No se encontro el archivo de instrucciones\n");
 				free(path_script_completo);
 				free(path_kernel);
 				return -1;
@@ -136,7 +136,7 @@ int atenderKernel(int *socket_kernel)
 			free(path_kernel);
             free(buffer);
 
-            //agregar_proceso_instrucciones(f, pid); // Ver como remodelamos esta funcion para este TP
+            agregar_proceso_instrucciones(f, pid); // Ver como remodelamos esta funcion para este TP
 
             bool confirmacion = true;
             send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que pudimos reservar espacio
