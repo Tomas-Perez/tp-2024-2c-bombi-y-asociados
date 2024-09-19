@@ -7,11 +7,21 @@ void finalizar_hilos_proceso(pcb* proceso);
 pcb *buscar_proc_lista(t_list *lista, int pid_buscado);
 void inicializar_estructuras();
 void pedir_memoria(int socket);
+void desalojar_proceso(int motivo);
+void* desalojar_por_RR(pcb* pcb);
 void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc);
 void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc);
-
+void bloquear_por_dump(tcb* hilo);
+void finalizar_proceso(pcb *proc, int motivo);
+void hilo_exit();
+void liberar_param_instruccion(instruccion* instrucc);
+extern void agregar_a_ready_prioridades(tcb* hilo);
+extern void agregar_a_ready(tcb* hilo); // TO DO: preguntar si esto es legal
+void finalizar_estructuras_kernel();
+void inicializar_estructuras_kernel();
 extern t_log* logger_kernel;
 extern int id_counter;
+extern tcb* hilo_en_ejecucion; 
 extern pthread_mutex_t m_hilo_en_ejecucion;
 extern pthread_mutex_t m_hilo_a_ejecutar;
 extern pthread_mutex_t m_proceso_en_ejecucion;

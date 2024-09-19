@@ -47,8 +47,8 @@ int main(int argc, char* argv[]) {
     pedir_memoria(socket);
     
     tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
-		iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
-   close(socket);
+	iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
+    close(socket);
 
     // pedir memoria para el pcb Preguntar si esta bien aca
 

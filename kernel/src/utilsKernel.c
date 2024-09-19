@@ -4,6 +4,23 @@
 
 #include "utilsKernel.h"
 t_log* logger_kernel;
+
+//---------------------------------------------------------------- 
+// --------------------------- inidice --------------------------- 
+//---------------------------------------------------------------- 
+// 1) Archivo inicial 
+// 2) Inicializar
+// 3) Crear
+// 4) Pedidos memoria
+// 5) Hilos planificador
+// 5) Parametros
+// 6) Iniciar hilos
+// 7) Finalizar
+// 8) Buscar
+// 9) Dump 
+// 10) Funciones auxiliares
+
+
 // --------------------------- Archivo inicial --------------------------- 
 
 #define MAX_LENGTH 1000 // maximo tamaño de la cadena
@@ -38,6 +55,7 @@ void inicializar_registros(tcb* hilo)
     	hilo->registros_cpu.PC=0;
 
 }
+
 void inicializar_estructuras_kernel()
 {
 	int id_counter = 0;
@@ -57,7 +75,13 @@ void inicializar_estructuras_kernel()
      lista_procesos_new = list_create();
      
 }
+void finalizar_estructuras_kernel()
+{
 
+}
+
+
+// --------------------------- Pedidos memoria ---------------------------
 void pedir_memoria(int socket)
 { 
    
@@ -103,7 +127,11 @@ void pedir_memoria(int socket)
         }
         
 }
-//  --------------------------- crear  --------------------------- 
+
+//void avisar_memoria(tcb hilo, char* path){
+    // TO DO (creo, no se si la hicimos con otro nombre)
+//}
+//  --------------------------- Crear  --------------------------- 
 
 pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
 {
@@ -125,8 +153,7 @@ pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
         return NULL;
     }
     hilo_main = crear_tcb(nuevo_pcb, prioridad_h_main);
-    list_add(nuevo_pcb->lista_tcb, hilo_main);
-  
+     
 
     return nuevo_pcb;
 }
@@ -148,13 +175,14 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
         free(nuevo_tcb);
         return NULL;
     }
+    list_add(proc_padre->lista_tcb, nuevo_tcb);
      return nuevo_tcb;
 }
 
 
 
 
-//  Planificador
+// -------------------------- Funciones planificador  --------------------------- 
 void inicializar_hilos_planificacion()
 {
    /* pthread_t hilo_plani_corto,hilo_plani_largo,hilo_exitt;
@@ -167,12 +195,23 @@ void inicializar_hilos_planificacion()
 	pthread_detach(hilo_plani_largo);
 	//pthread_detach(hilo_exitt); */
 }
-// //  Planificador largo plazo
+void desalojar_proceso(int motivo)
+{
+    // VER solo copie la funcion de nuestro tp
+
+    t_paquete *paquete_a_desalojar = crear_paquete(DESALOJAR_PROCESO);
+	agregar_a_paquete_solo(paquete_a_desalojar,&motivo, sizeof(int));
+	agregar_a_paquete_solo(paquete_a_desalojar,&hilo_en_ejecucion->tid, sizeof(int));
+	enviar_paquete(paquete_a_desalojar, conexion_interrupt);
+	eliminar_paquete(paquete_a_desalojar);
+}
+void* desalojar_por_RR(pcb* pcb)
+{
+    
+}
 
 
-// //  Planificador corto plazo
-
-// Parametros
+// // -------------------------- Parametros  --------------------------- 
 void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
 		int cod_op = recibir_operacion(conexion_dispatch);
 		if(cod_op == SYSCALL){
@@ -222,7 +261,7 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
 		free(buffer);
 	}
 
-// --------------------- iniciar hilos ---------------------
+// --------------------- Iniciar hilos ---------------------
 void iniciar_hilo(tcb* hilo, int conexion_memoria, char path){
         
     
@@ -242,14 +281,36 @@ void iniciar_hilo(tcb* hilo, int conexion_memoria, char path){
             {
                 printf("HILO trucho1");
             }
-
-            pthread_mutex_lock(&m_lista_de_ready);
-			list_add(lista_de_ready, hilo);
-			pthread_mutex_unlock(&m_lista_de_ready);
+            if(strcmp(algoritmo_de_planificacion, "PRIORIDADES"))
+            {
+                agregar_a_ready_prioridades(hilo);
+            }
+            else 
+            {
+                agregar_a_ready(hilo);
+            }
+            // TO DO: en realidad no es to do pero es RE importante que pensemos si esta
+            // bien que el hilo planificado x multinivel caiga en el agregar a ready normal,
+            // creo q cuando lo hagamos vamos a entender mejor
+            
         }
 }
 
-// --------------------- finalizar ---------------------
+// --------------------- Finalizar ---------------------
+void finalizar_proceso(pcb *proc, int motivo)
+{
+    // TO DO
+}
+
+void hilo_exit()
+{
+    // TO DO
+    // aca vamos a tener que liberar los mutex (no como el tp anterior q liberamos
+    // los recursos)
+    // tambien vamos a tener que hacer algo que avise que termino este hilo x si
+    // alguno esta bloqueado esperando que termine por la syscall THREAD_JOIN
+    
+}
 
 void finalizar_hilos_proceso(pcb* proceso)
 {
@@ -267,7 +328,7 @@ void finalizar_tcb(tcb* hilo_a_finalizar)
     // TO DO
 }
 
-// --------------------- buscar ---------------------
+// --------------------- Buscar ---------------------
 pcb *buscar_proc_lista(t_list *lista, int pid_buscado)
 {
 	int elementos = list_size(lista);
@@ -282,3 +343,21 @@ pcb *buscar_proc_lista(t_list *lista, int pid_buscado)
 	return NULL;
 }
 
+// --------------------- Dump ---------------------
+
+void bloquear_por_dump(tcb* hilo)
+{
+    // TO DO 
+}
+
+
+// --------------------- funciones auxiliares ---------------------
+void liberar_param_instruccion(instruccion* instrucc)
+{
+    for(int i = 0; i<list_size(instrucc->parametros); i++){
+			free(list_get(instrucc->parametros,i));
+		}
+		list_destroy(instrucc->parametros);
+		free(instrucc); 
+
+}

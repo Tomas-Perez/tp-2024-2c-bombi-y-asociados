@@ -57,7 +57,8 @@ typedef enum
     FETCH_INSTRUCCION,
     SYSCALL,
     SUCCESS,
-    INICIAR_HILO
+    INICIAR_HILO,
+    DESALOJAR_PROCESO
 } op_code;
 
 typedef struct

@@ -11,6 +11,21 @@ t_list* lista_de_ready;
 t_list* lista_procesos_new;
 sem_t finalizo_un_proc;
 
+
+void agregar_a_ready(tcb* hilo)
+{
+	pthread_mutex_lock(&m_lista_de_ready);
+	list_add(lista_de_ready, hilo);
+	pthread_mutex_unlock(&m_lista_de_ready);
+	// sem_post(&hilos_en_ready)
+}
+
+void agregar_a_ready_prioridades(tcb* hilo)
+{
+	// TO DO
+	// reordenar_lista_ready();
+	//sem_post(&hilos_en_ready)
+}
 void pasar_a_running_tcb(tcb* tcb_listo)
 {
    // mandar_tcb_dispatch(tcb_listo);
@@ -126,16 +141,15 @@ void atender_syscall()
 			prioridad = list_get(instrucc->parametros,1);
 			pcb* proceso = hilo_en_ejecucion->pcb_padre_tcb;
 			crear_tcb(proceso, prioridad);
-			
+			socket = conectarMemoria();
 			/* THREAD_CREATE, esta syscall recibirá como parámetro de la CPU el nombre del 
 			archivo de pseudocódigo que deberá ejecutar el hilo a crear y su prioridad. 
 			Al momento de crear el nuevo hilo, deberá generar el nuevo TCB con un TID 
 			autoincremental y poner al mismo en el estado READY. */
 
-			//hilo_nuevo = crear_tcb(proceso_en_ejec, int prioridad); REVISAR, supongo que el proceso padre va a ser el que esta en ejec
-			// una vez que tengamos hecho el rec contexto se puede tener la prioridad
-			// algun hilo va a llamar esta syscall, este hilo va a tener un padre y ahora
-			// van a compartir padre el hilo que llama y el que nace
+			
+			iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
+			close(socket);
 			
 		break;
 		case THREAD_JOIN:
