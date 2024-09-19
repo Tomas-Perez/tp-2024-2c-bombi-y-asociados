@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
     levantar_config_kernel();
     logger_kernel = iniciar_logger("kernel.log", "KERNEL");
-    int socket = conectarMemoria();
+    
     if(argc < 3)
     {
         log_error(logger_kernel, "Cantidad incorrecta de argumentos pasados por parametro");
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 
     pthread_t t1, t2;
     
-    //inicializar_estructuras();  //ahora esta en utilsKernel.c
+    inicializar_estructuras_kernel();  //ahora esta en utilsKernel.c
 
     pthread_create(&t1, NULL, (void *)conectarCpuDispatch, NULL);
     pthread_create(&t2, NULL, (void *)conectarCpuInterrupt, NULL);
@@ -39,12 +39,16 @@ int main(int argc, char* argv[]) {
 
     //inicializar_hilos_planificacion();
 
-
-
      //./bin/kernel [archivo_pseudocodigo] [tamanio_proceso] [...args]
+    int socket = conectarMemoria();
     int tam_proc = atoi(argv[2]);
-    crear_proceso_y_pedir_memoria(argv[1], tam_proc, 0, socket);
-   
+    pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc);
+    list_add(lista_procesos_new, proceso_nuevo);
+    pedir_memoria(socket);
+    
+    tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
+		iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
+   close(socket);
 
     // pedir memoria para el pcb Preguntar si esta bien aca
 

@@ -56,7 +56,8 @@ typedef enum
     NO_RECONOCIDO,
     FETCH_INSTRUCCION,
     SYSCALL,
-    SUCCESS
+    SUCCESS,
+    INICIAR_HILO
 } op_code;
 
 typedef struct
@@ -107,6 +108,8 @@ typedef struct
     bool mem_asignada;
     t_registros_cpu registros_cpu; // ver si conviene q solo este en el tcb, preguntar
     t_list *lista_tcb;
+    int tam_proc;
+    char* path_proc;
     // t_mutex* mutex; // HACER: ver si esta ok
     //  HACER: ver que cosas agregamos
 } pcb;
@@ -115,7 +118,7 @@ typedef struct
 {
     int tid;
     int prioridad;
-    int pid_padre_tcb;
+    pcb* pcb_padre_tcb;
     t_registros_cpu registros_cpu;
 } tcb;
 

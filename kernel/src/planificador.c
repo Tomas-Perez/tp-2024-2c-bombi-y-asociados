@@ -6,8 +6,10 @@ pthread_mutex_t m_hilo_en_ejecucion;
 pthread_mutex_t m_lista_de_ready;
 pthread_mutex_t m_regreso_de_cpu;
 pthread_mutex_t m_hilo_a_ejecutar;
+pthread_mutex_t m_lista_procesos_new;
 t_list* lista_de_ready;
-
+t_list* lista_procesos_new;
+sem_t finalizo_un_proc;
 
 void pasar_a_running_tcb(tcb* tcb_listo)
 {
@@ -16,7 +18,7 @@ void pasar_a_running_tcb(tcb* tcb_listo)
 	hilo_en_ejecucion = tcb_listo; 
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
     log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Anterior: READY - Estado Actual: EXEC",
-    hilo_en_ejecucion->pid_padre_tcb, hilo_en_ejecucion->tid);
+    hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 }
 
 void mandar_tcb_dispatch(tcb* tcb_listo)
@@ -35,7 +37,7 @@ void planificador_corto_plazo_tcb()
 	pthread_mutex_lock(&m_lista_de_ready);
     if (list_is_empty(lista_de_ready)) 
     {
-    	log_error(logger_kernel, "Cola de ready está vacía en planificador_corto_plazo\n");
+    	log_error(logger_kernel, "Cola de ready esta vacia en planificador_corto_plazo\n");
     	pthread_mutex_unlock(&m_lista_de_ready);
 		exit (1);
 	}
@@ -89,17 +91,19 @@ void atender_syscall()
 	{
 		case PROCESS_CREATE:
 		socket = conectarMemoria();
-		/*pcb* proceso_nuevo = crear_pcb(prioridad);
-		tamanio = list_get(instrucc->parametros, 0);
-        pedir_memoria(proceso_nuevo, socket, tamanio);  VER: te va reemplazar esto x lo de abajo? */
 
-		char* archivo = list_get(instrucc->parametros, 0);
-		int tamanio = list_get(instrucc->parametros, 1);
-		int prioridad = list_get(instrucc->parametros, 2);
+		char* archivo = list_get(instrucc->parametros, 0); //INICIAR_PROCESO1
+		int tamanio = list_get(instrucc->parametros, 1);//255
+		int prioridad = list_get(instrucc->parametros, 2);//1
+		 char* path = generar_path_archivo(archivo);//home/utnso/INICIAR_PROCESO1.txt
+		 
+		pcb* proceso_nuevo = crear_pcb(prioridad, path, tamanio);
+		//TO DO faltara un mutex
+		list_add(lista_procesos_new, proceso_nuevo);
+		pedir_memoria(socket);
 		
-		pcb* proceso_nuevo = crear_proceso_y_pedir_memoria(archivo, tamanio, prioridad, socket);
-		//pcb* proceso_nuevo = crear_proceso_y_pedir_memoria(nombre_arch,tam_proc, prioridad, socket);
-		// TO DO-> si hacemos esto tenemos q sacar los params de instrucc antes 
+		tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
+		iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
 		close(socket);
 		break;
 		case PROCESS_EXIT:
@@ -110,16 +114,17 @@ void atender_syscall()
 		
 		if(hilo_en_ejecucion->tid == 0)
 		{
-			finalizar_hilos_proceso(hilo_en_ejecucion->pid_padre_tcb);
+			finalizar_hilos_proceso(hilo_en_ejecucion->pcb_padre_tcb);
 			//finalizar_proceso(hilo_en_ejecucion->pid_padre_tcb,SUCCESS); VER cual de las 2 usamos
 			// void finalizar_pcb_buscado(int pid, int motivo) tenemos esta funcion del tp anterior
 			// aunque los procesos ahora solo pueden encontrarse en las listas de new, ready o exit
 		}
+		sem_post(&finalizo_un_proc);
 		break;
 
 		case THREAD_CREATE:
 			prioridad = list_get(instrucc->parametros,1);
-			pcb* proceso = buscar_proc_lista(lista_de_ready,hilo_en_ejecucion->pid_padre_tcb);
+			pcb* proceso = hilo_en_ejecucion->pcb_padre_tcb;
 			crear_tcb(proceso, prioridad);
 			
 			/* THREAD_CREATE, esta syscall recibirá como parámetro de la CPU el nombre del 

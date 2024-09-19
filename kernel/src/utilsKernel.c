@@ -48,15 +48,18 @@ void inicializar_estructuras_kernel()
 	pthread_mutex_init(&m_lista_de_ready,NULL);
 	pthread_mutex_init(&m_regreso_de_cpu,NULL);
     pthread_mutex_init(&m_hilo_a_ejecutar, NULL); //TO DO destroy de los mutex
-
+    pthread_mutex_init(&m_lista_procesos_new, NULL);
+    //semaforo
+    sem_init(&finalizo_un_proc, 0, 0);
+  
 	 //cola de procesos
 	 lista_de_ready = list_create();
+     lista_procesos_new = list_create();
+     
 }
 
-void pedir_memoria(pcb* proceso_nuevo, int socket, int tamanio, char* path)
-{
-
-     
+void pedir_memoria(int socket)
+{ 
    
     //TO DO -> mili :) 
     // con el socket sale la conexion
@@ -68,8 +71,12 @@ void pedir_memoria(pcb* proceso_nuevo, int socket, int tamanio, char* path)
     // hacer recv para confirmacion, seguro nos mandan un bool
     // el segundo parámetro es el tamaño del proceso en Memoria y 
     //el tercer parámetro es la prioridad del hilo main (TID 0)
-    
+
+       pcb* proceso_nuevo = list_get(lista_procesos_new, 0);
+
         int pid = proceso_nuevo->pid;
+        int tamanio = proceso_nuevo->tam_proc;
+        char path = proceso_nuevo->path_proc;
         int motivo = PROCESS_CREATE; //preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
 
 
@@ -82,32 +89,33 @@ void pedir_memoria(pcb* proceso_nuevo, int socket, int tamanio, char* path)
         enviar_paquete(pedido_memoria,socket);
 		eliminar_paquete(pedido_memoria);
 
-        int confirmacion = 0;
-        recv(socket,&confirmacion, sizeof(int), MSG_WAITALL);
+        int confirmacion_mem_disponible = 0;
+        recv(socket,&confirmacion_mem_disponible, sizeof(int), MSG_WAITALL);
 
-        if(confirmacion)
+        if(!confirmacion_mem_disponible)
         {
-            //agregar_a_ready(proceso_nuevo); TO DO
+
+            sem_wait(&finalizo_un_proc);
+            pedir_memoria(socket);	
         }
-        else
-        {
-            //esperar un SIGNAL de finalizo un proceso y llamar a la misma funcionn 
-            //pedir_memoria(proceso_nuevo, socket, instruccion)
-            // O
-            // list_add(proceso_nuevo, bloqueados_por_mem_insuficiente); 
-			// Y un hilo que chequee si esta vacia esta lista
-           
+        else {
+                list_remove(lista_procesos_new, 0);
         }
+        
 }
 //  --------------------------- crear  --------------------------- 
 
-pcb *crear_pcb(int prioridad_h_main)
+pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
 {
     pcb* nuevo_pcb = (pcb *)malloc(sizeof(pcb));
     tcb* hilo_main;
 
+    nuevo_pcb->tam_proc = tamanio;
+    nuevo_pcb->path_proc = path;
+
     nuevo_pcb->contador_tid = 0;
     id_counter++;
+
 
     nuevo_pcb->lista_tcb = list_create();
 
@@ -118,6 +126,7 @@ pcb *crear_pcb(int prioridad_h_main)
     }
     hilo_main = crear_tcb(nuevo_pcb, prioridad_h_main);
     list_add(nuevo_pcb->lista_tcb, hilo_main);
+  
 
     return nuevo_pcb;
 }
@@ -126,7 +135,7 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
 {
     tcb* nuevo_tcb = (tcb *)malloc(sizeof(tcb));  
     nuevo_tcb->tid = proc_padre->contador_tid;
-    nuevo_tcb->pid_padre_tcb = proc_padre->pid;
+    nuevo_tcb->pcb_padre_tcb = proc_padre;
     nuevo_tcb->prioridad = prioridad;
 
     inicializar_registros(nuevo_tcb);
@@ -142,16 +151,7 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
      return nuevo_tcb;
 }
 
-pcb* crear_proceso_y_pedir_memoria(char* nombre_arch, int tam_proc, int prioridad, int socket)
- {  
-    pcb *pcb_nuevo;
 
-    char* path = generar_path_archivo(nombre_arch);
-    pcb_nuevo = crear_pcb(prioridad); 
-    pedir_memoria(pcb_nuevo, socket, tam_proc, path);
-
-    return pcb_nuevo;
- }
 
 
 //  Planificador
@@ -222,23 +222,47 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
 		free(buffer);
 	}
 
+// --------------------- iniciar hilos ---------------------
+void iniciar_hilo(tcb* hilo, int conexion_memoria, char path){
+        
+    
+        t_paquete *paquete = crear_paquete(INICIAR_HILO);
+        agregar_a_paquete_solo(paquete, &(hilo->tid), sizeof(uint32_t));
+        agregar_a_paquete(paquete, path, strlen(path) + 1);
+        enviar_paquete(paquete, conexion_memoria);
+        eliminar_paquete(paquete);
 
+        bool confirmacion;
+        recv(conexion_memoria, &confirmacion, sizeof(bool), MSG_WAITALL);
 
+        if (confirmacion)
+        {
+           // agregue este sem post xq si no nunca podia pasar el semwait de agregar a nuevos!!
+            if (hilo == NULL)
+            {
+                printf("HILO trucho1");
+            }
+
+            pthread_mutex_lock(&m_lista_de_ready);
+			list_add(lista_de_ready, hilo);
+			pthread_mutex_unlock(&m_lista_de_ready);
+        }
+}
 
 // --------------------- finalizar ---------------------
 
-void finalizar_hilos_proceso(int pid)
+void finalizar_hilos_proceso(pcb* proceso)
 {
-    pcb* proceso = buscar_proc_lista(lista_de_ready,pid);
-    tcb* hilo_a_finlizar;
+   
+    tcb* hilo_a_finalizar;
     while(list_is_empty(proceso->lista_tcb) == 0)
     {
-        hilo_a_finlizar = list_remove(proceso->lista_tcb,0);
-        finalizar_tcb(hilo_a_finlizar);
+        hilo_a_finalizar = list_remove(proceso->lista_tcb,0);
+        finalizar_tcb(hilo_a_finalizar);
     }
 }
 
-void finalizar_tcb(tcb* hilo_a_finlizar)
+void finalizar_tcb(tcb* hilo_a_finalizar)
 {
     // TO DO
 }
@@ -257,3 +281,4 @@ pcb *buscar_proc_lista(t_list *lista, int pid_buscado)
 	}
 	return NULL;
 }
+
