@@ -2,6 +2,7 @@
 #define MEMORIA_INSTRUCCIONES_H_
 
 #include "utils/utils.h"
+#include "utilsMemoria.h"
 
 extern t_log* logger_memoria;
 extern t_config* config_memoria;

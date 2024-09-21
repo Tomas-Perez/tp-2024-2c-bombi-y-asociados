@@ -132,13 +132,13 @@ typedef struct
     uint32_t pid;
     uint32_t base;
     uint32_t limite;
-    t_list *tids;
+    t_list *tids; // lista de t_hilo
 } t_proceso;
 
 typedef struct
 {
     uint32_t tid;
-    uint32_t pid_padre;
+    uint32_t pid_padre; // nose si hace falta
     t_list *instrucciones;
     t_registros_cpu registros_hilo;
 } t_hilo;
