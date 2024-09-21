@@ -7,6 +7,7 @@ pthread_mutex_t m_lista_de_ready;
 pthread_mutex_t m_regreso_de_cpu;
 pthread_mutex_t m_hilo_a_ejecutar;
 pthread_mutex_t m_lista_procesos_new;
+pthread_mutex_t m_indice;
 t_list* lista_de_ready;
 t_list* lista_procesos_new;
 sem_t finalizo_un_proc;
@@ -26,10 +27,60 @@ void agregar_a_ready_prioridades(tcb* hilo)
 	// reordenar_lista_ready();
 	//sem_post(&hilos_en_ready)
 }
+
+
+tcb* hilo_prioritario_en_ready(){
+  
+
+	pthread_mutex_lock(&m_lista_de_ready);
+	tcb*  hilo_elegido = list_get(lista_de_ready, 0);
+	pthread_mutex_unlock(&m_lista_de_ready);
+
+    tcb* tcb_aux;
+    indice = 0;
+    
+    for(int i=1; i < list_size(lista_de_ready); i++){
+        pthread_mutex_lock(&m_lista_de_ready);
+       tcb_aux = list_get(lista_de_ready, i);
+        pthread_mutex_unlock(&m_lista_de_ready);
+
+        if(hilo_elegido->prioridad > tcb_aux->prioridad){
+            hilo_elegido = tcb_aux;
+            pthread_mutex_lock(&m_indice);
+            indice = i; 
+            pthread_mutex_unlock(&m_indice);    
+        }
+    }
+
+    return hilo_elegido;
+}
+
+tcb* elegir_segun_prioridades(){
+    tcb* hilo_elegido = hilo_prioritario_en_ready;
+
+	pthread_mutex_lock(&m_lista_de_ready);
+    list_remove(lista_de_ready, indice);
+    pthread_mutex_unlock(&m_lista_de_ready)
+
+    return hilo_elegido;
+}
+
+
 void pasar_a_running_tcb(tcb* tcb_listo)
 {
    // mandar_tcb_dispatch(tcb_listo);
     pthread_mutex_lock(&m_hilo_en_ejecucion);
+	hilo_en_ejecucion = tcb_listo; 
+	pthread_mutex_unlock(&m_hilo_en_ejecucion);
+    log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Anterior: READY - Estado Actual: EXEC",
+    hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
+}
+
+//esta me la invente puede q no sea asi 
+void pasar_a_running_tcb_prioridades(){
+
+	tcb* tcb_listo = elegir_segun_prioridades()
+	pthread_mutex_lock(&m_hilo_en_ejecucion);
 	hilo_en_ejecucion = tcb_listo; 
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
     log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Anterior: READY - Estado Actual: EXEC",
@@ -113,8 +164,9 @@ void atender_syscall()
 		 char* path = generar_path_archivo(archivo);//home/utnso/INICIAR_PROCESO1.txt
 		 
 		pcb* proceso_nuevo = crear_pcb(prioridad, path, tamanio);
-		//TO DO faltara un mutex
+		pthread_mutex_lock(&m_lista_procesos_new);
 		list_add(lista_procesos_new, proceso_nuevo);
+		pthread_mutex_unlock(&m_lista_procesos_new);
 		pedir_memoria(socket);
 		
 		tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
