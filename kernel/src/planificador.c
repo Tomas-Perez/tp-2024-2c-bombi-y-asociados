@@ -56,11 +56,11 @@ tcb* hilo_prioritario_en_ready(){
 }
 
 tcb* elegir_segun_prioridades(){
-    tcb* hilo_elegido = hilo_prioritario_en_ready;
+    tcb* hilo_elegido = hilo_prioritario_en_ready();
 
 	pthread_mutex_lock(&m_lista_de_ready);
     list_remove(lista_de_ready, indice);
-    pthread_mutex_unlock(&m_lista_de_ready)
+    pthread_mutex_unlock(&m_lista_de_ready);
 
     return hilo_elegido;
 }
@@ -79,7 +79,7 @@ void pasar_a_running_tcb(tcb* tcb_listo)
 //esta me la invente puede q no sea asi 
 void pasar_a_running_tcb_prioridades(){
 
-	tcb* tcb_listo = elegir_segun_prioridades()
+	tcb* tcb_listo = elegir_segun_prioridades();
 	pthread_mutex_lock(&m_hilo_en_ejecucion);
 	hilo_en_ejecucion = tcb_listo; 
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);

@@ -6,6 +6,7 @@ void inicializar_registros(tcb* hilos);
 void finalizar_hilos_proceso(pcb* proceso);
 pcb *buscar_proc_lista(t_list *lista, int pid_buscado);
 void inicializar_estructuras();
+void iniciar_hilo(tcb* hilo, int conexion_memoria, char path);
 void pedir_memoria(int socket);
 void desalojar_proceso(int motivo);
 void* desalojar_por_RR(pcb* pcb);

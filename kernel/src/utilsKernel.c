@@ -18,7 +18,8 @@ t_log* logger_kernel;
 // 7) Finalizar
 // 8) Buscar
 // 9) Dump 
-// 10) Funciones auxiliares
+// 10) Mutx
+// 11) Funciones auxiliares
 
 
 // --------------------------- Archivo inicial --------------------------- 
@@ -349,7 +350,12 @@ void bloquear_por_dump(tcb* hilo)
 {
     // TO DO 
 }
-
+// --------------------- Mutex ---------------------
+mutex_k* crear_mutex(char* nombre)
+{
+   mutex_k* mtx = (mutex_k*) malloc(sizeof(mutex_k)); 
+   mtx->nombre = nombre;
+}
 
 // --------------------- funciones auxiliares ---------------------
 void liberar_param_instruccion(instruccion* instrucc)
