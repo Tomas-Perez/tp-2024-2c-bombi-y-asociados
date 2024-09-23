@@ -9,8 +9,10 @@ pthread_mutex_t m_regreso_de_cpu;
 pthread_mutex_t m_hilo_a_ejecutar;
 pthread_mutex_t m_lista_procesos_new;
 pthread_mutex_t m_indice;
+pthread_mutex_t m_pthread_mutex_t;
 t_list* lista_de_ready;
 t_list* lista_procesos_new;
+
 sem_t finalizo_un_proc;
 
 
@@ -38,8 +40,9 @@ tcb* hilo_prioritario_en_ready(){
 	pthread_mutex_unlock(&m_lista_de_ready);
 
     tcb* tcb_aux;
+	pthread_mutex_lock(&m_indice);
     indice = 0;
-    
+    pthread_mutex_unlock(&m_indice);    
     for(int i=1; i < list_size(lista_de_ready); i++){
         pthread_mutex_lock(&m_lista_de_ready);
        tcb_aux = list_get(lista_de_ready, i);
@@ -158,11 +161,12 @@ void atender_syscall()
 	int motivo;
 	int socket;
 	int prioridad;
-
+	char* archivo;
 	instruccion* instrucc = malloc(sizeof(instruccion));
 	instrucc->parametros = list_create();
 	recibir_syscall_de_cpu(hilo_en_ejecucion, &motivo, instrucc);
-	
+	t_list* lista_mutex_proceso;
+	mutex_k* mutex_solic;
 	//BORRAR: es la misma que esta -> recibir_contexto_ejecc_de_cpu(proceso_en_ejecucion, &motivo ,instrucc);
 	// pero sin los registros.  
 	
@@ -171,10 +175,11 @@ void atender_syscall()
 		case PROCESS_CREATE:
 		socket = conectarMemoria();
 
-		char* archivo = list_get(instrucc->parametros, 0); //INICIAR_PROCESO1
-		int tamanio = list_get(instrucc->parametros, 1);//255
-		int prioridad = list_get(instrucc->parametros, 2);//1
-		 char* path = generar_path_archivo(archivo);//home/utnso/INICIAR_PROCESO1.txt
+		archivo = list_get(instrucc->parametros, 0); //INICIAR_PROCESO1
+		int tamanio =  list_get(instrucc->parametros, 1);//255
+		prioridad =  list_get(instrucc->parametros, 2);//1
+		printf("PRUEBA: tamanio: %d prioridad %d\n", tamanio, prioridad);
+		char* path = generar_path_archivo(archivo);//home/utnso/INICIAR_PROCESO1.txt
 		 
 		pcb* proceso_nuevo = crear_pcb(prioridad, path, tamanio);
 		pthread_mutex_lock(&m_lista_procesos_new);
@@ -203,9 +208,10 @@ void atender_syscall()
 		break;
 
 		case THREAD_CREATE:
+			archivo = list_get(instrucc->parametros, 0);
 			prioridad = list_get(instrucc->parametros,1);
 			pcb* proceso = hilo_en_ejecucion->pcb_padre_tcb;
-			crear_tcb(proceso, prioridad);
+			tcb* hilo = crear_tcb(proceso, prioridad);
 			socket = conectarMemoria();
 			/* THREAD_CREATE, esta syscall recibirá como parámetro de la CPU el nombre del 
 			archivo de pseudocódigo que deberá ejecutar el hilo a crear y su prioridad. 
@@ -213,7 +219,8 @@ void atender_syscall()
 			autoincremental y poner al mismo en el estado READY. */
 
 			
-			iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
+			iniciar_hilo(hilo, socket, archivo);
+			// TO DO: poner en ready
 			close(socket);
 			
 		break;
@@ -238,15 +245,70 @@ void atender_syscall()
 			 finalizar_tcb(hilo_en_ejecucion);
 		break;
 		case MUTEX_CREATE:
+			mutex_k* nuevo_mutex;
+			char* nombre_mutex = list_get(instrucc->parametros,0); //Borrar: medio al pedo pero para q se entienda mas
+			nuevo_mutex= crear_mutex(nombre_mutex);
+			list_add(hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc, nuevo_mutex);
+
 		break;
 		case MUTEX_LOCK:
+				lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
+				mutex_solic = list_get(instrucc->parametros, 0);
+				if(existe_mutex(mutex_solic, lista_mutex_proceso) != false)
+				{
+					if(mutex_solic->disponibilidad = true)
+					{
+						asignar_mutex_hilo(mutex_solic, hilo_en_ejecucion);
+					}
+					else
+					{
+						list_add(mutex_solic->bloqueados_por_mutex, mutex_solic);
+					}
+				}
+				else
+				{
+					// TO DO: Preguntar que pasa si no existe el mutex en el proc
+				}
 		break;
 		case MUTEX_UNLOCK:
+
+			mutex_k* mutex_solic = list_get(instrucc->parametros, 0);
+			lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
+			tcb* bloq_por_mutex;
+			
+			if(existe_mutex(mutex_solic, lista_mutex_proceso) != false)
+			{
+				if(mutex_tomado_por_hilo(mutex_solic, hilo_en_ejecucion) != false)
+				{
+					if(list_size(mutex_solic->bloqueados_por_mutex) > 0) // muchos ifs? :/
+					{
+						bloq_por_mutex = list_remove(mutex_solic->bloqueados_por_mutex,0);
+						asignar_mutex_hilo(mutex_solic, bloq_por_mutex);
+					}
+					else
+					{
+						mutex_solic->disponibilidad = true;
+						mutex_solic->hilo_poseedor = NULL;
+					}
+				}
+
+			}
+
 		break;
 		case DUMP_MEMORY:
+			socket = conectarMemoria();
+			t_paquete* dump = crear_paquete(DUMP_MEMORY);
+			agregar_a_paquete(dump, &(hilo_en_ejecucion->pcb_padre_tcb->pid), sizeof(int));
+			agregar_a_paquete(dump, &hilo_en_ejecucion->tid, sizeof(int));
+			enviar_paquete(dump, socket);
+
+			bloquear_por_dump(hilo_en_ejecucion);
+			
+			close(socket);
 		break;
 		case IO:
-		//usleep();
+			int cant_seg_duerme = list_get(instrucc->parametros, 0);
+			usleep(cant_seg_duerme);
 		break;
 	}
 }

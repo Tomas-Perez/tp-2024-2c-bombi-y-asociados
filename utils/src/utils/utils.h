@@ -84,7 +84,7 @@ typedef struct
 {
     int identificador; // dice que instruccion es
     int cant_parametros;
-    t_list *parametros; // lista de parametros (separados entre si), sin contar el identificador
+    t_list* parametros; // lista de parametros (separados entre si), sin contar el identificador
 } instruccion;
 
 // -------------------------------- CPU --------------------------------
@@ -110,6 +110,7 @@ typedef struct
     t_list *lista_tcb;
     int tam_proc;
     char* path_proc;
+    t_list* lista_mutex_proc;
 } pcb;
 
 typedef struct
