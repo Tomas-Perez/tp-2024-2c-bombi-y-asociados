@@ -1,5 +1,6 @@
 #include "planificador.h"
 int id_counter;
+int indice;
 
 tcb* hilo_en_ejecucion; 
 pthread_mutex_t m_hilo_en_ejecucion;

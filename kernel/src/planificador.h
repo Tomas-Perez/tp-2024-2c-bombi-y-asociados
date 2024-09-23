@@ -1,6 +1,5 @@
 #include "utilsKernel.h"
 extern int id_counter;
-extern int indice; //permitime dudar 
 
 void pasar_a_running_tcb(tcb* tcb_listo);
 void pasar_a_running_pcb(pcb* proceso_listo);
