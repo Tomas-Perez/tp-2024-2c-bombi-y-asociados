@@ -208,3 +208,38 @@ u_int8_t get_cant_parametros(u_int8_t identificador)
     }
     return cant_parametros;
 }
+
+void recibir_pcb(int socket)
+{
+    int size = 0;
+    void *buffer = recibir_buffer(&size, socket);
+
+    pid = buffer_read_uint32(buffer);
+    tid = buffer_read_uint32(buffer);
+
+    free(buffer);
+}
+
+void pedir_contexto_cpu(int pid, int tid)
+{
+    t_paquete *contexto = crear_paquete(PEDIR_CONTEXTO);
+    agregar_a_paquete_solo(contexto, &pid, sizeof(int));
+    agregar_a_paquete_solo(contexto, &tid, sizeof(int));
+    enviar_paquete(contexto, socket_memoria);
+    eliminar_paquete(contexto);
+
+    int size = 0;
+    void *buffer = recibir_buffer(&size, socket_memoria);
+
+    registros_cpu.PC = buffer_read_uint32(buffer);
+    registros_cpu.AX = buffer_read_uint32(buffer);
+    registros_cpu.BX = buffer_read_uint32(buffer);
+    registros_cpu.CX = buffer_read_uint32(buffer);
+    registros_cpu.DX = buffer_read_uint32(buffer);
+    registros_cpu.EX = buffer_read_uint32(buffer);
+    registros_cpu.FX = buffer_read_uint32(buffer);
+    registros_cpu.GX = buffer_read_uint32(buffer);
+    registros_cpu.HX = buffer_read_uint32(buffer);
+    // base = buffer_read_uint32(buffer);
+    // limite = buffer_read_uint32(buffer);
+}

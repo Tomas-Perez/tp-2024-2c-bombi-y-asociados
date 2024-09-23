@@ -16,8 +16,5 @@ t_hilo *buscar_hilo(t_proceso *proceso_padre, int tid_buscado);
 /*void eliminar_proceso(int pid);
 void liberar_proceso(t_proceso *proceso);*/
 
-void empaquetar_contexto(t_paquete *paquete, t_proceso *proceso, t_hilo *hilo);
-
-
 
 #endif /* MEMORIA_INSTRUCCIONES_H_ */

@@ -26,9 +26,4 @@ instruccion* execute(instruccion* inst);
 void check_interrupt(instruccion* inst);
 
 
-// FUNCIONES CONTEXTO DE EJECUCION
-
-void recibir_pcb(int socket);
-void pedir_contexto_cpu(int pid, int tid);
-
 #endif
