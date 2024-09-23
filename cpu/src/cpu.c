@@ -8,6 +8,9 @@ char *puerto_escucha_interrupt;
 char *ip_memoria;
 char *log_level;
 
+bool interrupcion;
+int motivo_interrupt; // ver donde declarar
+
 int socket_memoria;
 int conexion_dispatch;
 int conexion_interrupt;
@@ -65,13 +68,12 @@ int atenderCpuDispatch()
         case MENSAJE:
             // recibir_mensaje(conexion_dispatch);
             break;
-        /*case OP_ENVIO_PCB:
-        recibir_contexto_ejecucion(conexion_dispatch); // ver que variable manda
-
-        ejecutando_un_proceso = true;
-        ejecutar_proceso();
-        break;
-    */
+        case OP_ENVIO_PCB:
+            recibir_pcb(conexion_dispatch); // recibe pcb y tcb para solicitar contexto a memoria
+            pedir_contexto_cpu(pid, tid);
+            ejecutando_un_proceso = true;
+            ejecutar_proceso();
+            break;
         case -1:
             log_error(logger_cpu, "El cliente se desconecto. Terminando servidor\n");
             return EXIT_FAILURE;
@@ -80,7 +82,7 @@ int atenderCpuDispatch()
             break;
         }
     }
-    //return EXIT_SUCCESS;
+    // return EXIT_SUCCESS;
 }
 
 int atenderCpuInterrupt()
@@ -106,7 +108,7 @@ int atenderCpuInterrupt()
             break;
         }
     }
-    //return EXIT_SUCCESS;
+    // return EXIT_SUCCESS;
 }
 
 void levantar_config_cpu()
@@ -117,4 +119,66 @@ void levantar_config_cpu()
     puerto_escucha_dispatch = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_DISPATCH");
     puerto_escucha_interrupt = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_INTERRUPT");
     log_level = config_get_string_value(config_cpu, "LOG_LEVEL");
+}
+
+void ejecutar_proceso()
+{
+    while (ejecutando_un_proceso)
+    {
+        check_interrupt(execute(decode(fetch())));
+    }
+}
+
+void check_interrupt(instruccion *inst)
+{
+    if (interrupcion && ejecutando_un_proceso)
+    {
+        //devolver_contexto_de_ejecucion(motivo_interrupt, inst);
+        ejecutando_un_proceso = false;
+        log_info(logger_cpu, "Proceso desalojado por motivo: %d", motivo_interrupt);
+    } // hay interrupcion y un proceso en ejecucion
+    interrupcion = false;
+    for (int i = 0; i < list_size(inst->parametros); i++)
+    {
+        char *parametro = list_remove(inst->parametros, i);
+
+        // free(parametro);
+    } // liberar cada parametro de instruccion
+    list_destroy(inst->parametros);
+    free(inst);
+}
+
+void recibir_pcb(int socket)
+{
+    int size = 0;
+    void *buffer = recibir_buffer(&size, socket);
+
+    pid = buffer_read_uint32(buffer);
+    tid = buffer_read_uint32(buffer);
+
+    free(buffer);
+}
+
+void pedir_contexto_cpu(int pid, int tid)
+{
+    t_paquete *contexto = crear_paquete(PEDIR_CONTEXTO);
+    agregar_a_paquete_solo(contexto, &pid, sizeof(int));
+    agregar_a_paquete_solo(contexto, &tid, sizeof(int));
+    enviar_paquete(contexto, socket_memoria);
+    eliminar_paquete(contexto);
+
+    int size = 0;
+    void *buffer = recibir_buffer(&size, socket_memoria);
+
+    registros_cpu.PC = buffer_read_uint32(buffer);
+    registros_cpu.AX = buffer_read_uint32(buffer);
+    registros_cpu.BX = buffer_read_uint32(buffer);
+    registros_cpu.CX = buffer_read_uint32(buffer);
+    registros_cpu.DX = buffer_read_uint32(buffer);
+    registros_cpu.EX = buffer_read_uint32(buffer);
+    registros_cpu.FX = buffer_read_uint32(buffer);
+    registros_cpu.GX = buffer_read_uint32(buffer);
+    registros_cpu.HX = buffer_read_uint32(buffer);
+    // base = buffer_read_uint32(buffer);
+    // limite = buffer_read_uint32(buffer);
 }

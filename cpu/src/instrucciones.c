@@ -3,6 +3,7 @@
 bool ejecutando_un_proceso;
 t_registros_cpu registros_cpu;
 int tid;
+int pid;
 
 // Ciclo de instrucciones
 
@@ -10,9 +11,8 @@ char *fetch()
 {
     log_info(logger_cpu, "TID: <%d> - FETCH - Program Counter: <%d>", tid, registros_cpu.PC);
     t_paquete *paquete = crear_paquete(FETCH_INSTRUCCION);
-    // agregar_a_paquete_solo(paquete, &pid, sizeof(int));
+    agregar_a_paquete_solo(paquete, &pid, sizeof(int));
     agregar_a_paquete_solo(paquete, &tid, sizeof(int));
-    // agregar_a_paquete_solo(paquete, &program_counter, sizeof(int));
     agregar_a_paquete_solo(paquete, &registros_cpu.PC, sizeof(uint32_t));
 
     enviar_paquete(paquete, socket_memoria);

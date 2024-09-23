@@ -11,9 +11,9 @@ extern int tid;
 
 // Ciclo de instrucciones
 
-char *fetch();
+/*char *fetch();
 instruccion *decode(char *inst);
-instruccion *execute(instruccion *inst);
+instruccion *execute(instruccion *inst);*/
 
 // Instrucciones
 

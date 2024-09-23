@@ -58,7 +58,10 @@ typedef enum
     SYSCALL,
     SUCCESS,
     INICIAR_HILO,
-    DESALOJAR_PROCESO
+    DESALOJAR_PROCESO,
+    OP_ENVIO_PCB,
+    PEDIR_CONTEXTO,
+    ACTUALIZAR_CONTEXTO
 } op_code;
 
 typedef struct
@@ -150,7 +153,7 @@ typedef struct
     uint32_t base;
     uint32_t limite;
     t_registros_cpu registros;
-} t_contexto_ejecucion;
+} t_contexto_ejecucion; // ENTRE CPU Y MEM
 
 // -------------------------------- FILESYSTEM --------------------------------
 
