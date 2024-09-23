@@ -138,7 +138,19 @@ void planificador_corto_plazo_tcb()
 	//pasar_a_running_tcb(tcb_listo);
 	
 }
-
+tcb* buscar_TID(tcb* tcb_pedido, int tid_buscado){
+	pcb* proc = tcb_pedido->pcb_padre_tcb;
+	for (int i = 0; i < list_size(proc->lista_tcb); i++) {
+	tcb* hilo_buscado = list_get(proc->lista_tcb, i);
+        if (hilo_buscado->tid == tid_buscado) {
+			list_remove(proc->lista_tcb, i);//Buscar y lo saco del pcb
+            return hilo_buscado;
+			
+        }
+    }
+    
+    return NULL;
+}
 
 
 void atender_syscall()
@@ -208,6 +220,19 @@ void atender_syscall()
 		case THREAD_JOIN:
 		break;
 		case THREAD_CANCEL:
+			/*esta syscall recibe como parámetro un TID con el objetivo de finalizarlo pasando al mismo al estado EXIT.
+			 Se deberá indicar a la Memoria la finalización de dicho hilo. 
+			 En caso de que el TID pasado por parámetro no exista o ya haya finalizado, 
+			 esta syscall no hace nada. Finalmente, el hilo que la invocó continuará su ejecución.*/
+			 int tid = list_get(instrucc->parametros, 0);
+			 tcb* hilo_a_finalizar;
+			hilo_a_finalizar = buscar_TID(hilo_en_ejecucion,tid);
+			if(hilo_a_finalizar != NULL){
+				//asegurarse que no esta en exit para no finalizarlo 2 veces 
+				// por ahi mejor fijarse en finalizar_tcb
+				finalizar_tcb(hilo_a_finalizar);
+			}
+
 		break;
 		case THREAD_EXIT:
 			 finalizar_tcb(hilo_en_ejecucion);

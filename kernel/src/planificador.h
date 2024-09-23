@@ -9,3 +9,4 @@ void agregar_a_ready_prioridades(tcb* hilo); //este con lo de ahora no iria creo
 void agregar_a_ready(tcb* hilo);
 tcb* hilo_prioritario_en_ready();
 tcb* elegir_segun_prioridades();
+tcb* buscar_TID(tcb* tcb_pedido, int tid_buscado);
