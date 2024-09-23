@@ -7,6 +7,32 @@ int pid;
 
 // Ciclo de instrucciones
 
+void ejecutar_proceso()
+{
+    while (ejecutando_un_proceso)
+    {
+        check_interrupt(execute(decode(fetch())));
+    }
+}
+
+void check_interrupt(instruccion *inst)
+{
+    if (interrupcion && ejecutando_un_proceso)
+    {
+        devolver_contexto_de_ejecucion(pid, tid);
+        ejecutando_un_proceso = false;
+    } // hay interrupcion y un proceso en ejecucion
+    interrupcion = false;
+    for (int i = 0; i < list_size(inst->parametros); i++)
+    {
+        char *parametro = list_remove(inst->parametros, i);
+
+        // free(parametro);
+    } // liberar cada parametro de instruccion
+    list_destroy(inst->parametros);
+    free(inst);
+}
+
 char *fetch()
 {
     log_info(logger_cpu, "TID: <%d> - FETCH - Program Counter: <%d>", tid, registros_cpu.PC);
@@ -203,7 +229,8 @@ void log_instruccion(instruccion *inst)
 {
 }
 
-// SYSCALLS
+// SYSCALLS 
+// MANDAR PARAMETROS A KERNEL Y CONTEXTO A MEMORIA
 
 void dump_memory(instruccion *inst)
 {

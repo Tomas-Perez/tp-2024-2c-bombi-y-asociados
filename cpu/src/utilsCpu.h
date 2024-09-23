@@ -11,8 +11,10 @@ uint32_t *get_direccion_registro(char *string_registro);
 
 // FUNCIONES CONTEXTO DE EJECUCION
 
-void recibir_pcb(int socket);
+void recibir_tcb(int socket);
 void pedir_contexto_cpu(int pid, int tid);
+void devolver_contexto_de_ejecucion(int pid, int tid);
+void empaquetar_contexto(t_paquete *paquete);
 
 extern t_log* logger_cpu;
 extern int tid;

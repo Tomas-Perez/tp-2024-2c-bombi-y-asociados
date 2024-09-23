@@ -1,7 +1,7 @@
 #ifndef CPU_H_
 #define CPU_H_
 
-#include <utils/utils.h>
+#include <utilsCpu.h>
 
 #define PUERTO_ESCUCHA_D "8006"
 #define PUERTO_ESCUCHA_I "8007"
@@ -19,11 +19,14 @@ int atenderCpuDispatch();
 int atenderCpuInterrupt();
 int conectarMemoria();
 
+// Ciclo de instrucciones
+
 void ejecutar_proceso();
+void check_interrupt(instruccion* inst);
+
 char* fetch();
 instruccion* decode(char*);
 instruccion* execute(instruccion* inst);
-void check_interrupt(instruccion* inst);
 
 
 #endif

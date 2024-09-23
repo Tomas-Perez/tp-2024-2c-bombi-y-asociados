@@ -61,7 +61,8 @@ typedef enum
     DESALOJAR_PROCESO,
     OP_ENVIO_PCB,
     PEDIR_CONTEXTO,
-    ACTUALIZAR_CONTEXTO
+    ACTUALIZAR_CONTEXTO,
+    OP_ENVIO_TCB
 } op_code;
 
 typedef struct

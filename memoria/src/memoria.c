@@ -80,7 +80,7 @@ int atenderCpu(int *socket_cpu)
 
         buffer = recibir_buffer((&size), *socket_cpu);
 
-        uint32_t program_counter; 
+        uint32_t program_counter;
 
         pid = buffer_read_uint32(buffer);
         tid = buffer_read_uint32(buffer);
@@ -90,6 +90,8 @@ int atenderCpu(int *socket_cpu)
 
         char *instruccion = buscar_instruccion(pid, tid, program_counter);
 
+        log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%c>", pid, tid, instruccion); // VER LOS ARGS
+
         enviar_mensaje(instruccion, *socket_cpu);
 
         free(instruccion); // si tira error comentar
@@ -97,11 +99,13 @@ int atenderCpu(int *socket_cpu)
 
         break;
     case PEDIR_CONTEXTO:
-    
+
         buffer = recibir_buffer((&size), *socket_cpu);
 
         pid = buffer_read_uint32(buffer);
         tid = buffer_read_uint32(buffer);
+
+        log_info(logger_memoria, "Contexto <Solicitado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
 
         free(buffer);
 
@@ -115,6 +119,22 @@ int atenderCpu(int *socket_cpu)
 
         break;
     case ACTUALIZAR_CONTEXTO:
+
+        buffer = recibir_buffer((&size), *socket_cpu);
+
+        pid = buffer_read_uint32(buffer);
+        tid = buffer_read_uint32(buffer);
+
+        t_proceso *proceso = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
+        t_hilo *hilo = buscar_hilo(proceso, tid);
+        //actualizar_contexto(proceso, hilo); // DESARROLLAR FUNCION
+
+        log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
+
+        enviar_mensaje("OK", *socket_cpu);
+
+        free(buffer);
+
         break;
     case READ_MEM:
         break;
@@ -129,7 +149,6 @@ int atenderCpu(int *socket_cpu)
 int atenderKernel(int *socket_kernel)
 {
     void *buffer;
-    //log_info(logger_memoria, "Memoria conectada con Kernel");
     log_info(logger_memoria, "Kernel Conectado - FD del socket: <%d>", *socket_kernel);
 
     int cod_op = recibir_operacion(*socket_kernel);
@@ -199,6 +218,7 @@ int atenderKernel(int *socket_kernel)
 
         bool confirmacion = true;
         send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que pudimos reservar espacio
+
         break;
     case PROCESS_EXIT:
         break;

@@ -9,7 +9,7 @@ char *ip_memoria;
 char *log_level;
 
 bool interrupcion;
-int motivo_interrupt; // ver donde declarar
+int pid_interrupt;
 
 int socket_memoria;
 int conexion_dispatch;
@@ -68,8 +68,8 @@ int atenderCpuDispatch()
         case MENSAJE:
             // recibir_mensaje(conexion_dispatch);
             break;
-        case OP_ENVIO_PCB:
-            recibir_pcb(conexion_dispatch); // recibe pcb y tcb para solicitar contexto a memoria
+        case OP_ENVIO_TCB:
+            recibir_tcb(conexion_dispatch); // recibe pcb y tcb para solicitar contexto a memoria
             pedir_contexto_cpu(pid, tid);
             ejecutando_un_proceso = true;
             ejecutar_proceso();
@@ -97,8 +97,16 @@ int atenderCpuInterrupt()
         int cod_op = recibir_operacion(conexion_interrupt);
         switch (cod_op)
         {
-        case MENSAJE:
-            // recibir_mensaje(conexion_interrupt);
+        case DESALOJAR_PROCESO:
+            int size = 0;
+            void *buffer = recibir_buffer(&size, conexion_interrupt);
+            pid_interrupt = buffer_read_uint32(buffer);
+            if (pid_interrupt == pid)
+            {
+                log_info(logger_cpu, "Llega interrupción al puerto Interrupt");
+                interrupcion = true;
+            }
+            free(buffer);
             break;
         case -1:
             log_error(logger_cpu, "El cliente se desconecto. Terminando servidor\n");
@@ -119,31 +127,4 @@ void levantar_config_cpu()
     puerto_escucha_dispatch = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_DISPATCH");
     puerto_escucha_interrupt = config_get_string_value(config_cpu, "PUERTO_ESCUCHA_INTERRUPT");
     log_level = config_get_string_value(config_cpu, "LOG_LEVEL");
-}
-
-void ejecutar_proceso()
-{
-    while (ejecutando_un_proceso)
-    {
-        check_interrupt(execute(decode(fetch())));
-    }
-}
-
-void check_interrupt(instruccion *inst)
-{
-    if (interrupcion && ejecutando_un_proceso)
-    {
-        //devolver_contexto_de_ejecucion(motivo_interrupt, inst);
-        ejecutando_un_proceso = false;
-        log_info(logger_cpu, "Proceso desalojado por motivo: %d", motivo_interrupt);
-    } // hay interrupcion y un proceso en ejecucion
-    interrupcion = false;
-    for (int i = 0; i < list_size(inst->parametros); i++)
-    {
-        char *parametro = list_remove(inst->parametros, i);
-
-        // free(parametro);
-    } // liberar cada parametro de instruccion
-    list_destroy(inst->parametros);
-    free(inst);
 }

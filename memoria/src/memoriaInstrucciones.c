@@ -25,7 +25,7 @@ t_proceso *agregar_proceso_instrucciones(FILE *f, int pid) // habria que mandar 
 	// Ver como agregar base y limite
 
 	t_hilo *hilo_main = malloc(sizeof(t_hilo));
-	inicializar_hilo(proceso, 0, hilo_main, f);
+	inicializar_hilo(proceso, 0, hilo_main, f); // Ver si agregar prioridad
 	list_add(proceso->tids, hilo_main); // Agrego hilo main a lista de hilos dentro de procesos
 
 	pthread_mutex_lock(&mutex_listas);
@@ -85,5 +85,3 @@ t_hilo *buscar_hilo(t_proceso *proceso_padre, int tid_buscado)
 	printf("Hilo no encontrado\n");
 	return NULL;
 }
-
-// FUNCIONES PARA MANDAR A UTILS
