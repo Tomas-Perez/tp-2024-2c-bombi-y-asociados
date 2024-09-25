@@ -262,6 +262,7 @@ void atender_syscall()
 					}
 					else
 					{
+						// TO DO AGUS: sacalo de la cola de ready para que no sea planificable 
 						list_add(mutex_solic->bloqueados_por_mutex, mutex_solic);
 					}
 				}
