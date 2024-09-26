@@ -124,10 +124,12 @@ int atenderCpu(int *socket_cpu)
 
         pid = buffer_read_uint32(buffer);
         tid = buffer_read_uint32(buffer);
+        t_registros_cpu registros_a_actualizar = recibir_contexto(registros_a_actualizar, buffer);
 
-        t_proceso *proceso = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
-        t_hilo *hilo = buscar_hilo(proceso, tid);
-        //actualizar_contexto(proceso, hilo); // DESARROLLAR FUNCION
+        t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
+        t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid);
+
+        actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar); // Falta ver base y limite
 
         log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
 

@@ -227,6 +227,10 @@ void write_mem(instruccion *inst)
 // LOG (Registro): Escribe en el archivo de log el valor del registro.
 void log_instruccion(instruccion *inst)
 {
+    char *registro = list_get(inst->parametros, 0);
+    uint32_t *valor_registro = get_direccion_registro(registro);
+
+    log_info(logger_cpu, "El valor del registro es %i", *valor_registro);
 }
 
 // SYSCALLS 
