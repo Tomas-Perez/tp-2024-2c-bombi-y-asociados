@@ -3,16 +3,42 @@
 bool ejecutando_un_proceso;
 t_registros_cpu registros_cpu;
 int tid;
+int pid;
 
 // Ciclo de instrucciones
+
+void ejecutar_proceso()
+{
+    while (ejecutando_un_proceso)
+    {
+        check_interrupt(execute(decode(fetch())));
+    }
+}
+
+void check_interrupt(instruccion *inst)
+{
+    if (interrupcion && ejecutando_un_proceso)
+    {
+        devolver_contexto_de_ejecucion(pid, tid);
+        ejecutando_un_proceso = false;
+    } // hay interrupcion y un proceso en ejecucion
+    interrupcion = false;
+    for (int i = 0; i < list_size(inst->parametros); i++)
+    {
+        char *parametro = list_remove(inst->parametros, i);
+
+        // free(parametro);
+    } // liberar cada parametro de instruccion
+    list_destroy(inst->parametros);
+    free(inst);
+}
 
 char *fetch()
 {
     log_info(logger_cpu, "TID: <%d> - FETCH - Program Counter: <%d>", tid, registros_cpu.PC);
     t_paquete *paquete = crear_paquete(FETCH_INSTRUCCION);
-    // agregar_a_paquete_solo(paquete, &pid, sizeof(int));
+    agregar_a_paquete_solo(paquete, &pid, sizeof(int));
     agregar_a_paquete_solo(paquete, &tid, sizeof(int));
-    // agregar_a_paquete_solo(paquete, &program_counter, sizeof(int));
     agregar_a_paquete_solo(paquete, &registros_cpu.PC, sizeof(uint32_t));
 
     enviar_paquete(paquete, socket_memoria);
@@ -201,9 +227,14 @@ void write_mem(instruccion *inst)
 // LOG (Registro): Escribe en el archivo de log el valor del registro.
 void log_instruccion(instruccion *inst)
 {
+    char *registro = list_get(inst->parametros, 0);
+    uint32_t *valor_registro = get_direccion_registro(registro);
+
+    log_info(logger_cpu, "El valor del registro es %i", *valor_registro);
 }
 
-// SYSCALLS
+// SYSCALLS 
+// MANDAR PARAMETROS A KERNEL Y CONTEXTO A MEMORIA
 
 void dump_memory(instruccion *inst)
 {

@@ -7,13 +7,11 @@
 extern t_log* logger_cpu;
 extern int socket_memoria;
 extern int tid;
+extern bool interrupcion;
 
-
-// Ciclo de instrucciones
-
-char *fetch();
+/*char *fetch();
 instruccion *decode(char *inst);
-instruccion *execute(instruccion *inst);
+instruccion *execute(instruccion *inst);*/
 
 // Instrucciones
 

@@ -58,7 +58,11 @@ typedef enum
     SYSCALL,
     SUCCESS,
     INICIAR_HILO,
-    DESALOJAR_PROCESO
+    DESALOJAR_PROCESO,
+    OP_ENVIO_PCB,
+    PEDIR_CONTEXTO,
+    ACTUALIZAR_CONTEXTO,
+    OP_ENVIO_TCB
 } op_code;
 
 typedef struct
@@ -139,13 +143,13 @@ typedef struct
     uint32_t pid;
     uint32_t base;
     uint32_t limite;
-    t_list *tids;
+    t_list *tids; // lista de t_hilo
 } t_proceso;
 
 typedef struct
 {
     uint32_t tid;
-    uint32_t pid_padre;
+    uint32_t pid_padre; // nose si hace falta
     t_list *instrucciones;
     t_registros_cpu registros_hilo;
 } t_hilo;
@@ -157,7 +161,7 @@ typedef struct
     uint32_t base;
     uint32_t limite;
     t_registros_cpu registros;
-} t_contexto_ejecucion;
+} t_contexto_ejecucion; // ENTRE CPU Y MEM
 
 // -------------------------------- FILESYSTEM --------------------------------
 

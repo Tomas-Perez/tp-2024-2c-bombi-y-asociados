@@ -15,6 +15,7 @@ char *log_level;
 char *puerto_filesystem;
 
 int socket_fs;
+int pid, tid;
 
 int main(int argc, char *argv[])
 {
@@ -65,88 +66,175 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int atenderCpu()
+int atenderCpu(int *socket_cpu)
 {
+    int size = 0;
+    void *buffer;
     log_info(logger_memoria, "Memoria conectada con CPU");
+
+    int cod_op = recibir_operacion(*socket_cpu);
+
+    switch (cod_op)
+    {
+    case FETCH_INSTRUCCION:
+
+        buffer = recibir_buffer((&size), *socket_cpu);
+
+        uint32_t program_counter;
+
+        pid = buffer_read_uint32(buffer);
+        tid = buffer_read_uint32(buffer);
+        program_counter = buffer_read_uint32(buffer);
+
+        usleep(retardo_rta * 1000);
+
+        char *instruccion = buscar_instruccion(pid, tid, program_counter);
+
+        log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%c>", pid, tid, instruccion); // VER LOS ARGS
+
+        enviar_mensaje(instruccion, *socket_cpu);
+
+        free(instruccion); // si tira error comentar
+        free(buffer);
+
+        break;
+    case PEDIR_CONTEXTO:
+
+        buffer = recibir_buffer((&size), *socket_cpu);
+
+        pid = buffer_read_uint32(buffer);
+        tid = buffer_read_uint32(buffer);
+
+        log_info(logger_memoria, "Contexto <Solicitado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
+
+        free(buffer);
+
+        t_proceso *proceso = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
+        t_hilo *hilo = buscar_hilo(proceso, tid);
+
+        t_paquete *mandar_contexto = crear_paquete(PEDIR_CONTEXTO);
+        empaquetar_contexto(mandar_contexto, proceso, hilo);
+        enviar_paquete(mandar_contexto, *socket_cpu);
+        eliminar_paquete(mandar_contexto);
+
+        break;
+    case ACTUALIZAR_CONTEXTO:
+
+        buffer = recibir_buffer((&size), *socket_cpu);
+
+        pid = buffer_read_uint32(buffer);
+        tid = buffer_read_uint32(buffer);
+        t_registros_cpu registros_a_actualizar = recibir_contexto(registros_a_actualizar, buffer);
+
+        t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
+        t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid);
+
+        actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar); // Falta ver base y limite
+
+        log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
+
+        enviar_mensaje("OK", *socket_cpu);
+
+        free(buffer);
+
+        break;
+    case READ_MEM:
+        break;
+    case WRITE_MEM:
+        break;
+    default:
+        log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
+        break;
+    }
 }
 
 int atenderKernel(int *socket_kernel)
 {
     void *buffer;
-    log_info(logger_memoria, "Memoria conectada con Kernel");
+    log_info(logger_memoria, "Kernel Conectado - FD del socket: <%d>", *socket_kernel);
 
     int cod_op = recibir_operacion(*socket_kernel);
 
-    switch (cod_op) 
+    switch (cod_op)
     {
-        case PROCESS_CREATE: // SIEMPRE EL TID VA A SER 0
-            int size = 0;
-            char *path_kernel;
-			buffer = recibir_buffer(&size, *socket_kernel); // recibimos PCB
+    case PROCESS_CREATE: // SIEMPRE EL TID VA A SER 0
+        int size = 0;
+        char *path_kernel;
+        buffer = recibir_buffer(&size, *socket_kernel); // recibimos PCB
 
-			if (buffer == NULL)
-			{
-				log_info(logger_memoria, "Error al recibir el buffer\n");
-				return -1;
-			}
+        if (buffer == NULL)
+        {
+            log_info(logger_memoria, "Error al recibir el buffer\n");
+            return -1;
+        }
 
-            uint32_t pid = buffer_read_uint32(buffer);
-            uint32_t tamanio_proceso = buffer_read_uint32(buffer);
+        pid = buffer_read_uint32(buffer);
+        uint32_t tamanio_proceso = buffer_read_uint32(buffer);
 
-            /*if (tamanio_proceso > memoria_disponible) { // DEPENDE DEL TIPO DE MEMORIA Y DEL ESQUEMA, VEREMOS MAS ADELANTE
-                // Devolver que no hay espacio disponible (?)
-            }*/
+        /*if (tamanio_proceso > memoria_disponible) { // DEPENDE DEL TIPO DE MEMORIA Y DEL ESQUEMA, VEREMOS MAS ADELANTE
+            // Devolver que no hay espacio disponible (?)
+        }*/
 
-            uint32_t size_path = buffer_read_uint32(buffer);
+        uint32_t size_path = buffer_read_uint32(buffer);
 
-            path_kernel = malloc(size_path + 1); // asignamos memoria, +1 para el carácter nulo
-			if (path_kernel == NULL)
-			{
-				log_info(logger_memoria, "Error al asignar memoria para path_kernel\n");
-				return -1;
-			}
+        path_kernel = malloc(size_path + 1); // asignamos memoria, +1 para el carácter nulo
+        if (path_kernel == NULL)
+        {
+            log_info(logger_memoria, "Error al asignar memoria para path_kernel\n");
+            return -1;
+        }
 
-            path_kernel = buffer_read_string(buffer, size_path);
-            path_kernel[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+        path_kernel = buffer_read_string(buffer, size_path);
+        path_kernel[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
 
-            char *path_script_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_kernel) + 1);
-			if (path_script_completo == NULL)
-			{
-				log_info(logger_memoria, "Error al asignar memoria para path_script_completo\n");
-				free(path_kernel);
-				return -1;
-			}
-			strcpy(path_script_completo, path_instrucciones);   // copia path_inst en path_script_completo
-			strcat(path_script_completo, path_kernel); // concatena path_kernel a path_script_completo
+        char *path_script_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_kernel) + 1);
+        if (path_script_completo == NULL)
+        {
+            log_info(logger_memoria, "Error al asignar memoria para path_script_completo\n");
+            free(path_kernel);
+            return -1;
+        }
+        strcpy(path_script_completo, path_instrucciones); // copia path_inst en path_script_completo
+        strcat(path_script_completo, path_kernel);        // concatena path_kernel a path_script_completo
 
-			//usleep(retardo_memoria() * 1000);
+        // usleep(retardo_memoria() * 1000);
 
-			printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
+        printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
 
-            FILE *f;
-			if (!(f = fopen(path_script_completo, "r")))
-			{ // ABRE EL ARCHIVO PARA LECTURA
-				log_info(logger_memoria, "No se encontro el archivo de instrucciones\n");
-				free(path_script_completo);
-				free(path_kernel);
-				return -1;
-			}
+        FILE *f;
+        if (!(f = fopen(path_script_completo, "r")))
+        { // ABRE EL ARCHIVO PARA LECTURA
+            log_info(logger_memoria, "No se encontro el archivo de instrucciones\n");
+            free(path_script_completo);
+            free(path_kernel);
+            return -1;
+        }
 
-			free(path_script_completo);
-			free(path_kernel);
-            free(buffer);
+        free(path_script_completo);
+        free(path_kernel);
+        free(buffer);
 
-            agregar_proceso_instrucciones(f, pid); // Ver como remodelamos esta funcion para este TP
+        agregar_proceso_instrucciones(f, pid);
 
-            bool confirmacion = true;
-            send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que pudimos reservar espacio
-            break;
-        default:
-            log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
-			printf("Cod Op: %i", cod_op);
-			break;
+        log_info(logger_memoria, "Proceso <Creado> -  PID: <%i> - Tamaño: <%i>", pid, tamanio_proceso);
+
+        bool confirmacion = true;
+        send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que pudimos reservar espacio
+
+        break;
+    case PROCESS_EXIT:
+        break;
+    case THREAD_CREATE:
+        break;
+    case THREAD_EXIT:
+        break;
+    case DUMP_MEMORY:
+        break;
+    default:
+        log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
+        printf("Cod Op: %i", cod_op);
+        break;
     }
-
 }
 
 void levantar_config_memoria()

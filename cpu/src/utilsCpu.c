@@ -1,6 +1,5 @@
 #include "utilsCpu.h"
 
-
 void mostrar_parametros(instruccion *inst, int cant_parametros)
 {
     if (cant_parametros == 0)
@@ -207,4 +206,64 @@ u_int8_t get_cant_parametros(u_int8_t identificador)
         break;
     }
     return cant_parametros;
+}
+
+void recibir_tcb(int socket)
+{
+    int size = 0;
+    void *buffer = recibir_buffer(&size, socket);
+
+    pid = buffer_read_uint32(buffer);
+    tid = buffer_read_uint32(buffer);
+
+    free(buffer);
+}
+
+void pedir_contexto_cpu(int pid, int tid)
+{
+    t_paquete *contexto = crear_paquete(PEDIR_CONTEXTO);
+    agregar_a_paquete_solo(contexto, &pid, sizeof(int));
+    agregar_a_paquete_solo(contexto, &tid, sizeof(int));
+    enviar_paquete(contexto, socket_memoria);
+    eliminar_paquete(contexto);
+
+    int size = 0;
+    void *buffer = recibir_buffer(&size, socket_memoria);
+
+    registros_cpu.PC = buffer_read_uint32(buffer);
+    registros_cpu.AX = buffer_read_uint32(buffer);
+    registros_cpu.BX = buffer_read_uint32(buffer);
+    registros_cpu.CX = buffer_read_uint32(buffer);
+    registros_cpu.DX = buffer_read_uint32(buffer);
+    registros_cpu.EX = buffer_read_uint32(buffer);
+    registros_cpu.FX = buffer_read_uint32(buffer);
+    registros_cpu.GX = buffer_read_uint32(buffer);
+    registros_cpu.HX = buffer_read_uint32(buffer);
+    // base = buffer_read_uint32(buffer);
+    // limite = buffer_read_uint32(buffer);
+}
+
+void devolver_contexto_de_ejecucion(int pid, int tid)
+{
+    t_paquete *dev_contexto = crear_paquete(ACTUALIZAR_CONTEXTO);
+    agregar_a_paquete_solo(dev_contexto, &pid, sizeof(int));
+    agregar_a_paquete_solo(dev_contexto, &tid, sizeof(int));
+    empaquetar_contexto(dev_contexto);
+    enviar_paquete(dev_contexto, socket_memoria);
+    eliminar_paquete(dev_contexto);
+}
+
+void empaquetar_contexto(t_paquete *paquete)
+{
+    agregar_a_paquete_solo(paquete, registros_cpu.PC, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.AX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.BX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.CX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.DX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.EX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.FX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.GX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.HX, sizeof(uint32_t));
+    // agregar_a_paquete_solo(dev_contexto, base, sizeof(uint32_t));
+    // agregar_a_paquete_solo(dev_contexto, limite, sizeof(uint32_t));
 }

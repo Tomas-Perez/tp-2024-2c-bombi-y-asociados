@@ -8,6 +8,9 @@ char *puerto_escucha_interrupt;
 char *ip_memoria;
 char *log_level;
 
+bool interrupcion;
+int pid_interrupt;
+
 int socket_memoria;
 int conexion_dispatch;
 int conexion_interrupt;
@@ -65,13 +68,12 @@ int atenderCpuDispatch()
         case MENSAJE:
             // recibir_mensaje(conexion_dispatch);
             break;
-        /*case OP_ENVIO_PCB:
-        recibir_contexto_ejecucion(conexion_dispatch); // ver que variable manda
-
-        ejecutando_un_proceso = true;
-        ejecutar_proceso();
-        break;
-    */
+        case OP_ENVIO_TCB:
+            recibir_tcb(conexion_dispatch); // recibe pcb y tcb para solicitar contexto a memoria
+            pedir_contexto_cpu(pid, tid);
+            ejecutando_un_proceso = true;
+            ejecutar_proceso();
+            break;
         case -1:
             log_error(logger_cpu, "El cliente se desconecto. Terminando servidor\n");
             return EXIT_FAILURE;
@@ -80,7 +82,7 @@ int atenderCpuDispatch()
             break;
         }
     }
-    //return EXIT_SUCCESS;
+    // return EXIT_SUCCESS;
 }
 
 int atenderCpuInterrupt()
@@ -95,8 +97,16 @@ int atenderCpuInterrupt()
         int cod_op = recibir_operacion(conexion_interrupt);
         switch (cod_op)
         {
-        case MENSAJE:
-            // recibir_mensaje(conexion_interrupt);
+        case DESALOJAR_PROCESO:
+            int size = 0;
+            void *buffer = recibir_buffer(&size, conexion_interrupt);
+            pid_interrupt = buffer_read_uint32(buffer);
+            if (pid_interrupt == pid)
+            {
+                log_info(logger_cpu, "Llega interrupción al puerto Interrupt");
+                interrupcion = true;
+            }
+            free(buffer);
             break;
         case -1:
             log_error(logger_cpu, "El cliente se desconecto. Terminando servidor\n");
@@ -106,7 +116,7 @@ int atenderCpuInterrupt()
             break;
         }
     }
-    //return EXIT_SUCCESS;
+    // return EXIT_SUCCESS;
 }
 
 void levantar_config_cpu()
