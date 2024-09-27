@@ -6,6 +6,7 @@ void inicializar_registros(tcb* hilos);
 void finalizar_hilos_proceso(pcb* proceso);
 pcb *buscar_proc_lista(t_list *lista, int pid_buscado);
 void inicializar_estructuras();
+void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path);
 void pedir_memoria(int socket);
 void desalojar_proceso(int motivo);
 void* desalojar_por_RR(pcb* pcb);
@@ -19,6 +20,13 @@ extern void agregar_a_ready_prioridades(tcb* hilo);
 extern void agregar_a_ready(tcb* hilo); // TO DO: preguntar si esto es legal
 void finalizar_estructuras_kernel();
 void inicializar_estructuras_kernel();
+void finalizar_tcb(tcb* hilo_a_finlizar);
+bool existe_mutex(mutex_k* mutex_solic,t_list* lista_mutex_proceso);
+void asignar_mutex_hilo(mutex_k* mutex,tcb* hilo);
+bool mutex_tomado_por_hilo(mutex_k* mutex, tcb* hilo);
+mutex_k* crear_mutex(char* nombre);
+
+
 extern t_log* logger_kernel;
 extern int id_counter;
 extern tcb* hilo_en_ejecucion; 
@@ -34,7 +42,7 @@ extern sem_t finalizo_un_proc;
 
 extern t_list* lista_de_ready;
 extern t_list* lista_procesos_new;
-void finalizar_tcb(tcb* hilo_a_finlizar);
+
 extern char *ip_memoria;
 extern char *puerto_memoria; 
 extern char *ip_cpu; 

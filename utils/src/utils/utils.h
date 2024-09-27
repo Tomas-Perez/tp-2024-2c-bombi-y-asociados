@@ -84,7 +84,7 @@ typedef struct
 {
     int identificador; // dice que instruccion es
     int cant_parametros;
-    t_list *parametros; // lista de parametros (separados entre si), sin contar el identificador
+    t_list* parametros; // lista de parametros (separados entre si), sin contar el identificador
 } instruccion;
 
 // -------------------------------- CPU --------------------------------
@@ -107,12 +107,10 @@ typedef struct
     uint32_t pid;
     int contador_tid;
     bool mem_asignada;
-    t_registros_cpu registros_cpu; // ver si conviene q solo este en el tcb, preguntar
     t_list *lista_tcb;
     int tam_proc;
     char* path_proc;
-    // t_mutex* mutex; // HACER: ver si esta ok
-    //  HACER: ver que cosas agregamos
+    t_list* lista_mutex_proc;
 } pcb;
 
 typedef struct
@@ -121,8 +119,17 @@ typedef struct
     int prioridad;
     pcb* pcb_padre_tcb;
     t_registros_cpu registros_cpu;
+    t_list* lista_mutex;
 } tcb;
 
+typedef struct 
+{
+    char* nombre;
+    bool disponibilidad;
+    tcb* hilo_poseedor;
+    t_list* bloqueados_por_mutex;
+
+} mutex_k;
 void inicializar_estructuras();
 
 // -------------------------------- MEMORIA --------------------------------

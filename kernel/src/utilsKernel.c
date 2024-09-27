@@ -18,7 +18,8 @@ t_log* logger_kernel;
 // 7) Finalizar
 // 8) Buscar
 // 9) Dump 
-// 10) Funciones auxiliares
+// 10) Mutex
+// 11) Funciones auxiliares
 
 
 // --------------------------- Archivo inicial --------------------------- 
@@ -67,6 +68,7 @@ void inicializar_estructuras_kernel()
 	pthread_mutex_init(&m_regreso_de_cpu,NULL);
     pthread_mutex_init(&m_hilo_a_ejecutar, NULL); //TO DO destroy de los mutex
     pthread_mutex_init(&m_lista_procesos_new, NULL);
+    
     //semaforo
     sem_init(&finalizo_un_proc, 0, 0);
   
@@ -100,7 +102,7 @@ void pedir_memoria(int socket)
 
         int pid = proceso_nuevo->pid;
         int tamanio = proceso_nuevo->tam_proc;
-        char path = proceso_nuevo->path_proc;
+        char* path = proceso_nuevo->path_proc;
         int motivo = PROCESS_CREATE; //preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
 
 
@@ -146,7 +148,7 @@ pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
 
 
     nuevo_pcb->lista_tcb = list_create();
-
+    nuevo_pcb->lista_mutex_proc = list_create();
     if (nuevo_pcb == NULL)
     {
         free(nuevo_pcb);
@@ -262,7 +264,7 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
 	}
 
 // --------------------- Iniciar hilos ---------------------
-void iniciar_hilo(tcb* hilo, int conexion_memoria, char path){
+void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
         
     
         t_paquete *paquete = crear_paquete(INICIAR_HILO);
@@ -343,13 +345,59 @@ pcb *buscar_proc_lista(t_list *lista, int pid_buscado)
 	return NULL;
 }
 
+bool existe_mutex(mutex_k* mutex_solic,t_list* lista_mutex_proceso)
+{
+    bool existe = false;
+    mutex_k* aux;
+    for(int i = 0; i < list_size(lista_mutex_proceso); i++)
+    {
+        aux = list_get(lista_mutex_proceso, i);
+        if(strcmp(aux->nombre, mutex_solic->nombre) == 0) //Comparo x nombre, supongo q no nos van a dar 2 mutex q se llamen igual en el mismo proc
+        {
+            existe = true;
+        }
+    }
+    return existe;
+}
+bool mutex_tomado_por_hilo(mutex_k* mutex, tcb* hilo)
+{
+    bool tomado = false;
+    mutex_k* aux;
+    for(int i=0; i < list_size(hilo->lista_mutex); i++)
+    {
+        aux = list_get(hilo->lista_mutex,i);
+        if(strcmp(mutex->nombre, aux->nombre) == 0)
+        {
+            tomado = true;
+        }
+    }
+
+    return tomado;
+}
 // --------------------- Dump ---------------------
 
-void bloquear_por_dump(tcb* hilo)
+void bloquear_por_dump(tcb* hilo) 
 {
     // TO DO 
+    // aca contemplamos este caso tmbn:
+    // memoria confirme la finalización de la operación, en caso de error, el proceso se enviará a EXIT.
+    // o lo hacemos dentro del case de la syscall?
 }
+// --------------------- Mutex ---------------------
+mutex_k* crear_mutex(char* nombre)
+{
+    mutex_k* mtx = (mutex_k*) malloc(sizeof(mutex_k)); 
+    mtx->nombre = nombre;
+    mtx->disponibilidad = true;
 
+   return mtx;
+}
+void asignar_mutex_hilo(mutex_k* mutex,tcb* hilo)
+{
+    mutex->disponibilidad = false;
+    mutex->hilo_poseedor = hilo;
+    list_add(hilo->lista_mutex, mutex);
+}
 
 // --------------------- funciones auxiliares ---------------------
 void liberar_param_instruccion(instruccion* instrucc)
