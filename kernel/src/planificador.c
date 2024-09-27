@@ -72,7 +72,7 @@ tcb* elegir_segun_prioridades(){
 
 void pasar_a_running_tcb(tcb* tcb_listo)
 {
-   // mandar_tcb_dispatch(tcb_listo);
+   	mandar_tcb_dispatch(tcb_listo);
     pthread_mutex_lock(&m_hilo_en_ejecucion);
 	hilo_en_ejecucion = tcb_listo; 
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
@@ -87,6 +87,7 @@ void pasar_a_running_tcb_prioridades(){
 	pthread_mutex_lock(&m_hilo_en_ejecucion);
 	hilo_en_ejecucion = tcb_listo; 
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
+	mandar_tcb_dispatch(tcb_listo);
     log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Anterior: READY - Estado Actual: EXEC",
     hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 }
@@ -112,33 +113,34 @@ void planificador_corto_plazo_tcb()
 		exit (1);
 	}
         
-    pthread_mutex_lock(&m_hilo_a_ejecutar);
-	pthread_mutex_lock(&m_lista_de_ready);
-	hilo_a_ejecutar = list_remove(lista_de_ready,0);
-	pthread_mutex_unlock(&m_lista_de_ready);        
-	
-	if(hilo_a_ejecutar == NULL)
-    {
-        log_error(logger_kernel,"Hilo a ejecutar es NULL en planificador_corto_plazo\n");
-        exit (1);
-    }	
-	pthread_mutex_unlock(&m_hilo_a_ejecutar);
+    
 		
     //solicitud_de_cpu();				
     
 	if(strcmp(algoritmo_de_planificacion,"FIFO"))
 	{
-		
+		pthread_mutex_lock(&m_hilo_a_ejecutar);
+		pthread_mutex_lock(&m_lista_de_ready);
+		hilo_a_ejecutar = list_remove(lista_de_ready,0);
+		pthread_mutex_unlock(&m_lista_de_ready);        
+	
+		if(hilo_a_ejecutar == NULL)
+		{
+			log_error(logger_kernel,"Hilo a ejecutar es NULL en planificador_corto_plazo\n");
+			exit (1);
+		}	
+		pthread_mutex_unlock(&m_hilo_a_ejecutar);
+		pasar_a_running_tcb(hilo_a_ejecutar);
 	}
 	if(strcmp(algoritmo_de_planificacion,"PRIORIDADES"))
 	{
-		
+		pasar_a_running_tcb_prioridades();
 	}
 	if(strcmp(algoritmo_de_planificacion,"MULTINIVEL"))
 	{
 		// muerte TO DO (queda muy sombrio?)
 	}
-	//pasar_a_running_tcb(tcb_listo);
+	
 	
 }
 tcb* buscar_TID(tcb* tcb_pedido, int tid_buscado){
@@ -242,7 +244,7 @@ void atender_syscall()
 
 		break;
 		case THREAD_EXIT:
-			 finalizar_tcb(hilo_en_ejecucion);
+			finalizar_tcb(hilo_en_ejecucion);
 		break;
 		case MUTEX_CREATE:
 			mutex_k* nuevo_mutex;
@@ -272,7 +274,7 @@ void atender_syscall()
 				}
 		break;
 		case MUTEX_UNLOCK:
-
+			
 			mutex_k* mutex_solic = list_get(instrucc->parametros, 0);
 			lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
 			tcb* bloq_por_mutex;
@@ -294,7 +296,7 @@ void atender_syscall()
 				}
 
 			}
-
+			
 		break;
 		case DUMP_MEMORY:
 			socket = conectarMemoria();
