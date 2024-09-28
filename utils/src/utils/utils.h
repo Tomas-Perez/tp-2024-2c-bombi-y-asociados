@@ -134,6 +134,12 @@ typedef struct
     t_list* bloqueados_por_mutex;
 
 } mutex_k;
+typedef struct 
+{
+    int prioridad;
+    t_list* hilos_asociados;
+
+} nivel_prioridad; 
 void inicializar_estructuras();
 
 // -------------------------------- MEMORIA --------------------------------
