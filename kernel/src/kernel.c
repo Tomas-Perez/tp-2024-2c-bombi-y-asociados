@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
 
     pthread_join(t2, NULL);
 
-    //inicializar_hilos_planificacion();
+    inicializar_hilos_planificacion();
 
      //./bin/kernel [archivo_pseudocodigo] [tamanio_proceso] [...args]
     int socket = conectarMemoria();

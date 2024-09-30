@@ -68,20 +68,22 @@ void inicializar_estructuras_kernel()
 	pthread_mutex_init(&m_regreso_de_cpu,NULL);
     pthread_mutex_init(&m_hilo_a_ejecutar, NULL); //TO DO destroy de los mutex
     pthread_mutex_init(&m_lista_procesos_new, NULL);
-    
+    pthread_mutex_init(&m_lista_multinivel,NULL);
     //semaforo
     sem_init(&finalizo_un_proc, 0, 0);
   
 	 //cola de procesos
 	 lista_de_ready = list_create();
      lista_procesos_new = list_create();
+     lista_multinivel = list_create();
      
 }
-void finalizar_estructuras_kernel()
+
+void inicializar_cola_nivel_prioridad(nivel_prioridad* nuevo_nivel)
 {
-
+    nuevo_nivel->hilos_asociados = list_create();
+    pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
 }
-
 
 // --------------------------- Pedidos memoria ---------------------------
 void pedir_memoria(int socket)
@@ -181,21 +183,26 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
      return nuevo_tcb;
 }
 
-
+void crear_cola_nivel(int prioridad,tcb* hilo) // lo llamo asi x el nombre del alg pero creo una lista
+{
+    // crear la lista y agregar el hilo 
+    // list add sorted para la cola multinivel
+}
 
 
 // -------------------------- Funciones planificador  --------------------------- 
 void inicializar_hilos_planificacion()
-{
-   /* pthread_t hilo_plani_corto,hilo_plani_largo,hilo_exitt;
+{ // TO DO
+    pthread_t hilo_plani_corto,hilo_plani_largo,hilo_exitt;
 
 	pthread_create(&hilo_plani_corto, NULL,(void*) planificador_corto_plazo,NULL);
-	pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
+	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
 	pthread_create(&hilo_exitt,NULL, (void*) hilo_exit, NULL);
 
 	pthread_detach(hilo_plani_corto);
 	pthread_detach(hilo_plani_largo);
 	//pthread_detach(hilo_exitt); */
+    pthread_detach(hilo_plani_corto);
 }
 void desalojar_proceso(int motivo)
 {
@@ -266,7 +273,7 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
 // --------------------- Iniciar hilos ---------------------
 void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
         
-    
+        // TO DO opcional: usar funcion tomi
         t_paquete *paquete = crear_paquete(INICIAR_HILO);
         agregar_a_paquete_solo(paquete, &(hilo->tid), sizeof(uint32_t));
         agregar_a_paquete(paquete, path, strlen(path) + 1);
@@ -283,17 +290,14 @@ void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
             {
                 printf("HILO trucho1");
             }
-            if(strcmp(algoritmo_de_planificacion, "PRIORIDADES"))
+            if(strcmp(algoritmo_de_planificacion, "MULTINIVEL")== 0)
             {
-                agregar_a_ready_prioridades(hilo);
+                agregar_a_ready_multinivel(hilo);
             }
-            else 
+            else
             {
                 agregar_a_ready(hilo);
             }
-            // TO DO: en realidad no es to do pero es RE importante que pensemos si esta
-            // bien que el hilo planificado x multinivel caiga en el agregar a ready normal,
-            // creo q cuando lo hagamos vamos a entender mejor
             
         }
 }
@@ -329,7 +333,17 @@ void finalizar_tcb(tcb* hilo_a_finalizar)
 {
     // TO DO
 }
+void finalizar_estructuras_kernel()
+{
+    // TO DO ;/
 
+    // listas
+    list_destroy(lista_multinivel);
+    list_destroy(lista_de_ready);
+    list_destroy(lista_procesos_new);
+    //list_destroy();
+    
+}
 // --------------------- Buscar ---------------------
 pcb *buscar_proc_lista(t_list *lista, int pid_buscado)
 {
@@ -373,6 +387,40 @@ bool mutex_tomado_por_hilo(mutex_k* mutex, tcb* hilo)
     }
 
     return tomado;
+}
+/*
+t_list* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
+{
+    nivel_prioridad* aux;
+    bool _existe_nivel
+    {
+        for(int i = 0; i < list_size(lista_multinivel); i++)
+        {
+            aux = list_get(lista_multinivel, i);
+            if(aux->prioridad == prioridad)
+            {
+                return aux->hilos_asociados;
+            }
+        }
+    }
+    return list_find(lista_multinivel, _existe_nivel);
+}*/
+nivel_prioridad* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
+{
+    nivel_prioridad* aux;
+    bool _existe_nivel(void* ptr)
+    {
+        nivel_prioridad* aux = (nivel_prioridad*) ptr;
+        return aux->prioridad == prioridad;
+    }
+
+    nivel_prioridad* resultado = list_find(lista_multinivel, _existe_nivel);
+
+    if(resultado != NULL)
+    {
+        return resultado;
+    }
+    return NULL;
 }
 // --------------------- Dump ---------------------
 

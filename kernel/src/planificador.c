@@ -9,10 +9,11 @@ pthread_mutex_t m_regreso_de_cpu;
 pthread_mutex_t m_hilo_a_ejecutar;
 pthread_mutex_t m_lista_procesos_new;
 pthread_mutex_t m_indice;
-pthread_mutex_t m_pthread_mutex_t;
+pthread_mutex_t m_lista_multinivel; 
+
 t_list* lista_de_ready;
 t_list* lista_procesos_new;
-
+t_list* lista_multinivel;
 sem_t finalizo_un_proc;
 
 
@@ -22,15 +23,27 @@ void agregar_a_ready(tcb* hilo)
 	list_add(lista_de_ready, hilo);
 	pthread_mutex_unlock(&m_lista_de_ready);
 	// sem_post(&hilos_en_ready)
+	
 }
 
-void agregar_a_ready_prioridades(tcb* hilo)
+void agregar_a_ready_multinivel(tcb* hilo)
 {
-	// TO DO
-	// reordenar_lista_ready();
-	//sem_post(&hilos_en_ready)
+	nivel_prioridad* cola_nivel;
+	// chequear si existe alguna cola con esa prioridad
+	cola_nivel = encontrar_por_nivel(lista_multinivel, hilo->prioridad);
+	if(cola_nivel == NULL)
+	{
+		crear_cola_nivel(hilo->prioridad, hilo);
+		inicializar_cola_nivel_prioridad(cola_nivel);
+	}
+	else
+	{
+		//list_add a la cola de esa prioridad		
+		pthread_mutex_lock(&(cola_nivel->m_lista_prioridad));
+		list_add(cola_nivel->hilos_asociados, hilo);
+		pthread_mutex_unlock(&(cola_nivel->m_lista_prioridad));
+	}
 }
-
 
 tcb* hilo_prioritario_en_ready(){
   
@@ -95,11 +108,14 @@ void pasar_a_running_tcb_prioridades(){
 void mandar_tcb_dispatch(tcb* tcb_listo)
 {
 	// TO DO 
+	t_paquete* tcb_a_dispatch = crear_paquete(OP_ENVIO_TCB);
+	// Preguntar tomi funciones nuevas
+	enviar_paquete(tcb_a_dispatch,conexion_dispatch);
 }
    
 
 
-void planificador_corto_plazo_tcb()
+void planificador_corto_plazo()
 {
 	// semaforos!!!! binario para controlar la ejecucion y un contador para los hilos en ready
 	//TO DO -> agus
@@ -271,6 +287,7 @@ void atender_syscall()
 				else
 				{
 					// TO DO: Preguntar que pasa si no existe el mutex en el proc
+					// finalizar
 				}
 		break;
 		case MUTEX_UNLOCK:
