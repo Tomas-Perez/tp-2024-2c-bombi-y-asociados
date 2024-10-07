@@ -10,11 +10,14 @@ pthread_mutex_t m_hilo_a_ejecutar;
 pthread_mutex_t m_lista_procesos_new;
 pthread_mutex_t m_indice;
 pthread_mutex_t m_lista_multinivel; 
+pthread_mutex_t m_lista_finalizados;
 
 t_list* lista_de_ready;
 t_list* lista_procesos_new;
 t_list* lista_multinivel;
+t_list* lista_finalizados;
 sem_t finalizo_un_proc;
+sem_t hilos_en_exit;
 
 
 void agregar_a_ready(tcb* hilo)
@@ -210,19 +213,12 @@ void atender_syscall()
 		close(socket);
 		break;
 		case PROCESS_EXIT:
-		/* esta syscall finalizará el PCB correspondiente al TCB que ejecutó la 
-		instrucción, enviando todos sus TCBs asociados a la cola de EXIT. Esta 
-		instrucción sólo será llamada por el TID 0 del proceso y le deberá indicar 
-		a la memoria la finalización de dicho proceso. */
-		
+			
 		if(hilo_en_ejecucion->tid == 0)
 		{
-			finalizar_hilos_proceso(hilo_en_ejecucion->pcb_padre_tcb);
-			//finalizar_proceso(hilo_en_ejecucion->pid_padre_tcb,SUCCESS); VER cual de las 2 usamos
-			// void finalizar_pcb_buscado(int pid, int motivo) tenemos esta funcion del tp anterior
-			// aunque los procesos ahora solo pueden encontrarse en las listas de new, ready o exit
+			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
 		}
-		sem_post(&finalizo_un_proc);
+		// sem_post(&finalizo_un_proc); VER: creo q este semaforo no se usa en ninguna parte?
 		break;
 
 		case THREAD_CREATE:
@@ -243,6 +239,7 @@ void atender_syscall()
 			
 		break;
 		case THREAD_JOIN:
+		// 	TO DO
 		break;
 		case THREAD_CANCEL:
 			/*esta syscall recibe como parámetro un TID con el objetivo de finalizarlo pasando al mismo al estado EXIT.

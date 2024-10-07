@@ -138,6 +138,7 @@ typedef struct
 {
     int prioridad;
     t_list* hilos_asociados;
+    pthread_mutex_t m_lista_prioridad;
 
 } nivel_prioridad; 
 void inicializar_estructuras();

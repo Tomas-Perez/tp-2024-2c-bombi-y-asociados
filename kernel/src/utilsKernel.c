@@ -69,13 +69,15 @@ void inicializar_estructuras_kernel()
     pthread_mutex_init(&m_hilo_a_ejecutar, NULL); //TO DO destroy de los mutex
     pthread_mutex_init(&m_lista_procesos_new, NULL);
     pthread_mutex_init(&m_lista_multinivel,NULL);
+    pthread_mutex_init(&m_lista_finalizados,NULL);
     //semaforo
     sem_init(&finalizo_un_proc, 0, 0);
-  
+    sem_init(&hilos_en_exit, 0, 0);
 	 //cola de procesos
-	 lista_de_ready = list_create();
-     lista_procesos_new = list_create();
-     lista_multinivel = list_create();
+	lista_de_ready = list_create();
+    lista_procesos_new = list_create();
+    lista_multinivel = list_create();
+    lista_finalizados = list_create();
      
 }
 
@@ -192,16 +194,17 @@ void crear_cola_nivel(int prioridad,tcb* hilo) // lo llamo asi x el nombre del a
 
 // -------------------------- Funciones planificador  --------------------------- 
 void inicializar_hilos_planificacion()
-{ // TO DO
+{ // TO DO 
     pthread_t hilo_plani_corto,hilo_plani_largo,hilo_exitt;
 
 	pthread_create(&hilo_plani_corto, NULL,(void*) planificador_corto_plazo,NULL);
-	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
-	pthread_create(&hilo_exitt,NULL, (void*) hilo_exit, NULL);
+    pthread_create(&hilo_exitt,NULL, (void*) hilo_exit, NULL);
 
+	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
+	
 	pthread_detach(hilo_plani_corto);
-	pthread_detach(hilo_plani_largo);
-	//pthread_detach(hilo_exitt); */
+	pthread_detach(hilo_plani_largo);*/
+	pthread_detach(hilo_exitt); 
     pthread_detach(hilo_plani_corto);
 }
 void desalojar_proceso(int motivo)
@@ -303,22 +306,20 @@ void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
 }
 
 // --------------------- Finalizar ---------------------
-void finalizar_proceso(pcb *proc, int motivo)
+void finalizar_proceso(pcb *proc)
 {
-    // TO DO
+    if(!list_is_empty(proc->lista_tcb))  // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
+    {
+        finalizar_hilos_proceso(proc);
+    }
+    avisar_memoria_liberar_pcb(proc);
+    list_destroy(proc->lista_tcb);
+    free(proc->path_proc);
+
 }
 
-void hilo_exit()
-{
-    // TO DO
-    // aca vamos a tener que liberar los mutex (no como el tp anterior q liberamos
-    // los recursos)
-    // tambien vamos a tener que hacer algo que avise que termino este hilo x si
-    // alguno esta bloqueado esperando que termine por la syscall THREAD_JOIN
-    
-}
 
-void finalizar_hilos_proceso(pcb* proceso)
+void finalizar_hilos_proceso(pcb* proceso)  // PARA PROCESS_EXIT
 {
    
     tcb* hilo_a_finalizar;
@@ -331,8 +332,43 @@ void finalizar_hilos_proceso(pcb* proceso)
 
 void finalizar_tcb(tcb* hilo_a_finalizar)
 {
-    // TO DO
+    pthread_mutex_lock(&m_lista_finalizados);
+    list_add(lista_finalizados,hilo_a_finalizar);
+    pthread_mutex_unlock(&m_lista_finalizados);
+
+    sem_post(&hilos_en_exit);
+    sacar_de_lista_pcb(hilo_a_finalizar);  //VER: no se si conviene ponerlo en hilo exit
+    log_info(logger_kernel,"Finaliza el hilo <%d>", hilo_a_finalizar->tid);
 }
+
+void* hilo_exit()
+{
+	while(1)
+	{
+		sem_wait(&hilos_en_exit);
+	
+		pthread_mutex_lock(&m_lista_finalizados);
+		tcb *hilo = list_remove(lista_finalizados,0);
+		pthread_mutex_unlock(&m_lista_finalizados);
+
+        avisar_memoria_liberar_tcb(hilo);
+		
+		liberar_tcb(hilo);
+		printf("BORRAR: en hilo_exit-> termino todo");
+	}
+	
+}
+
+void liberar_tcb(tcb* hilo)
+{
+    liberar_mutexs_asociados(hilo);
+	liberar_bloqueados_x_thread_join(hilo);
+    free(hilo);
+}
+
+
+
+
 void finalizar_estructuras_kernel()
 {
     // TO DO ;/
@@ -447,6 +483,11 @@ void asignar_mutex_hilo(mutex_k* mutex,tcb* hilo)
     list_add(hilo->lista_mutex, mutex);
 }
 
+void liberar_mutexs_asociados(tcb* hilo)
+{
+    // TO DO
+}
+
 // --------------------- funciones auxiliares ---------------------
 void liberar_param_instruccion(instruccion* instrucc)
 {
@@ -456,4 +497,37 @@ void liberar_param_instruccion(instruccion* instrucc)
 		list_destroy(instrucc->parametros);
 		free(instrucc); 
 
+}
+
+void sacar_de_lista_pcb(tcb* hilo_a_sacar)
+{
+    pcb* proc_padre = hilo_a_sacar->pcb_padre_tcb;
+    bool lo_encontro;
+    lo_encontro = list_remove_element(proc_padre->lista_tcb, hilo_a_sacar);
+
+    if(lo_encontro != 0)
+    {
+        proc_padre->contador_tid--;
+        if(proc_padre <= 0)
+        {
+            finalizar_proceso(proc_padre);
+        }
+    }
+
+}
+
+
+void liberar_bloqueados_x_thread_join(tcb* hilo) 
+{
+    // TO DO
+}
+
+void avisar_memoria_liberar_tcb(tcb* hilo)
+{
+    // TO DO
+}
+
+void avisar_memoria_liberar_pcb(pcb* proc)
+{
+    // TO DO --> ver si conviene que devuelva un bool q avise q se libero bien
 }
