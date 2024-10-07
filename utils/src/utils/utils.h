@@ -24,6 +24,10 @@
 #include <pthread.h>
 #include <commons/temporal.h>
 #include <semaphore.h>
+//aniadido para fs
+#include <dirent.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 /**
  * @brief Imprime un saludo por consola
