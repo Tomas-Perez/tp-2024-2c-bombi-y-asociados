@@ -18,6 +18,7 @@ t_list* lista_multinivel;
 t_list* lista_finalizados;
 sem_t finalizo_un_proc;
 sem_t hilos_en_exit;
+sem_t hilos_en_ready;
 
 
 void agregar_a_ready(tcb* hilo)
@@ -25,7 +26,7 @@ void agregar_a_ready(tcb* hilo)
 	pthread_mutex_lock(&m_lista_de_ready);
 	list_add(lista_de_ready, hilo);
 	pthread_mutex_unlock(&m_lista_de_ready);
-	// sem_post(&hilos_en_ready)
+	sem_post(&hilos_en_ready);
 	
 }
 
@@ -46,6 +47,7 @@ void agregar_a_ready_multinivel(tcb* hilo)
 		list_add(cola_nivel->hilos_asociados, hilo);
 		pthread_mutex_unlock(&(cola_nivel->m_lista_prioridad));
 	}
+	sem_post(&hilos_en_ready);
 }
 
 tcb* hilo_prioritario_en_ready(){
@@ -120,8 +122,7 @@ void mandar_tcb_dispatch(tcb* tcb_listo)
 
 void planificador_corto_plazo()
 {
-	// semaforos!!!! binario para controlar la ejecucion y un contador para los hilos en ready
-	//TO DO -> agus
+	sem_wait(&hilos_en_ready);
 	tcb* hilo_a_ejecutar;
 
 	pthread_mutex_lock(&m_lista_de_ready);
@@ -131,8 +132,7 @@ void planificador_corto_plazo()
     	pthread_mutex_unlock(&m_lista_de_ready);
 		exit (1);
 	}
-        
-    
+      pthread_mutex_unlock(&m_lista_de_ready);   
 		
     //solicitud_de_cpu();				
     
@@ -158,6 +158,7 @@ void planificador_corto_plazo()
 	if(strcmp(algoritmo_de_planificacion,"MULTINIVEL"))
 	{
 		// muerte TO DO (queda muy sombrio?)
+
 	}
 	
 	
@@ -194,31 +195,32 @@ void atender_syscall()
 	switch(motivo)
 	{
 		case PROCESS_CREATE:
-		socket = conectarMemoria();
+			socket = conectarMemoria();
 
-		archivo = list_get(instrucc->parametros, 0); //INICIAR_PROCESO1
-		int tamanio =  list_get(instrucc->parametros, 1);//255
-		prioridad =  list_get(instrucc->parametros, 2);//1
-		printf("PRUEBA: tamanio: %d prioridad %d\n", tamanio, prioridad);
-		char* path = generar_path_archivo(archivo);//home/utnso/INICIAR_PROCESO1.txt
-		 
-		pcb* proceso_nuevo = crear_pcb(prioridad, path, tamanio);
-		pthread_mutex_lock(&m_lista_procesos_new);
-		list_add(lista_procesos_new, proceso_nuevo);
-		pthread_mutex_unlock(&m_lista_procesos_new);
-		pedir_memoria(socket);
-		
-		tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
-		iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
-		close(socket);
+			archivo = list_get(instrucc->parametros, 0); //INICIAR_PROCESO1
+			int tamanio =  list_get(instrucc->parametros, 1);//255
+			prioridad =  list_get(instrucc->parametros, 2);//1
+			printf("PRUEBA: tamanio: %d prioridad %d\n", tamanio, prioridad);
+
+			char* path = generar_path_archivo(archivo);//home/utnso/INICIAR_PROCESO1.txt
+			
+			pcb* proceso_nuevo = crear_pcb(prioridad, path, tamanio);
+			pthread_mutex_lock(&m_lista_procesos_new);
+			list_add(lista_procesos_new, proceso_nuevo);
+			pthread_mutex_unlock(&m_lista_procesos_new);
+			pedir_memoria(socket);
+			
+			tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
+			iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
+			close(socket);
 		break;
 		case PROCESS_EXIT:
 			
-		if(hilo_en_ejecucion->tid == 0)
-		{
-			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
-		}
-		// sem_post(&finalizo_un_proc); VER: creo q este semaforo no se usa en ninguna parte?
+			if(hilo_en_ejecucion->tid == 0)
+			{
+				finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
+			}
+			// sem_post(&finalizo_un_proc); VER: creo q este semaforo no se usa en ninguna parte?
 		break;
 
 		case THREAD_CREATE:
@@ -328,5 +330,6 @@ void atender_syscall()
 			usleep(cant_seg_duerme);
 		break;
 	}
+	// PREGUNTAR: 
 }
 

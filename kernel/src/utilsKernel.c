@@ -73,6 +73,7 @@ void inicializar_estructuras_kernel()
     //semaforo
     sem_init(&finalizo_un_proc, 0, 0);
     sem_init(&hilos_en_exit, 0, 0);
+    sem_init(&hilos_en_ready,0,0);
 	 //cola de procesos
 	lista_de_ready = list_create();
     lista_procesos_new = list_create();
@@ -173,8 +174,8 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
 
     inicializar_registros(nuevo_tcb);
     proc_padre->contador_tid++;
-    inicializar_registros(nuevo_tcb);
-
+    
+    
     if (nuevo_tcb == NULL)
     {
         
@@ -182,6 +183,7 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
         return NULL;
     }
     list_add(proc_padre->lista_tcb, nuevo_tcb);
+   
      return nuevo_tcb;
 }
 
@@ -336,8 +338,8 @@ void finalizar_tcb(tcb* hilo_a_finalizar)
     list_add(lista_finalizados,hilo_a_finalizar);
     pthread_mutex_unlock(&m_lista_finalizados);
 
+    sacar_de_lista_pcb(hilo_a_finalizar);
     sem_post(&hilos_en_exit);
-    sacar_de_lista_pcb(hilo_a_finalizar);  //VER: no se si conviene ponerlo en hilo exit
     log_info(logger_kernel,"Finaliza el hilo <%d>", hilo_a_finalizar->tid);
 }
 
@@ -379,6 +381,7 @@ void finalizar_estructuras_kernel()
     list_destroy(lista_procesos_new);
     //list_destroy();
     
+
 }
 // --------------------- Buscar ---------------------
 pcb *buscar_proc_lista(t_list *lista, int pid_buscado)

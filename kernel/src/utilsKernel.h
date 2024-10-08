@@ -16,7 +16,7 @@ void bloquear_por_dump(tcb* hilo);
 void finalizar_proceso(pcb *proc);
 void liberar_bloqueados_x_thread_join(tcb* hilo) ;
 void liberar_param_instruccion(instruccion* instrucc);
-//extern void agregar_a_ready_prioridades(tcb* hilo);
+extern void agregar_a_ready_multinivel(tcb* hilo);
 extern void agregar_a_ready(tcb* hilo); // TO DO: preguntar si esto es legal
 void finalizar_estructuras_kernel();
 void inicializar_estructuras_kernel();
@@ -49,6 +49,7 @@ extern pthread_mutex_t m_lista_multinivel;
 extern pthread_mutex_t m_lista_finalizados;
 extern sem_t finalizo_un_proc;
 extern sem_t hilos_en_exit;
+extern sem_t hilos_en_ready;
 
 extern t_list* lista_de_ready;
 extern t_list* lista_procesos_new;
