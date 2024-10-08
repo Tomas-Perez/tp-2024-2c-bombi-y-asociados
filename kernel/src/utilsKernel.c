@@ -527,10 +527,13 @@ void liberar_bloqueados_x_thread_join(tcb* hilo)
 
 void avisar_memoria_liberar_tcb(tcb* hilo)
 {
-    // TO DO
+    // TO DO pid y tid crear buffer y despues usar
+    // buffer_add_uint32(t_buffer *buffer, uint32_t data) THREAD_EXIT 
 }
 
 void avisar_memoria_liberar_pcb(pcb* proc)
 {
-    // TO DO --> ver si conviene que devuelva un bool q avise q se libero bien
+    // TO DO --> ver si conviene que devuelva un bool q avise q se libero bien PROCESS_EXIT
+
+    //pid 
 }

@@ -202,9 +202,9 @@ void atender_syscall()
 			prioridad =  list_get(instrucc->parametros, 2);//1
 			printf("PRUEBA: tamanio: %d prioridad %d\n", tamanio, prioridad);
 
-			char* path = generar_path_archivo(archivo);//home/utnso/INICIAR_PROCESO1.txt
+			//char* path = generar_path_archivo(archivo);//home/utnso/INICIAR_PROCESO1.txt
 			
-			pcb* proceso_nuevo = crear_pcb(prioridad, path, tamanio);
+			pcb* proceso_nuevo = crear_pcb(prioridad, archivo, tamanio);
 			pthread_mutex_lock(&m_lista_procesos_new);
 			list_add(lista_procesos_new, proceso_nuevo);
 			pthread_mutex_unlock(&m_lista_procesos_new);
