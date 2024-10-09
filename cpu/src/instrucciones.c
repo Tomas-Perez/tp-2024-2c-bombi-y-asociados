@@ -233,49 +233,62 @@ void log_instruccion(instruccion *inst)
     log_info(logger_cpu, "El valor del registro es %i", *valor_registro);
 }
 
-// SYSCALLS 
+// SYSCALLS
 // MANDAR PARAMETROS A KERNEL Y CONTEXTO A MEMORIA
 
 void dump_memory(instruccion *inst)
 {
+    devolver_lista_instrucciones(DUMP_MEMORY, inst);
 }
 
 void io(instruccion *inst)
 {
+    devolver_lista_instrucciones(IO, inst);
 }
 
 void process_create(instruccion *inst)
 {
+    devolver_lista_instrucciones(PROCESS_CREATE, inst);
 }
 
 void thread_create(instruccion *inst)
 {
+    devolver_lista_instrucciones(THREAD_CREATE, inst);
 }
 
 void thread_join(instruccion *inst)
 {
+    devolver_lista_instrucciones(THREAD_JOIN, inst);
 }
 
 void thread_cancel(instruccion *inst)
 {
+
+    devolver_lista_instrucciones(THREAD_CANCEL, inst);
 }
 
 void mutex_create(instruccion *inst)
 {
+
+    devolver_lista_instrucciones(MUTEX_CREATE, inst);
 }
 
 void mutex_lock(instruccion *inst)
 {
+    devolver_lista_instrucciones(MUTEX_LOCK, inst);
 }
 
 void mutex_unlock(instruccion *inst)
 {
+    devolver_lista_instrucciones(MUTEX_UNLOCK, inst);
 }
 
 void thread_exit(instruccion *inst)
 {
+    devolver_lista_instrucciones(THREAD_EXIT, inst);
 }
 
 void process_exit(instruccion *inst)
 {
+    devolver_lista_instrucciones(PROCESS_EXIT, inst);
 }

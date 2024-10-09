@@ -267,3 +267,19 @@ void empaquetar_contexto(t_paquete *paquete)
     // agregar_a_paquete_solo(dev_contexto, base, sizeof(uint32_t));
     // agregar_a_paquete_solo(dev_contexto, limite, sizeof(uint32_t));
 }
+
+void devolver_lista_instrucciones(int motivo, instruccion *info)
+{
+
+    t_paquete *paquete_instrucciones = crear_paquete(motivo);
+
+    for (int i = 0; i < list_size(info->parametros); i++)
+    {
+        char *aux = list_get(info->parametros, i);
+        // printf("%s\n",aux);
+        agregar_a_paquete(paquete_instrucciones, aux, strlen(aux) + 1);
+    }
+    devolver_contexto_de_ejecucion(pid, tid);
+    enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
+    eliminar_paquete(paquete_instrucciones);
+}

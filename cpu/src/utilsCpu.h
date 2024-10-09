@@ -16,8 +16,13 @@ void pedir_contexto_cpu(int pid, int tid);
 void devolver_contexto_de_ejecucion(int pid, int tid);
 void empaquetar_contexto(t_paquete *paquete);
 
+// FUNCION PARA MANDAR PARAMETROS A KERNEL
+
+void devolver_lista_instrucciones(int motivo, instruccion *info);
+
 extern t_log* logger_cpu;
 extern int tid;
 extern int pid;
 extern int socket_memoria;
 extern t_registros_cpu registros_cpu;
+extern int conexion_dispatch;

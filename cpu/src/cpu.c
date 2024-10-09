@@ -65,9 +65,6 @@ int atenderCpuDispatch()
         int cod_op = recibir_operacion(conexion_dispatch);
         switch (cod_op)
         {
-        case MENSAJE:
-            // recibir_mensaje(conexion_dispatch);
-            break;
         case OP_ENVIO_TCB:
             recibir_tcb(conexion_dispatch); // recibe pcb y tcb para solicitar contexto a memoria
             pedir_contexto_cpu(pid, tid);

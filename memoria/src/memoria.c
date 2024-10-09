@@ -109,6 +109,8 @@ int atenderCpu(int *socket_cpu)
 
         free(buffer);
 
+        usleep(retardo_rta * 1000);
+
         t_proceso *proceso = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
         t_hilo *hilo = buscar_hilo(proceso, tid);
 
@@ -129,6 +131,8 @@ int atenderCpu(int *socket_cpu)
         t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
         t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid);
 
+        usleep(retardo_rta * 1000);
+
         actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar); // Falta ver base y limite
 
         log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
@@ -139,8 +143,10 @@ int atenderCpu(int *socket_cpu)
 
         break;
     case READ_MEM:
+        enviar_mensaje("OK", *socket_cpu);
         break;
     case WRITE_MEM:
+        enviar_mensaje("OK", *socket_cpu);
         break;
     default:
         log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
@@ -224,7 +230,65 @@ int atenderKernel(int *socket_kernel)
         break;
     case PROCESS_EXIT:
         break;
-    case THREAD_CREATE:
+    case INICIAR_HILO:
+        int size_hilo = 0;
+        char *path_hilo;
+        buffer = recibir_buffer(&size, *socket_kernel); // recibimos TCB
+
+        if (buffer == NULL)
+        {
+            log_info(logger_memoria, "Error al recibir el buffer\n");
+            return -1;
+        }
+
+        pid = buffer_read_uint32(buffer);
+        tid = buffer_read_uint32(buffer);
+
+        uint32_t size_path_hilo = buffer_read_uint32(buffer);
+
+        path_hilo = malloc(size_path_hilo + 1); // asignamos memoria, +1 para el carácter nulo
+        if (path_hilo == NULL)
+        {
+            log_info(logger_memoria, "Error al asignar memoria para path_kernel\n");
+            return -1;
+        }
+
+        path_hilo = buffer_read_string(buffer, size_path_hilo);
+        path_hilo[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+
+        char *path_hilo_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_hilo) + 1); // VER QUE ONDA PATH INSTRUCCIONES
+        if (path_hilo_completo == NULL)
+        {
+            log_info(logger_memoria, "Error al asignar memoria para path_script_completo\n");
+            free(path_hilo);
+            return -1;
+        }
+        strcpy(path_hilo_completo, path_instrucciones);
+        strcat(path_hilo_completo, path_hilo);      
+
+        usleep(retardo_rta * 1000);
+
+        printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
+
+        FILE *file_hilo;
+        if (!(file_hilo = fopen(path_hilo_completo, "r")))
+        { // ABRE EL ARCHIVO PARA LECTURA
+            log_info(logger_memoria, "No se encontro el archivo de instrucciones\n");
+            free(path_hilo_completo);
+            free(path_hilo);
+            return -1;
+        }
+
+        free(path_script_completo);
+        free(path_hilo);
+        free(buffer);
+
+        t_proceso *proceso_padre = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
+        t_hilo *hilo_nuevo = malloc(sizeof(t_hilo));
+
+        inicializar_hilo(proceso_padre, tid, hilo_nuevo, file_hilo);
+
+        list_add(proceso_padre->tids, hilo_nuevo);
         break;
     case THREAD_EXIT:
         break;
