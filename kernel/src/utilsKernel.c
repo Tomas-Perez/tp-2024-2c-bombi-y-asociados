@@ -573,9 +573,14 @@ void sacar_de_lista_pcb(tcb* hilo_a_sacar)
 
 void liberar_bloqueados_x_thread_join(tcb* hilo) 
 {
-    // TO DO
-    //for(;)
-    //hilo->bloq_x_join
+    tcb* aux;
+    if (hilo->block_join != NULL && list_size(hilo->block_join) > 0){
+        for (int i = 0; i < list_size(hilo->block_join); i++){
+            aux = list_remove(hilo->block_join, i);
+            agregar_a_ready_segun_alg(aux);
+        }
+    }
+    list_destroy(hilo->block_join);
 }
 
 void avisar_memoria_liberar_tcb(tcb* hilo)

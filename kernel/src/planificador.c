@@ -308,10 +308,9 @@ void atender_syscall()
 		if(tcb_invocado != NULL){
 		pthread_mutex_lock(&m_hilo_a_ejecutar);
         list_add(tcb_invocado->block_join, hilo_en_ejecucion);
-		hilo_en_ejecucion = tcb_invocado; //FORO si pasa a running de una o espera su turno 
 		pthread_mutex_unlock(&m_hilo_a_ejecutar);}
 
-
+		hilo_en_ejecucion = NULL; 
 		break;
 		case THREAD_CANCEL:
 			tid = list_get(instrucc->parametros, 0);
