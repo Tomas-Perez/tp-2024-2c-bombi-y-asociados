@@ -11,8 +11,8 @@ t_log* logger_kernel;
 // 1) Archivo inicial 
 // 2) Inicializar
 // 3) Crear
+// 4) Funciones planificador
 // 4) Pedidos memoria
-// 5) Hilos planificador
 // 5) Parametros
 // 6) Iniciar hilos
 // 7) Finalizar
@@ -65,11 +65,13 @@ void inicializar_estructuras_kernel()
 	//mutex 
 	pthread_mutex_init(&m_hilo_en_ejecucion,NULL);
 	pthread_mutex_init(&m_lista_de_ready,NULL);
+   // pthread_mutex_init(&m_lista_bloqueados,NULL);
 	pthread_mutex_init(&m_regreso_de_cpu,NULL);
     pthread_mutex_init(&m_hilo_a_ejecutar, NULL); //TO DO destroy de los mutex
     pthread_mutex_init(&m_lista_procesos_new, NULL);
     pthread_mutex_init(&m_lista_multinivel,NULL);
     pthread_mutex_init(&m_lista_finalizados,NULL);
+    pthread_mutex_init(&m_lista_prioridad,NULL);
     //semaforo
     sem_init(&finalizo_un_proc, 0, 0);
     sem_init(&hilos_en_exit, 0, 0);
@@ -171,6 +173,7 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
     nuevo_tcb->tid = proc_padre->contador_tid;
     nuevo_tcb->pcb_padre_tcb = proc_padre;
     nuevo_tcb->prioridad = prioridad;
+    nuevo_tcb->block_join = list_create();
 
     inicializar_registros(nuevo_tcb);
     proc_padre->contador_tid++;
@@ -197,7 +200,7 @@ void crear_cola_nivel(int prioridad,tcb* hilo) // lo llamo asi x el nombre del a
 // -------------------------- Funciones planificador  --------------------------- 
 void inicializar_hilos_planificacion()
 { // TO DO 
-    pthread_t hilo_plani_corto,hilo_plani_largo,hilo_exitt;
+    pthread_t hilo_plani_corto,hilo_exitt;
 
 	pthread_create(&hilo_plani_corto, NULL,(void*) planificador_corto_plazo,NULL);
     pthread_create(&hilo_exitt,NULL, (void*) hilo_exit, NULL);
@@ -209,7 +212,17 @@ void inicializar_hilos_planificacion()
 	pthread_detach(hilo_exitt); 
     pthread_detach(hilo_plani_corto);
 }
-void desalojar_proceso(int motivo)
+
+void mandar_tcb_dispatch(tcb* tcb_listo)
+{
+	// TO DO 
+	t_paquete* tcb_a_dispatch = crear_paquete(OP_ENVIO_TCB);
+	// Preguntar tomi funciones nuevas
+	enviar_paquete(tcb_a_dispatch,conexion_dispatch);
+}
+
+
+void desalojar_hilo(int motivo)
 {
     // VER solo copie la funcion de nuestro tp
 
@@ -219,12 +232,29 @@ void desalojar_proceso(int motivo)
 	enviar_paquete(paquete_a_desalojar, conexion_interrupt);
 	eliminar_paquete(paquete_a_desalojar);
 }
-void* desalojar_por_RR(pcb* pcb)
+
+void* desalojar_por_RR(tcb* hilo)
 {
-    
+    usleep(quantum*1000);
+    if(hilo_en_ejecucion->tid == hilo->tid)
+	{		
+		desalojar_hilo(RR);
+		log_info(logger_kernel,"TID: <%d> - Desalojado por fin de Quantum",hilo->tid);
+		return;
+	}
 }
 
-
+void agregar_a_ready_segun_alg(tcb* hilo)
+{
+	if(strcmp(algoritmo_de_planificacion, "MULTINIVEL") == 0)
+	{
+		agregar_a_ready_multinivel(hilo);
+	}
+	else
+	{
+		agregar_a_ready(hilo);
+	}
+}
 // // -------------------------- Parametros  --------------------------- 
 void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
 		int cod_op = recibir_operacion(conexion_dispatch);
@@ -278,9 +308,12 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
 // --------------------- Iniciar hilos ---------------------
 void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
         
+        uint32_t size_path_hilo = sizeof(path);
         // TO DO opcional: usar funcion tomi
         t_paquete *paquete = crear_paquete(INICIAR_HILO);
+        agregar_a_paquete_solo(paquete, &(hilo->pcb_padre_tcb->pid), sizeof(uint32_t));
         agregar_a_paquete_solo(paquete, &(hilo->tid), sizeof(uint32_t));
+        agregar_a_paquete_solo(paquete, &(size_path_hilo), sizeof(uint32_t));
         agregar_a_paquete(paquete, path, strlen(path) + 1);
         enviar_paquete(paquete, conexion_memoria);
         eliminar_paquete(paquete);
@@ -446,7 +479,7 @@ t_list* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
 }*/
 nivel_prioridad* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
 {
-    nivel_prioridad* aux;
+    //nivel_prioridad* aux;
     bool _existe_nivel(void* ptr)
     {
         nivel_prioridad* aux = (nivel_prioridad*) ptr;
@@ -461,6 +494,24 @@ nivel_prioridad* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
     }
     return NULL;
 }
+
+
+nivel_prioridad* encontrar_nivel_mas_prioritario(t_list* multinivel)
+{
+    nivel_prioridad* mayor_prioridad;
+
+    void* _max_prioridad(void* a, void* b) {
+        nivel_prioridad* nivel_a = (nivel_prioridad*) a;
+        nivel_prioridad* nivel_b = (nivel_prioridad*) b;
+        
+    return nivel_a->prioridad  >= nivel_b->prioridad ? nivel_a : nivel_b;
+    }
+
+    mayor_prioridad = list_get_maximum(multinivel, _max_prioridad);
+    return mayor_prioridad;
+}
+
+
 // --------------------- Dump ---------------------
 
 void bloquear_por_dump(tcb* hilo) 
@@ -523,6 +574,8 @@ void sacar_de_lista_pcb(tcb* hilo_a_sacar)
 void liberar_bloqueados_x_thread_join(tcb* hilo) 
 {
     // TO DO
+    //for(;)
+    //hilo->bloq_x_join
 }
 
 void avisar_memoria_liberar_tcb(tcb* hilo)

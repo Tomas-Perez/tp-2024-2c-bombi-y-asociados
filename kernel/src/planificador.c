@@ -5,17 +5,20 @@ int indice;
 tcb* hilo_en_ejecucion; 
 pthread_mutex_t m_hilo_en_ejecucion;
 pthread_mutex_t m_lista_de_ready;
+pthread_mutex_t m_lista_de_bloqueados;
 pthread_mutex_t m_regreso_de_cpu;
 pthread_mutex_t m_hilo_a_ejecutar;
 pthread_mutex_t m_lista_procesos_new;
 pthread_mutex_t m_indice;
 pthread_mutex_t m_lista_multinivel; 
 pthread_mutex_t m_lista_finalizados;
+pthread_mutex_t m_lista_prioridad;
 
 t_list* lista_de_ready;
 t_list* lista_procesos_new;
 t_list* lista_multinivel;
 t_list* lista_finalizados;
+t_list* lista_bloqueados;
 sem_t finalizo_un_proc;
 sem_t hilos_en_exit;
 sem_t hilos_en_ready;
@@ -110,13 +113,7 @@ void pasar_a_running_tcb_prioridades(){
     hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 }
 
-void mandar_tcb_dispatch(tcb* tcb_listo)
-{
-	// TO DO 
-	t_paquete* tcb_a_dispatch = crear_paquete(OP_ENVIO_TCB);
-	// Preguntar tomi funciones nuevas
-	enviar_paquete(tcb_a_dispatch,conexion_dispatch);
-}
+
    
 
 
@@ -150,14 +147,27 @@ void planificador_corto_plazo()
 		}	
 		pthread_mutex_unlock(&m_hilo_a_ejecutar);
 		pasar_a_running_tcb(hilo_a_ejecutar);
+		atender_syscall();
 	}
 	if(strcmp(algoritmo_de_planificacion,"PRIORIDADES"))
 	{
 		pasar_a_running_tcb_prioridades();
+		atender_syscall();
 	}
 	if(strcmp(algoritmo_de_planificacion,"MULTINIVEL"))
 	{
-		// muerte TO DO (queda muy sombrio?)
+		nivel_prioridad* mayor_nivel;
+		
+		mayor_nivel = encontrar_nivel_mas_prioritario(lista_multinivel);
+		pthread_mutex_lock(&m_lista_prioridad);
+		hilo_a_ejecutar = list_remove(mayor_nivel->hilos_asociados,0);
+		pthread_mutex_unlock(&m_lista_prioridad);
+		pasar_a_running_tcb(hilo_a_ejecutar);
+
+		pthread_t tround_robin;
+		atender_syscall();		
+		pthread_create(&tround_robin, NULL, (void*) desalojar_por_RR, (void*) hilo_a_ejecutar);
+		pthread_detach(tround_robin);
 
 	}
 	
@@ -176,6 +186,51 @@ tcb* buscar_TID(tcb* tcb_pedido, int tid_buscado){
     
     return NULL;
 }
+tcb* buscar_hilos_listas(tcb* main, int tid){
+	tcb* hilo = buscar_TID(main, tid);
+	bool confirmacion = 0;
+	if (hilo != NULL) {
+		pthread_mutex_lock(&m_lista_de_ready);
+        confirmacion = list_remove_element(lista_de_ready, hilo);
+		pthread_mutex_unlock(&m_lista_de_ready);
+        if (confirmacion) {
+            return hilo;  
+        }
+        
+		if(strcmp(algoritmo_de_planificacion,"MULTINIVEL")){
+			buscar_hilo_en_multinivel(hilo->prioridad, hilo->tid);
+		}
+
+    }
+
+
+    return NULL;
+	}
+
+
+	tcb* buscar_hilo_en_multinivel(int prioridad, int tid) {
+    for (int i = 0; i < list_size(lista_multinivel); i++) {
+        nivel_prioridad* cola_aux = list_get(lista_multinivel, i);
+        
+        if (cola_aux->prioridad == prioridad) {
+           
+            pthread_mutex_lock(&(cola_aux->m_lista_prioridad));
+            
+            for (int j = 0; j < list_size(cola_aux->hilos_asociados); j++) {
+                tcb* hilo = list_get(cola_aux->hilos_asociados, j);
+                if (hilo->tid == tid) {
+                   	list_remove(cola_aux->hilos_asociados, i);
+                    pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
+                    return hilo; 
+           		 }
+            
+				pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
+			}
+		}
+				
+	}
+			return NULL;
+}
 
 
 void atender_syscall()
@@ -183,6 +238,7 @@ void atender_syscall()
 	int motivo;
 	int socket;
 	int prioridad;
+	int tid;
 	char* archivo;
 	instruccion* instrucc = malloc(sizeof(instruccion));
 	instrucc->parametros = list_create();
@@ -194,6 +250,11 @@ void atender_syscall()
 	
 	switch(motivo)
 	{
+		case RR:
+			hilo_en_ejecucion = NULL;
+			sem_post(&hilos_en_ready);
+			agregar_a_ready_segun_alg(hilo_en_ejecucion);
+		break;
 		case PROCESS_CREATE:
 			socket = conectarMemoria();
 
@@ -241,16 +302,21 @@ void atender_syscall()
 			
 		break;
 		case THREAD_JOIN:
-		// 	TO DO
+		tid = list_get(instrucc->parametros, 0);
+		tcb* tcb_invocado = buscar_hilos_listas(hilo_en_ejecucion,tid);
+
+		if(tcb_invocado != NULL){
+		pthread_mutex_lock(&m_hilo_a_ejecutar);
+        list_add(tcb_invocado->block_join, hilo_en_ejecucion);
+		hilo_en_ejecucion = tcb_invocado; //FORO si pasa a running de una o espera su turno 
+		pthread_mutex_unlock(&m_hilo_a_ejecutar);}
+
+
 		break;
 		case THREAD_CANCEL:
-			/*esta syscall recibe como parámetro un TID con el objetivo de finalizarlo pasando al mismo al estado EXIT.
-			 Se deberá indicar a la Memoria la finalización de dicho hilo. 
-			 En caso de que el TID pasado por parámetro no exista o ya haya finalizado, 
-			 esta syscall no hace nada. Finalmente, el hilo que la invocó continuará su ejecución.*/
-			 int tid = list_get(instrucc->parametros, 0);
+			tid = list_get(instrucc->parametros, 0);
 			 tcb* hilo_a_finalizar;
-			hilo_a_finalizar = buscar_TID(hilo_en_ejecucion,tid);
+			hilo_a_finalizar = buscar_hilos_listas(hilo_en_ejecucion,tid);
 			if(hilo_a_finalizar != NULL){
 				//asegurarse que no esta en exit para no finalizarlo 2 veces 
 				// por ahi mejor fijarse en finalizar_tcb
@@ -328,8 +394,13 @@ void atender_syscall()
 		case IO:
 			int cant_seg_duerme = list_get(instrucc->parametros, 0);
 			usleep(cant_seg_duerme);
+			 log_info(logger_kernel,"## (<PID>:<TID>) finalizó IO y pasa a READY", 
+			 hilo_en_ejecucion->pcb_padre_tcb->contador_tid,hilo_en_ejecucion->tid);
+			agregar_a_ready_segun_alg(hilo_en_ejecucion);
+			hilo_en_ejecucion = NULL;
 		break;
 	}
 	// PREGUNTAR: 
 }
+
 
