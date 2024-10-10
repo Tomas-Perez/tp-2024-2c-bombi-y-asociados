@@ -229,6 +229,19 @@ int atenderKernel(int *socket_kernel)
 
         break;
     case PROCESS_EXIT:
+        buffer = recibir_buffer(&size, *socket_kernel); // recibimos pid
+
+        if (buffer == NULL)
+        {
+            log_info(logger_memoria, "Error al recibir el buffer\n");
+            return -1;
+        }
+
+        pid = buffer_read_uint32(buffer);
+        // FALTA LIBERAR ESPACIO ASIGNADO EN MEMORIA
+        eliminar_proceso(pid); // elimina las estructuras administrativas
+        // enviar OK
+        free(buffer);
         break;
     case INICIAR_HILO:
         int size_hilo = 0;
@@ -264,7 +277,7 @@ int atenderKernel(int *socket_kernel)
             return -1;
         }
         strcpy(path_hilo_completo, path_instrucciones);
-        strcat(path_hilo_completo, path_hilo);      
+        strcat(path_hilo_completo, path_hilo);
 
         usleep(retardo_rta * 1000);
 
@@ -291,6 +304,21 @@ int atenderKernel(int *socket_kernel)
         list_add(proceso_padre->tids, hilo_nuevo);
         break;
     case THREAD_EXIT:
+        buffer = recibir_buffer(&size, *socket_kernel); // recibimos TID, PID
+
+        if (buffer == NULL)
+        {
+            log_info(logger_memoria, "Error al recibir el buffer\n");
+            return -1;
+        }
+
+        pid = buffer_read_uint32(buffer);
+        tid = buffer_read_uint32(buffer);
+
+        eliminar_hilo(pid,tid);
+        // MANDAR OK
+        free(buffer);
+
         break;
     case DUMP_MEMORY:
         break;
