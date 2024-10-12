@@ -11,8 +11,8 @@ t_log* logger_kernel;
 // 1) Archivo inicial 
 // 2) Inicializar
 // 3) Crear
+// 4) Funciones planificador
 // 4) Pedidos memoria
-// 5) Hilos planificador
 // 5) Parametros
 // 6) Iniciar hilos
 // 7) Finalizar
@@ -65,53 +65,45 @@ void inicializar_estructuras_kernel()
 	//mutex 
 	pthread_mutex_init(&m_hilo_en_ejecucion,NULL);
 	pthread_mutex_init(&m_lista_de_ready,NULL);
+   // pthread_mutex_init(&m_lista_bloqueados,NULL);
 	pthread_mutex_init(&m_regreso_de_cpu,NULL);
     pthread_mutex_init(&m_hilo_a_ejecutar, NULL); //TO DO destroy de los mutex
     pthread_mutex_init(&m_lista_procesos_new, NULL);
     pthread_mutex_init(&m_lista_multinivel,NULL);
+    pthread_mutex_init(&m_lista_finalizados,NULL);
+    pthread_mutex_init(&m_lista_prioridad,NULL);
     //semaforo
     sem_init(&finalizo_un_proc, 0, 0);
-  
+    sem_init(&hilos_en_exit, 0, 0);
+    sem_init(&hilos_en_ready,0,0);
 	 //cola de procesos
-	 lista_de_ready = list_create();
-     lista_procesos_new = list_create();
-     lista_multinivel = list_create();
+	lista_de_ready = list_create();
+    lista_procesos_new = list_create();
+    lista_multinivel = list_create();
+    lista_finalizados = list_create();
      
 }
 
-void inicializar_cola_nivel_prioridad(nivel_prioridad* nuevo_nivel)
-{
-    nuevo_nivel->hilos_asociados = list_create();
-    pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
-}
+
 
 // --------------------------- Pedidos memoria ---------------------------
 void pedir_memoria(int socket)
 { 
    
-    //TO DO -> mili :) 
-    // con el socket sale la conexion
-    // mandar a memoria el motivo PROCESS_CREATE,
-    // mandar en este orden
-
-    // 1) el pid 2) el tam proc 3) tam path 4) el path, los chicos se van a encargar de verificar si hay suficiente
-    // memoria para abrir el archivo y si no volvemos a 
-    // hacer recv para confirmacion, seguro nos mandan un bool
-    // el segundo parámetro es el tamaño del proceso en Memoria y 
-    //el tercer parámetro es la prioridad del hilo main (TID 0)
-
+        pthread_mutex_lock(&m_lista_procesos_new);
        pcb* proceso_nuevo = list_get(lista_procesos_new, 0);
-
+        pthread_mutex_unlock(&m_lista_procesos_new);
         int pid = proceso_nuevo->pid;
         int tamanio = proceso_nuevo->tam_proc;
         char* path = proceso_nuevo->path_proc;
         int motivo = PROCESS_CREATE; //preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
-
+        uint32_t size_path_hilo = sizeof(path);
+        
 
         t_paquete* pedido_memoria = crear_paquete(motivo);
 		agregar_a_paquete(pedido_memoria, &pid,sizeof(int));
         agregar_a_paquete(pedido_memoria, &tamanio, sizeof(int));
-        //agregar_a_paquete // ponemos el tam del path?
+        agregar_a_paquete_solo(pedido_memoria, &(size_path_hilo), sizeof(uint32_t));
         agregar_a_paquete(pedido_memoria, path, strlen(path) + 1);// PATH PREGUNTAR
 
         enviar_paquete(pedido_memoria,socket);
@@ -127,14 +119,14 @@ void pedir_memoria(int socket)
             pedir_memoria(socket);	
         }
         else {
+                pthread_mutex_lock(&m_lista_procesos_new);
                 list_remove(lista_procesos_new, 0);
+                pthread_mutex_unlock(&m_lista_procesos_new);
         }
         
 }
 
-//void avisar_memoria(tcb hilo, char* path){
-    // TO DO (creo, no se si la hicimos con otro nombre)
-//}
+
 //  --------------------------- Crear  --------------------------- 
 
 pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
@@ -168,11 +160,12 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
     nuevo_tcb->tid = proc_padre->contador_tid;
     nuevo_tcb->pcb_padre_tcb = proc_padre;
     nuevo_tcb->prioridad = prioridad;
+    nuevo_tcb->block_join = list_create();
 
     inicializar_registros(nuevo_tcb);
     proc_padre->contador_tid++;
-    inicializar_registros(nuevo_tcb);
-
+    
+    
     if (nuevo_tcb == NULL)
     {
         
@@ -180,31 +173,55 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
         return NULL;
     }
     list_add(proc_padre->lista_tcb, nuevo_tcb);
+   
      return nuevo_tcb;
 }
 
-void crear_cola_nivel(int prioridad,tcb* hilo) // lo llamo asi x el nombre del alg pero creo una lista
+void crear_cola_nivel(int prioridad, tcb* hilo, nivel_prioridad* nuevo_nivel) 
 {
-    // crear la lista y agregar el hilo 
-    // list add sorted para la cola multinivel
+    nuevo_nivel->prioridad = prioridad;
+    nuevo_nivel->hilos_asociados = list_create();
+    pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
+
+    pthread_mutex_lock(&nuevo_nivel->m_lista_prioridad);
+    list_add(nuevo_nivel->hilos_asociados, hilo);
+    pthread_mutex_unlock(&nuevo_nivel->m_lista_prioridad);
+
+    pthread_mutex_lock(&m_lista_multinivel);
+    list_add(lista_multinivel, nuevo_nivel);
+    pthread_mutex_unlock(&m_lista_multinivel);
+    // VER: nos habian dicho q usemos list_add_sorted pero como
+    // cuando lo pasamos a running encontramos el mayor nivel de prioridad
+    // creo q no hace falta
+
 }
 
 
 // -------------------------- Funciones planificador  --------------------------- 
 void inicializar_hilos_planificacion()
-{ // TO DO
-    pthread_t hilo_plani_corto,hilo_plani_largo,hilo_exitt;
+{ 
+    pthread_t hilo_plani_corto,hilo_exitt;
 
 	pthread_create(&hilo_plani_corto, NULL,(void*) planificador_corto_plazo,NULL);
-	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
-	pthread_create(&hilo_exitt,NULL, (void*) hilo_exit, NULL);
+    pthread_create(&hilo_exitt,NULL, (void*) hilo_exit, NULL);
 
-	pthread_detach(hilo_plani_corto);
-	pthread_detach(hilo_plani_largo);
-	//pthread_detach(hilo_exitt); */
+	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
+	
+	pthread_detach(hilo_plani_largo);*/
+	pthread_detach(hilo_exitt); 
     pthread_detach(hilo_plani_corto);
 }
-void desalojar_proceso(int motivo)
+
+void mandar_tcb_dispatch(tcb* tcb_listo)
+{
+	// TO DO 
+	t_paquete* tcb_a_dispatch = crear_paquete(OP_ENVIO_TCB);
+	// Preguntar tomi funciones nuevas
+	enviar_paquete(tcb_a_dispatch,conexion_dispatch);
+}
+
+
+void desalojar_hilo(int motivo)
 {
     // VER solo copie la funcion de nuestro tp
 
@@ -214,12 +231,29 @@ void desalojar_proceso(int motivo)
 	enviar_paquete(paquete_a_desalojar, conexion_interrupt);
 	eliminar_paquete(paquete_a_desalojar);
 }
-void* desalojar_por_RR(pcb* pcb)
+
+void* desalojar_por_RR(tcb* hilo)
 {
-    
+    usleep(quantum*1000);
+    if(hilo_en_ejecucion->tid == hilo->tid)
+	{		
+		desalojar_hilo(RR);
+		log_info(logger_kernel,"TID: <%d> - Desalojado por fin de Quantum",hilo->tid);
+		return;
+	}
 }
 
-
+void agregar_a_ready_segun_alg(tcb* hilo)
+{
+	if(strcmp(algoritmo_de_planificacion, "MULTINIVEL") == 0)
+	{
+		agregar_a_ready_multinivel(hilo);
+	}
+	else
+	{
+		agregar_a_ready(hilo);
+	}
+}
 // // -------------------------- Parametros  --------------------------- 
 void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
 		int cod_op = recibir_operacion(conexion_dispatch);
@@ -273,9 +307,11 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
 // --------------------- Iniciar hilos ---------------------
 void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
         
-        // TO DO opcional: usar funcion tomi
+        uint32_t size_path_hilo = sizeof(path);
         t_paquete *paquete = crear_paquete(INICIAR_HILO);
+        agregar_a_paquete_solo(paquete, &(hilo->pcb_padre_tcb->pid), sizeof(uint32_t));
         agregar_a_paquete_solo(paquete, &(hilo->tid), sizeof(uint32_t));
+        agregar_a_paquete_solo(paquete, &(size_path_hilo), sizeof(uint32_t));
         agregar_a_paquete(paquete, path, strlen(path) + 1);
         enviar_paquete(paquete, conexion_memoria);
         eliminar_paquete(paquete);
@@ -303,22 +339,20 @@ void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
 }
 
 // --------------------- Finalizar ---------------------
-void finalizar_proceso(pcb *proc, int motivo)
+void finalizar_proceso(pcb *proc)
 {
-    // TO DO
+    if(!list_is_empty(proc->lista_tcb))  // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
+    {
+        finalizar_hilos_proceso(proc);
+    }
+    avisar_memoria_liberar_pcb(proc);
+    list_destroy(proc->lista_tcb); // VER o este? list_destroy_and_destroy_elements(proc->lista_tcb);
+    free(proc->path_proc); 
+    free(proc);
 }
 
-void hilo_exit()
-{
-    // TO DO
-    // aca vamos a tener que liberar los mutex (no como el tp anterior q liberamos
-    // los recursos)
-    // tambien vamos a tener que hacer algo que avise que termino este hilo x si
-    // alguno esta bloqueado esperando que termine por la syscall THREAD_JOIN
-    
-}
 
-void finalizar_hilos_proceso(pcb* proceso)
+void finalizar_hilos_proceso(pcb* proceso)  // PARA PROCESS_EXIT
 {
    
     tcb* hilo_a_finalizar;
@@ -331,8 +365,43 @@ void finalizar_hilos_proceso(pcb* proceso)
 
 void finalizar_tcb(tcb* hilo_a_finalizar)
 {
-    // TO DO
+    pthread_mutex_lock(&m_lista_finalizados);
+    list_add(lista_finalizados,hilo_a_finalizar);
+    pthread_mutex_unlock(&m_lista_finalizados);
+
+    sacar_de_lista_pcb(hilo_a_finalizar);
+    sem_post(&hilos_en_exit);
+    log_info(logger_kernel,"Finaliza el hilo <%d>", hilo_a_finalizar->tid);
 }
+
+void* hilo_exit()
+{
+	while(1)
+	{
+		sem_wait(&hilos_en_exit);
+	
+		pthread_mutex_lock(&m_lista_finalizados);
+		tcb *hilo = list_remove(lista_finalizados,0);
+		pthread_mutex_unlock(&m_lista_finalizados);
+
+        avisar_memoria_liberar_tcb(hilo);
+		
+		liberar_tcb(hilo);
+		printf("BORRAR: en hilo_exit-> termino todo");
+	}
+	
+}
+
+void liberar_tcb(tcb* hilo)
+{
+    liberar_mutexs_asociados(hilo);
+	liberar_bloqueados_x_thread_join(hilo);
+    free(hilo);
+}
+
+
+
+
 void finalizar_estructuras_kernel()
 {
     // TO DO ;/
@@ -343,6 +412,7 @@ void finalizar_estructuras_kernel()
     list_destroy(lista_procesos_new);
     //list_destroy();
     
+
 }
 // --------------------- Buscar ---------------------
 pcb *buscar_proc_lista(t_list *lista, int pid_buscado)
@@ -407,7 +477,7 @@ t_list* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
 }*/
 nivel_prioridad* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
 {
-    nivel_prioridad* aux;
+    //nivel_prioridad* aux;
     bool _existe_nivel(void* ptr)
     {
         nivel_prioridad* aux = (nivel_prioridad*) ptr;
@@ -422,6 +492,24 @@ nivel_prioridad* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
     }
     return NULL;
 }
+
+
+nivel_prioridad* encontrar_nivel_mas_prioritario(t_list* multinivel)
+{
+    nivel_prioridad* mayor_prioridad;
+
+    void* _max_prioridad(void* a, void* b) {
+        nivel_prioridad* nivel_a = (nivel_prioridad*) a;
+        nivel_prioridad* nivel_b = (nivel_prioridad*) b;
+        
+    return nivel_a->prioridad  >= nivel_b->prioridad ? nivel_a : nivel_b;
+    }
+
+    mayor_prioridad = list_get_maximum(multinivel, _max_prioridad);
+    return mayor_prioridad;
+}
+
+
 // --------------------- Dump ---------------------
 
 void bloquear_por_dump(tcb* hilo) 
@@ -447,6 +535,11 @@ void asignar_mutex_hilo(mutex_k* mutex,tcb* hilo)
     list_add(hilo->lista_mutex, mutex);
 }
 
+void liberar_mutexs_asociados(tcb* hilo)
+{
+    // TO DO
+}
+
 // --------------------- funciones auxiliares ---------------------
 void liberar_param_instruccion(instruccion* instrucc)
 {
@@ -455,5 +548,55 @@ void liberar_param_instruccion(instruccion* instrucc)
 		}
 		list_destroy(instrucc->parametros);
 		free(instrucc); 
+
+}
+
+void sacar_de_lista_pcb(tcb* hilo_a_sacar)
+{
+    pcb* proc_padre = hilo_a_sacar->pcb_padre_tcb;
+    bool lo_encontro;
+    lo_encontro = list_remove_element(proc_padre->lista_tcb, hilo_a_sacar);
+
+    if(lo_encontro != 0)
+    {
+        proc_padre->contador_tid--;
+        if(proc_padre <= 0)
+        {
+            finalizar_proceso(proc_padre);
+        }
+    }
+
+}
+
+
+void liberar_bloqueados_x_thread_join(tcb* hilo) 
+{
+    tcb* aux;
+    if (hilo->block_join != NULL && list_size(hilo->block_join) > 0){
+        for (int i = 0; i < list_size(hilo->block_join); i++){
+            aux = list_remove(hilo->block_join, i);
+            agregar_a_ready_segun_alg(aux);
+        }
+    }
+    list_destroy(hilo->block_join);
+}
+
+void avisar_memoria_liberar_tcb(tcb* hilo)
+{
+    int socket = conectarMemoria();
+    t_paquete* t_exit = crear_paquete(THREAD_EXIT);
+    agregar_a_paquete(t_exit, &(hilo->pcb_padre_tcb->pid), sizeof(int));
+	agregar_a_paquete(t_exit, &hilo->tid, sizeof(int));
+	enviar_paquete(t_exit, socket);
+    eliminar_paquete(t_exit);
+}
+
+void avisar_memoria_liberar_pcb(pcb* proc)
+{
+    int socket = conectarMemoria();
+    t_paquete* p_exit = crear_paquete(PROCESS_EXIT);
+	agregar_a_paquete(p_exit, &proc->pid, sizeof(int));
+	enviar_paquete(p_exit, socket);
+    eliminar_paquete(p_exit);
 
 }

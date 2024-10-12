@@ -62,7 +62,8 @@ typedef enum
     OP_ENVIO_PCB,
     PEDIR_CONTEXTO,
     ACTUALIZAR_CONTEXTO,
-    OP_ENVIO_TCB
+    OP_ENVIO_TCB,
+    RR
 } op_code;
 
 typedef struct
@@ -124,6 +125,7 @@ typedef struct
     pcb* pcb_padre_tcb;
     t_registros_cpu registros_cpu;
     t_list* lista_mutex;
+    t_list* block_join;
 } tcb;
 
 typedef struct 
@@ -138,6 +140,7 @@ typedef struct
 {
     int prioridad;
     t_list* hilos_asociados;
+    pthread_mutex_t m_lista_prioridad;
 
 } nivel_prioridad; 
 void inicializar_estructuras();

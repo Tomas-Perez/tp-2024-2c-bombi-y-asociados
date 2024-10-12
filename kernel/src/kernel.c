@@ -40,10 +40,15 @@ int main(int argc, char* argv[]) {
     inicializar_hilos_planificacion();
 
      //./bin/kernel [archivo_pseudocodigo] [tamanio_proceso] [...args]
+
     int socket = conectarMemoria();
     int tam_proc = atoi(argv[2]);
+    printf("tam proc %d archivo: %s\n", tam_proc, argv[1]);
+
     pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc);
+    pthread_mutex_lock(&m_lista_procesos_new);
     list_add(lista_procesos_new, proceso_nuevo);
+    pthread_mutex_unlock(&m_lista_procesos_new);
     pedir_memoria(socket);
     
     tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
@@ -56,7 +61,10 @@ int main(int argc, char* argv[]) {
     liberar_conexion(conexion_dispatch);
     liberar_conexion(conexion_interrupt);
 
-
+    log_destroy(logger_kernel);
+    config_destroy(config_kernel);
+    finalizar_estructuras_kernel();
+    
     return 0;
 }
 

@@ -88,10 +88,10 @@ void actualizar_contexto_en_memoria(t_proceso *proceso, t_hilo *hilo, t_registro
 	hilo->registros_hilo.BX = registros.BX;
 	hilo->registros_hilo.CX = registros.CX;
 	hilo->registros_hilo.DX = registros.DX;
-	hilo->registros_hilo.EX = registros.FX;
-	hilo->registros_hilo.FX = registros.EX;
-	hilo->registros_hilo.GX = registros.AX;
-	hilo->registros_hilo.HX = registros.AX;
+	hilo->registros_hilo.EX = registros.EX;
+	hilo->registros_hilo.FX = registros.FX;
+	hilo->registros_hilo.GX = registros.GX;
+	hilo->registros_hilo.HX = registros.HX;
 	//proceso->base = base;
 	//proceso->limite = limite;
 }
