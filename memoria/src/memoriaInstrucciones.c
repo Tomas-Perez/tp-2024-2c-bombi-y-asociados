@@ -4,6 +4,7 @@ t_list *procesos_memoria;
 
 pthread_mutex_t mutex_listas;
 pthread_mutex_t mutex_instrucciones;
+pthread_mutex_t mutex_tids;
 pthread_mutex_t m_instruccion;
 pthread_mutex_t m_proc_mem;
 
@@ -26,7 +27,7 @@ t_proceso *agregar_proceso_instrucciones(FILE *f, int pid) // habria que mandar 
 
 	t_hilo *hilo_main = malloc(sizeof(t_hilo));
 	inicializar_hilo(proceso, 0, hilo_main, f); // Ver si agregar prioridad
-	list_add(proceso->tids, hilo_main); // Agrego hilo main a lista de hilos dentro de procesos
+	list_add(proceso->tids, hilo_main);			// Agrego hilo main a lista de hilos dentro de procesos
 
 	pthread_mutex_lock(&mutex_listas);
 	list_add(procesos_memoria, proceso); // Agrega proceso a lista de procesos
@@ -84,4 +85,46 @@ t_hilo *buscar_hilo(t_proceso *proceso_padre, int tid_buscado)
 	}
 	printf("Hilo no encontrado\n");
 	return NULL;
+}
+
+// Funciones para eliminar estructuras
+
+void eliminar_proceso(int pid)
+{
+	t_proceso *proceso_a_eliminar = buscar_proceso(procesos_memoria, pid);
+	pthread_mutex_lock(&m_proc_mem);
+	list_remove_element(procesos_memoria, proceso_a_eliminar);
+	pthread_mutex_unlock(&m_proc_mem);
+	liberar_proceso(proceso_a_eliminar);
+}
+
+void liberar_proceso(t_proceso *proceso)
+{
+	for (int i = 0; i < list_size(proceso->tids); i++)
+	{
+		pthread_mutex_lock(&mutex_tids);
+		free(list_get(proceso->tids, i));
+		pthread_mutex_unlock(&mutex_tids);
+	}
+	free(proceso);
+}
+
+void eliminar_hilo(int pid, int tid)
+{
+	t_proceso *proceso_padre = buscar_proceso(procesos_memoria, pid);
+	t_hilo *hilo_a_eliminar = buscar_hilo(proceso_padre, tid);
+	liberar_hilo(hilo_a_eliminar);
+}
+
+
+void liberar_hilo(t_hilo *hilo)
+{
+	for (int i = 0; i < list_size(hilo->instrucciones); i++)
+	{
+		pthread_mutex_lock(&mutex_instrucciones);
+		free(list_get(hilo->instrucciones, i));
+		pthread_mutex_unlock(&mutex_instrucciones);
+	}
+	list_destroy(hilo->instrucciones);
+	free(hilo);
 }
