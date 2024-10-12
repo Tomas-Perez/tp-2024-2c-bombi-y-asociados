@@ -20,7 +20,6 @@ extern void agregar_a_ready_multinivel(tcb* hilo);
 extern void agregar_a_ready(tcb* hilo); // TO DO: preguntar si esto es legal
 void finalizar_estructuras_kernel();
 void inicializar_estructuras_kernel();
-void inicializar_cola_nivel_prioridad();
 void finalizar_tcb(tcb* hilo_a_finlizar);
 void sacar_de_lista_pcb(tcb* hilo_a_sacar);
 void liberar_mutexs_asociados(tcb* hilo);
@@ -32,7 +31,7 @@ nivel_prioridad* encontrar_por_nivel(t_list* lista_multinivel, int prioridad);
 nivel_prioridad* encontrar_nivel_mas_prioritario(t_list* multinivel);
 void agregar_a_ready_segun_alg(tcb* hilo);
 mutex_k* crear_mutex(char* nombre);
-void crear_cola_nivel(int prioridad,tcb* hilo);
+void crear_cola_nivel(int prioridad,tcb* hilo, nivel_prioridad* nuevo_nivel);
 void* hilo_exit();
 void avisar_memoria_liberar_pcb(pcb* proc);
 void avisar_memoria_liberar_tcb(tcb* hilo);

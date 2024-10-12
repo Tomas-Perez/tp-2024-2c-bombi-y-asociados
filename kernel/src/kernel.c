@@ -46,7 +46,9 @@ int main(int argc, char* argv[]) {
     printf("tam proc %d archivo: %s\n", tam_proc, argv[1]);
 
     pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc);
+    pthread_mutex_lock(&m_lista_procesos_new);
     list_add(lista_procesos_new, proceso_nuevo);
+    pthread_mutex_unlock(&m_lista_procesos_new);
     pedir_memoria(socket);
     
     tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       

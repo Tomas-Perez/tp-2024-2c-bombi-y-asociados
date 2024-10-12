@@ -36,16 +36,14 @@ void agregar_a_ready(tcb* hilo)
 void agregar_a_ready_multinivel(tcb* hilo)
 {
 	nivel_prioridad* cola_nivel;
-	// chequear si existe alguna cola con esa prioridad
 	cola_nivel = encontrar_por_nivel(lista_multinivel, hilo->prioridad);
 	if(cola_nivel == NULL)
 	{
-		crear_cola_nivel(hilo->prioridad, hilo);
-		inicializar_cola_nivel_prioridad(cola_nivel);
+		crear_cola_nivel(hilo->prioridad, hilo, cola_nivel);
+		
 	}
 	else
-	{
-		//list_add a la cola de esa prioridad		
+	{	
 		pthread_mutex_lock(&(cola_nivel->m_lista_prioridad));
 		list_add(cola_nivel->hilos_asociados, hilo);
 		pthread_mutex_unlock(&(cola_nivel->m_lista_prioridad));
@@ -308,9 +306,10 @@ void atender_syscall()
 		if(tcb_invocado != NULL){
 		pthread_mutex_lock(&m_hilo_a_ejecutar);
         list_add(tcb_invocado->block_join, hilo_en_ejecucion);
+		hilo_en_ejecucion = tcb_invocado; //FORO si pasa a running de una o espera su turno 
 		pthread_mutex_unlock(&m_hilo_a_ejecutar);}
 
-		hilo_en_ejecucion = NULL; 
+
 		break;
 		case THREAD_CANCEL:
 			tid = list_get(instrucc->parametros, 0);

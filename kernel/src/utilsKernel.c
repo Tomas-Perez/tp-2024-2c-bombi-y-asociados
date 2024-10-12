@@ -84,39 +84,26 @@ void inicializar_estructuras_kernel()
      
 }
 
-void inicializar_cola_nivel_prioridad(nivel_prioridad* nuevo_nivel)
-{
-    nuevo_nivel->hilos_asociados = list_create();
-    pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
-}
+
 
 // --------------------------- Pedidos memoria ---------------------------
 void pedir_memoria(int socket)
 { 
    
-    //TO DO -> mili :) 
-    // con el socket sale la conexion
-    // mandar a memoria el motivo PROCESS_CREATE,
-    // mandar en este orden
-
-    // 1) el pid 2) el tam proc 3) tam path 4) el path, los chicos se van a encargar de verificar si hay suficiente
-    // memoria para abrir el archivo y si no volvemos a 
-    // hacer recv para confirmacion, seguro nos mandan un bool
-    // el segundo parámetro es el tamaño del proceso en Memoria y 
-    //el tercer parámetro es la prioridad del hilo main (TID 0)
-
+        pthread_mutex_lock(&m_lista_procesos_new);
        pcb* proceso_nuevo = list_get(lista_procesos_new, 0);
-
+        pthread_mutex_unlock(&m_lista_procesos_new);
         int pid = proceso_nuevo->pid;
         int tamanio = proceso_nuevo->tam_proc;
         char* path = proceso_nuevo->path_proc;
         int motivo = PROCESS_CREATE; //preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
-
+        uint32_t size_path_hilo = sizeof(path);
+        
 
         t_paquete* pedido_memoria = crear_paquete(motivo);
 		agregar_a_paquete(pedido_memoria, &pid,sizeof(int));
         agregar_a_paquete(pedido_memoria, &tamanio, sizeof(int));
-        //agregar_a_paquete // ponemos el tam del path?
+        agregar_a_paquete_solo(pedido_memoria, &(size_path_hilo), sizeof(uint32_t));
         agregar_a_paquete(pedido_memoria, path, strlen(path) + 1);// PATH PREGUNTAR
 
         enviar_paquete(pedido_memoria,socket);
@@ -132,14 +119,14 @@ void pedir_memoria(int socket)
             pedir_memoria(socket);	
         }
         else {
+                pthread_mutex_lock(&m_lista_procesos_new);
                 list_remove(lista_procesos_new, 0);
+                pthread_mutex_unlock(&m_lista_procesos_new);
         }
         
 }
 
-//void avisar_memoria(tcb hilo, char* path){
-    // TO DO (creo, no se si la hicimos con otro nombre)
-//}
+
 //  --------------------------- Crear  --------------------------- 
 
 pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
@@ -190,16 +177,29 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
      return nuevo_tcb;
 }
 
-void crear_cola_nivel(int prioridad,tcb* hilo) // lo llamo asi x el nombre del alg pero creo una lista
+void crear_cola_nivel(int prioridad, tcb* hilo, nivel_prioridad* nuevo_nivel) 
 {
-    // crear la lista y agregar el hilo 
-    // list add sorted para la cola multinivel
+    nuevo_nivel->prioridad = prioridad;
+    nuevo_nivel->hilos_asociados = list_create();
+    pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
+
+    pthread_mutex_lock(&nuevo_nivel->m_lista_prioridad);
+    list_add(nuevo_nivel->hilos_asociados, hilo);
+    pthread_mutex_unlock(&nuevo_nivel->m_lista_prioridad);
+
+    pthread_mutex_lock(&m_lista_multinivel);
+    list_add(lista_multinivel, nuevo_nivel);
+    pthread_mutex_unlock(&m_lista_multinivel);
+    // VER: nos habian dicho q usemos list_add_sorted pero como
+    // cuando lo pasamos a running encontramos el mayor nivel de prioridad
+    // creo q no hace falta
+
 }
 
 
 // -------------------------- Funciones planificador  --------------------------- 
 void inicializar_hilos_planificacion()
-{ // TO DO 
+{ 
     pthread_t hilo_plani_corto,hilo_exitt;
 
 	pthread_create(&hilo_plani_corto, NULL,(void*) planificador_corto_plazo,NULL);
@@ -207,7 +207,6 @@ void inicializar_hilos_planificacion()
 
 	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
 	
-	pthread_detach(hilo_plani_corto);
 	pthread_detach(hilo_plani_largo);*/
 	pthread_detach(hilo_exitt); 
     pthread_detach(hilo_plani_corto);
@@ -309,7 +308,6 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
 void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
         
         uint32_t size_path_hilo = sizeof(path);
-        // TO DO opcional: usar funcion tomi
         t_paquete *paquete = crear_paquete(INICIAR_HILO);
         agregar_a_paquete_solo(paquete, &(hilo->pcb_padre_tcb->pid), sizeof(uint32_t));
         agregar_a_paquete_solo(paquete, &(hilo->tid), sizeof(uint32_t));
@@ -348,9 +346,9 @@ void finalizar_proceso(pcb *proc)
         finalizar_hilos_proceso(proc);
     }
     avisar_memoria_liberar_pcb(proc);
-    list_destroy(proc->lista_tcb);
-    free(proc->path_proc);
-
+    list_destroy(proc->lista_tcb); // VER o este? list_destroy_and_destroy_elements(proc->lista_tcb);
+    free(proc->path_proc); 
+    free(proc);
 }
 
 
@@ -585,13 +583,20 @@ void liberar_bloqueados_x_thread_join(tcb* hilo)
 
 void avisar_memoria_liberar_tcb(tcb* hilo)
 {
-    // TO DO pid y tid crear buffer y despues usar
-    // buffer_add_uint32(t_buffer *buffer, uint32_t data) THREAD_EXIT 
+    int socket = conectarMemoria();
+    t_paquete* t_exit = crear_paquete(THREAD_EXIT);
+    agregar_a_paquete(t_exit, &(hilo->pcb_padre_tcb->pid), sizeof(int));
+	agregar_a_paquete(t_exit, &hilo->tid, sizeof(int));
+	enviar_paquete(t_exit, socket);
+    eliminar_paquete(t_exit);
 }
 
 void avisar_memoria_liberar_pcb(pcb* proc)
 {
-    // TO DO --> ver si conviene que devuelva un bool q avise q se libero bien PROCESS_EXIT
+    int socket = conectarMemoria();
+    t_paquete* p_exit = crear_paquete(PROCESS_EXIT);
+	agregar_a_paquete(p_exit, &proc->pid, sizeof(int));
+	enviar_paquete(p_exit, socket);
+    eliminar_paquete(p_exit);
 
-    //pid 
 }
