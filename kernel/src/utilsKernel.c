@@ -136,7 +136,7 @@ pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
 
     nuevo_pcb->tam_proc = tamanio;
     nuevo_pcb->path_proc = path;
-
+    nuevo_pcb->pid = id_counter;
     nuevo_pcb->contador_tid = 0;
     id_counter++;
 
@@ -349,6 +349,7 @@ void finalizar_proceso(pcb *proc)
     list_destroy(proc->lista_tcb); // VER o este? list_destroy_and_destroy_elements(proc->lista_tcb);
     free(proc->path_proc); 
     free(proc);
+    sem_post(&finalizo_un_proc);
 }
 
 
@@ -358,18 +359,19 @@ void finalizar_hilos_proceso(pcb* proceso)  // PARA PROCESS_EXIT
     tcb* hilo_a_finalizar;
     while(list_is_empty(proceso->lista_tcb) == 0)
     {
-        hilo_a_finalizar = list_remove(proceso->lista_tcb,0);
+        hilo_a_finalizar = list_get(proceso->lista_tcb,0);
         finalizar_tcb(hilo_a_finalizar);
     }
 }
 
 void finalizar_tcb(tcb* hilo_a_finalizar)
 {
+    buscar_hilos_listas(hilo_a_finalizar, hilo_a_finalizar->tid);
     pthread_mutex_lock(&m_lista_finalizados);
-    list_add(lista_finalizados,hilo_a_finalizar);
+    list_add(lista_finalizados, hilo_a_finalizar); 
     pthread_mutex_unlock(&m_lista_finalizados);
 
-    sacar_de_lista_pcb(hilo_a_finalizar);
+    //sacar_de_lista_pcb(hilo_a_finalizar);
     sem_post(&hilos_en_exit);
     log_info(logger_kernel,"Finaliza el hilo <%d>", hilo_a_finalizar->tid);
 }
@@ -550,7 +552,7 @@ void liberar_param_instruccion(instruccion* instrucc)
 		free(instrucc); 
 
 }
-
+/*
 void sacar_de_lista_pcb(tcb* hilo_a_sacar)
 {
     pcb* proc_padre = hilo_a_sacar->pcb_padre_tcb;
@@ -559,14 +561,14 @@ void sacar_de_lista_pcb(tcb* hilo_a_sacar)
 
     if(lo_encontro != 0)
     {
-        proc_padre->contador_tid--;
-        if(proc_padre <= 0)
+        //proc_padre->contador_tid--;
+        if(proc_padre->contador_tid <= 0)
         {
             finalizar_proceso(proc_padre);
         }
     }
 
-}
+}*/
 
 
 void liberar_bloqueados_x_thread_join(tcb* hilo) 

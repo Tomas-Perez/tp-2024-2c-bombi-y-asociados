@@ -55,7 +55,6 @@ int main(int argc, char* argv[]) {
 	iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
     close(socket);
 
-    // pedir memoria para el pcb Preguntar si esta bien aca
 
     liberar_conexion(conexion_memoria);
     liberar_conexion(conexion_dispatch);

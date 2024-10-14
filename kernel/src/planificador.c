@@ -184,6 +184,8 @@ tcb* buscar_TID(tcb* tcb_pedido, int tid_buscado){
     
     return NULL;
 }
+
+
 tcb* buscar_hilos_listas(tcb* main, int tid){
 	tcb* hilo = buscar_TID(main, tid);
 	bool confirmacion = 0;
@@ -279,7 +281,7 @@ void atender_syscall()
 			{
 				finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
 			}
-			// sem_post(&finalizo_un_proc); VER: creo q este semaforo no se usa en ninguna parte?
+			
 		break;
 
 		case THREAD_CREATE:
