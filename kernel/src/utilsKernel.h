@@ -23,6 +23,7 @@ void inicializar_estructuras_kernel();
 void finalizar_tcb(tcb* hilo_a_finlizar);
 void sacar_de_lista_pcb(tcb* hilo_a_sacar);
 void liberar_mutexs_asociados(tcb* hilo);
+void asignar_mutex_al_primer_bloqueado(mutex_k* mutex_solic);
 void inicializar_hilos_planificacion();
 bool existe_mutex(mutex_k* mutex_solic,t_list* lista_mutex_proceso);
 void asignar_mutex_hilo(mutex_k* mutex,tcb* hilo);

@@ -214,10 +214,11 @@ void inicializar_hilos_planificacion()
 
 void mandar_tcb_dispatch(tcb* tcb_listo)
 {
-	// TO DO 
 	t_paquete* tcb_a_dispatch = crear_paquete(OP_ENVIO_TCB);
-	// Preguntar tomi funciones nuevas
+    agregar_a_paquete_solo(tcb_a_dispatch,&tcb_listo->tid, sizeof(int));
+    agregar_a_paquete_solo(tcb_a_dispatch,&tcb_listo->pcb_padre_tcb->pid, sizeof(int));
 	enviar_paquete(tcb_a_dispatch,conexion_dispatch);
+    eliminar_paquete(tcb_a_dispatch);
 }
 
 
@@ -537,9 +538,31 @@ void asignar_mutex_hilo(mutex_k* mutex,tcb* hilo)
     list_add(hilo->lista_mutex, mutex);
 }
 
+
 void liberar_mutexs_asociados(tcb* hilo)
 {
-    // TO DO
+    mutex_k* aux;
+    for(int i = 0; i< list_size(hilo->lista_mutex); i++)
+    {
+        aux = list_remove(hilo->lista_mutex, 0);
+        asignar_mutex_al_primer_bloqueado(aux);
+    }
+    list_destroy(hilo->lista_mutex);
+}
+
+void asignar_mutex_al_primer_bloqueado(mutex_k* mutex_solic)
+{
+    tcb* bloq_por_mutex;
+    if(list_size(mutex_solic->bloqueados_por_mutex) > 0) 
+	{
+		bloq_por_mutex = list_remove(mutex_solic->bloqueados_por_mutex,0);
+		asignar_mutex_hilo(mutex_solic, bloq_por_mutex);
+	}
+	else
+	{
+		mutex_solic->disponibilidad = true;
+		mutex_solic->hilo_poseedor = NULL;
+	}
 }
 
 // --------------------- funciones auxiliares ---------------------

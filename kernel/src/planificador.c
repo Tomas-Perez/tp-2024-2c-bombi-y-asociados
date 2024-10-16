@@ -297,7 +297,6 @@ void atender_syscall()
 
 			
 			iniciar_hilo(hilo, socket, archivo);
-			// TO DO: poner en ready
 			close(socket);
 			
 		break;
@@ -359,22 +358,13 @@ void atender_syscall()
 			
 			mutex_k* mutex_solic = list_get(instrucc->parametros, 0);
 			lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
-			tcb* bloq_por_mutex;
+			
 			
 			if(existe_mutex(mutex_solic, lista_mutex_proceso) != false)
 			{
 				if(mutex_tomado_por_hilo(mutex_solic, hilo_en_ejecucion) != false)
 				{
-					if(list_size(mutex_solic->bloqueados_por_mutex) > 0) // muchos ifs? :/
-					{
-						bloq_por_mutex = list_remove(mutex_solic->bloqueados_por_mutex,0);
-						asignar_mutex_hilo(mutex_solic, bloq_por_mutex);
-					}
-					else
-					{
-						mutex_solic->disponibilidad = true;
-						mutex_solic->hilo_poseedor = NULL;
-					}
+					asignar_mutex_al_primer_bloqueado(mutex_solic);
 				}
 
 			}
