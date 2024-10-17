@@ -9,6 +9,4 @@ void agregar_a_ready(tcb* hilo);
 void agregar_a_ready_multinivel(tcb* hilo);
 tcb* hilo_prioritario_en_ready();
 tcb* elegir_segun_prioridades();
-tcb* buscar_TID(tcb* tcb_pedido, int tid_buscado);
-tcb* buscar_hilos_listas(tcb* main, int tid);
-tcb* buscar_hilo_en_multinivel(int prioridad, int tid);
+

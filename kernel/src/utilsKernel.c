@@ -59,7 +59,7 @@ void inicializar_registros(tcb* hilo)
 
 void inicializar_estructuras_kernel()
 {
-	int id_counter = 0;
+	int id_counter = 1;
     
 
 	//mutex 
@@ -145,11 +145,14 @@ pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
     nuevo_pcb->lista_mutex_proc = list_create();
     if (nuevo_pcb == NULL)
     {
+        list_destroy(nuevo_pcb->lista_mutex_proc);
+        list_destroy(nuevo_pcb->lista_tcb);
         free(nuevo_pcb);
         return NULL;
     }
     hilo_main = crear_tcb(nuevo_pcb, prioridad_h_main);
      
+    log_info(logger_kernel, "## (<PID>:%d) Se crea el proceso - Estado: NEW", nuevo_pcb->pid);
 
     return nuevo_pcb;
 }
@@ -173,7 +176,9 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
         return NULL;
     }
     list_add(proc_padre->lista_tcb, nuevo_tcb);
-   
+    log_info(logger_kernel, "## (PID <%d> : TID <%d>) Se crea el Hilo - Estado: READY",
+    nuevo_tcb->pcb_padre_tcb->pid, nuevo_tcb->tid);
+
      return nuevo_tcb;
 }
 
@@ -224,8 +229,6 @@ void mandar_tcb_dispatch(tcb* tcb_listo)
 
 void desalojar_hilo(int motivo)
 {
-    // VER solo copie la funcion de nuestro tp
-
     t_paquete *paquete_a_desalojar = crear_paquete(DESALOJAR_PROCESO);
 	agregar_a_paquete_solo(paquete_a_desalojar,&motivo, sizeof(int));
 	agregar_a_paquete_solo(paquete_a_desalojar,&hilo_en_ejecucion->tid, sizeof(int));
@@ -239,14 +242,14 @@ void* desalojar_por_RR(tcb* hilo)
     if(hilo_en_ejecucion->tid == hilo->tid)
 	{		
 		desalojar_hilo(RR);
-		log_info(logger_kernel,"TID: <%d> - Desalojado por fin de Quantum",hilo->tid);
+		log_info(logger_kernel,"## (PID <%d>:TID <%d>) - Desalojado por fin de Quantum”",hilo->pcb_padre_tcb->pid,hilo->tid);
 		return;
 	}
 }
 
 void agregar_a_ready_segun_alg(tcb* hilo)
 {
-	if(strcmp(algoritmo_de_planificacion, "MULTINIVEL") == 0)
+	if(strcmp(algoritmo_de_planificacion, "CMN") == 0)
 	{
 		agregar_a_ready_multinivel(hilo);
 	}
@@ -263,8 +266,8 @@ void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
 			printf("TID: %i, motivo: %i", hilo->tid, *motivo);
             
 		}
-		else {printf("Codigo de Operacion de CPU incorrecto\n");
-               
+		else {
+            printf("Codigo de Operacion de CPU incorrecto\n");
         }
 }
 
@@ -327,14 +330,7 @@ void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
             {
                 printf("HILO trucho1");
             }
-            if(strcmp(algoritmo_de_planificacion, "MULTINIVEL")== 0)
-            {
-                agregar_a_ready_multinivel(hilo);
-            }
-            else
-            {
-                agregar_a_ready(hilo);
-            }
+            agregar_a_ready_segun_alg(hilo);
             
         }
 }
@@ -347,7 +343,9 @@ void finalizar_proceso(pcb *proc)
         finalizar_hilos_proceso(proc);
     }
     avisar_memoria_liberar_pcb(proc);
-    list_destroy(proc->lista_tcb); // VER o este? list_destroy_and_destroy_elements(proc->lista_tcb);
+    log_info(logger_kernel,"## Finaliza el proceso <PID>",proc->pid);
+
+    list_destroy(proc->lista_tcb);
     free(proc->path_proc); 
     free(proc);
     sem_post(&finalizo_un_proc);
@@ -372,9 +370,8 @@ void finalizar_tcb(tcb* hilo_a_finalizar)
     list_add(lista_finalizados, hilo_a_finalizar); 
     pthread_mutex_unlock(&m_lista_finalizados);
 
-    //sacar_de_lista_pcb(hilo_a_finalizar);
     sem_post(&hilos_en_exit);
-    log_info(logger_kernel,"Finaliza el hilo <%d>", hilo_a_finalizar->tid);
+    log_info(logger_kernel,"## (PID <%d>:TID <%d>) Finaliza el hilo", hilo_a_finalizar->tid);
 }
 
 void* hilo_exit()
@@ -418,6 +415,68 @@ void finalizar_estructuras_kernel()
 
 }
 // --------------------- Buscar ---------------------
+tcb* buscar_TID(tcb* tcb_pedido, int tid_buscado){
+	pcb* proc = tcb_pedido->pcb_padre_tcb;
+	for (int i = 0; i < list_size(proc->lista_tcb); i++) {
+	tcb* hilo_buscado = list_get(proc->lista_tcb, i);
+        if (hilo_buscado->tid == tid_buscado) {
+			list_remove(proc->lista_tcb, i);//Buscar y lo saco del pcb
+            return hilo_buscado;
+			
+        }
+    }
+    
+    return NULL;
+}
+
+
+tcb* buscar_hilos_listas(tcb* main, int tid){
+	tcb* hilo = buscar_TID(main, tid);
+	bool confirmacion = 0;
+	if (hilo != NULL) {
+		pthread_mutex_lock(&m_lista_de_ready);
+        confirmacion = list_remove_element(lista_de_ready, hilo);
+		pthread_mutex_unlock(&m_lista_de_ready);
+        if (confirmacion) {
+            return hilo;  
+        }
+        
+		if(strcmp(algoritmo_de_planificacion,"CMN")){
+			buscar_hilo_en_multinivel(hilo->prioridad, hilo->tid);
+		}
+
+    }
+
+
+    return NULL;
+	}
+
+
+tcb* buscar_hilo_en_multinivel(int prioridad, int tid) {
+    for (int i = 0; i < list_size(lista_multinivel); i++) {
+        nivel_prioridad* cola_aux = list_get(lista_multinivel, i);
+        
+        if (cola_aux->prioridad == prioridad) {
+           
+            pthread_mutex_lock(&(cola_aux->m_lista_prioridad));
+            
+            for (int j = 0; j < list_size(cola_aux->hilos_asociados); j++) {
+                tcb* hilo = list_get(cola_aux->hilos_asociados, j);
+                if (hilo->tid == tid) {
+                   	list_remove(cola_aux->hilos_asociados, i);
+                    pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
+                    return hilo; 
+           		 }
+            
+				pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
+			}
+		}
+				
+	}
+			return NULL;
+}
+
+
 pcb *buscar_proc_lista(t_list *lista, int pid_buscado)
 {
 	int elementos = list_size(lista);
@@ -439,7 +498,7 @@ bool existe_mutex(mutex_k* mutex_solic,t_list* lista_mutex_proceso)
     for(int i = 0; i < list_size(lista_mutex_proceso); i++)
     {
         aux = list_get(lista_mutex_proceso, i);
-        if(strcmp(aux->nombre, mutex_solic->nombre) == 0) //Comparo x nombre, supongo q no nos van a dar 2 mutex q se llamen igual en el mismo proc
+        if(strcmp(aux->nombre, mutex_solic->nombre) == 0) 
         {
             existe = true;
         }
@@ -517,9 +576,13 @@ nivel_prioridad* encontrar_nivel_mas_prioritario(t_list* multinivel)
 
 int bloquear_por_dump(tcb* hilo, int socket) 
 {
-    //una forma de bloquear el hilo seria que espere que se haga la confirmacion
-    //no puede seguir la ejecucion hasta q recibimos algo pero no haria falta pasarlo x param
     int finalizo_operacion = 0;
+    t_paquete* dump = crear_paquete(DUMP_MEMORY);
+	agregar_a_paquete(dump, &(hilo->pcb_padre_tcb->pid), sizeof(int));
+	agregar_a_paquete(dump, &hilo->tid, sizeof(int));
+	enviar_paquete(dump, socket);
+	eliminar_paquete(dump);
+     
     recv(socket,&finalizo_operacion, sizeof(int), MSG_WAITALL);
     
     return finalizo_operacion;
