@@ -515,12 +515,14 @@ nivel_prioridad* encontrar_nivel_mas_prioritario(t_list* multinivel)
 
 // --------------------- Dump ---------------------
 
-void bloquear_por_dump(tcb* hilo) 
+int bloquear_por_dump(tcb* hilo, int socket) 
 {
-    // TO DO 
-    // aca contemplamos este caso tmbn:
-    // memoria confirme la finalización de la operación, en caso de error, el proceso se enviará a EXIT.
-    // o lo hacemos dentro del case de la syscall?
+    //una forma de bloquear el hilo seria que espere que se haga la confirmacion
+    //no puede seguir la ejecucion hasta q recibimos algo pero no haria falta pasarlo x param
+    int finalizo_operacion = 0;
+    recv(socket,&finalizo_operacion, sizeof(int), MSG_WAITALL);
+    
+    return finalizo_operacion;
 }
 // --------------------- Mutex ---------------------
 mutex_k* crear_mutex(char* nombre)

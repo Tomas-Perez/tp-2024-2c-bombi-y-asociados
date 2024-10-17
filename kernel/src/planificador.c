@@ -377,7 +377,14 @@ void atender_syscall()
 			agregar_a_paquete(dump, &hilo_en_ejecucion->tid, sizeof(int));
 			enviar_paquete(dump, socket);
 
-			bloquear_por_dump(hilo_en_ejecucion);
+			int rta = bloquear_por_dump(hilo_en_ejecucion, socket);
+
+					
+			if(rta == 0){
+				finalizar_tcb(hilo_en_ejecucion);
+			}else{
+				agregar_a_ready_segun_alg(hilo_en_ejecucion);
+			}
 			
 			close(socket);
 		break;
