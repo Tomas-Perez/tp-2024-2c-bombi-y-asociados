@@ -12,7 +12,7 @@ void desalojar_hilo(int motivo);
 void* desalojar_por_RR(tcb* hilo);
 void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc);
 void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc);
-void bloquear_por_dump(tcb* hilo);
+int bloquear_por_dump(tcb* hilo, int socket);
 void finalizar_proceso(pcb *proc);
 void liberar_bloqueados_x_thread_join(tcb* hilo) ;
 void liberar_param_instruccion(instruccion* instrucc);
