@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     
     sem_init(&sem2,0,0);
     inicializarBloques();
-    inicializarBloques();
+    inicializarBitmap();
     archivocheq();
     // HILOS PARA CONEXIONES
 
