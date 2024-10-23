@@ -150,9 +150,8 @@ pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
         free(nuevo_pcb);
         return NULL;
     }
-    hilo_main = crear_tcb(nuevo_pcb, prioridad_h_main);
-     
     log_info(logger_kernel, "## (<PID>:%d) Se crea el proceso - Estado: NEW", nuevo_pcb->pid);
+    hilo_main = crear_tcb(nuevo_pcb, prioridad_h_main);
 
     return nuevo_pcb;
 }
