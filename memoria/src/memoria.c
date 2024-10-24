@@ -17,6 +17,8 @@ char *puerto_filesystem;
 int socket_fs;
 int pid, tid;
 
+void *memoria;
+
 int main(int argc, char *argv[])
 {
     int socket_cliente;
@@ -25,6 +27,13 @@ int main(int argc, char *argv[])
     logger_memoria = iniciar_logger("memoria.log", "MEMORIA");
 
     int socket_memoria = iniciar_servidor(puerto_escucha);
+
+    memoria = calloc(1, tamanio_memoria); // Inicializamos memoria de usuario en 0
+
+    /*if (esquema === "FIJAS") // VER STRCMP
+    {
+        inicilizar_particiones_fijas();
+    }*/
 
     // AVISAR QUE SE CREO EL SV Y ESTA ESPERANDO QUE SE CONECTEN
     log_info(logger_memoria, "Servidor listo para aceptar conexiones");
@@ -315,7 +324,7 @@ int atenderKernel(int *socket_kernel)
         pid = buffer_read_uint32(buffer);
         tid = buffer_read_uint32(buffer);
 
-        eliminar_hilo(pid,tid);
+        eliminar_hilo(pid, tid);
         // MANDAR OK
         free(buffer);
 
@@ -358,4 +367,64 @@ int conectarFS()
     }
 
     handshake_cliente(socket_fs, logger_memoria);
+}
+
+/*void inicilizar_particiones_fijas()
+{
+    char * particiones_char = eliminar_corchetes(particiones);
+    char** vector_particiones = string_split(particiones_char,","); //Los separo cuando encuentra un ","
+
+    int base_sgte = 0;
+
+    for(int i=0; i < string_array_size(vector_particiones); i++)
+	{
+
+        t_particiones *particion = (t_particiones*)malloc(sizeof(t_particiones));
+        //recurso->nombre=recursos_array[i];
+        particion->base = base_sgte;
+        base_sgte += particion->limite;
+        particion->limite = strdup(vector_particiones[i]);  // 
+        particion->ocupado = false;
+        list_add(particiones_fijas, particion);
+	}
+	string_array_destroy(vector_particiones);
+}*/
+
+void inicializar_particiones_fijas() {
+    char *particiones_char = eliminar_corchetes(particiones);
+    char **vector_particiones = string_split(particiones_char, ",");  // Separar por comas
+
+    int base_sgte = 0;
+
+    for (int i = 0; i < string_array_size(vector_particiones); i++) {
+        t_particiones *particion = malloc(sizeof(t_particiones));
+
+        if (particion == NULL) {  // Validar que malloc no falle
+            perror("Error al asignar memoria para la partición");
+            exit(EXIT_FAILURE);
+        }
+
+        particion->base = base_sgte;
+        particion->limite = atoi(vector_particiones[i]);
+        particion->ocupado = false;
+
+        base_sgte += particion->limite;
+
+        // Agregar la partición a la lista
+        list_add(particiones_fijas, particion);
+    }
+
+    // Liberar la memoria del array de strings
+    string_array_destroy(vector_particiones);
+}
+
+char *eliminar_corchetes(char *cad)
+{
+    if (strlen(cad) <= 2)
+    {
+        return 0;
+    }
+    memmove(cad, cad + 1, strlen(cad));
+    cad[strlen(cad) - 1] = '\0';
+    return cad;
 }

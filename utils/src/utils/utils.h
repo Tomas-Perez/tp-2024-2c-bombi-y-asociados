@@ -172,6 +172,12 @@ typedef struct
     t_registros_cpu registros;
 } t_contexto_ejecucion; // ENTRE CPU Y MEM
 
+typedef struct {
+    uint32_t base;
+    uint32_t limite;
+    bool ocupado;
+} t_particiones;
+
 // -------------------------------- FILESYSTEM --------------------------------
 
 // -------------------------------- LOGGER --------------------------------

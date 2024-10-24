@@ -13,5 +13,13 @@ int atenderCpu();
 int atenderKernel();
 int conectarFS();
 
+// FUNCIONES PARA MANEJO DE PARTICIONES
+
+extern t_list *particiones_fijas;
+
+
+void inicilizar_particiones_fijas();
+char* eliminar_corchetes(char* cad);
+
 
 #endif
