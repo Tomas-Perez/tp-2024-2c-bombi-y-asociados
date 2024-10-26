@@ -30,10 +30,10 @@ int main(int argc, char *argv[])
 
     memoria = calloc(1, tamanio_memoria); // Inicializamos memoria de usuario en 0
 
-    /*if (esquema === "FIJAS") // VER STRCMP
+    if (strcmp(esquema, "FIJAS") == 0)
     {
-        inicilizar_particiones_fijas();
-    }*/
+        inicializar_particiones_fijas();
+    }
 
     // AVISAR QUE SE CREO EL SV Y ESTA ESPERANDO QUE SE CONECTEN
     log_info(logger_memoria, "Servidor listo para aceptar conexiones");
@@ -377,29 +377,32 @@ int conectarFS()
     int base_sgte = 0;
 
     for(int i=0; i < string_array_size(vector_particiones); i++)
-	{
+    {
 
         t_particiones *particion = (t_particiones*)malloc(sizeof(t_particiones));
         //recurso->nombre=recursos_array[i];
         particion->base = base_sgte;
         base_sgte += particion->limite;
-        particion->limite = strdup(vector_particiones[i]);  // 
+        particion->limite = strdup(vector_particiones[i]);  //
         particion->ocupado = false;
         list_add(particiones_fijas, particion);
-	}
-	string_array_destroy(vector_particiones);
+    }
+    string_array_destroy(vector_particiones);
 }*/
 
-void inicializar_particiones_fijas() {
+void inicializar_particiones_fijas()
+{
     char *particiones_char = eliminar_corchetes(particiones);
-    char **vector_particiones = string_split(particiones_char, ",");  // Separar por comas
+    char **vector_particiones = string_split(particiones_char, ","); // Separar por comas
 
     int base_sgte = 0;
 
-    for (int i = 0; i < string_array_size(vector_particiones); i++) {
+    for (int i = 0; i < string_array_size(vector_particiones); i++)
+    {
         t_particiones *particion = malloc(sizeof(t_particiones));
 
-        if (particion == NULL) {  // Validar que malloc no falle
+        if (particion == NULL)
+        { // Validar que malloc no falle
             perror("Error al asignar memoria para la partición");
             exit(EXIT_FAILURE);
         }
