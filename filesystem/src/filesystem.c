@@ -1,10 +1,7 @@
 #include "filesystem.h"
 
-t_config *config_fs;
 t_log *logger_fs;
 t_list* list_archivos;
-char *puerto_escucha, *mount_dir, *log_level;
-uint32_t block_size,block_count,retardo_acceso_bloque;
 int socket_cliente,fpbitmap,fpbloc;
 t_bitarray *bitarray_bitmap;
 char *ptr_bitarray;
@@ -12,13 +9,6 @@ void *blocmap;
 
 sem_t semaforo,sem2;
 
-typedef struct
-{
-    char* nombre;
-    int bloque_inicial;
-    int tamanio;
-    int cant_bloque;
-}t_archivo;
 
 int main(int argc, char *argv[])
 {
@@ -129,17 +119,6 @@ void atender_petiticiones(int *socket)
     }
 }
 
-void levantar_config_fs()
-{
-    config_fs = config_create("filesystem.config");
-    puerto_escucha = config_get_string_value(config_fs, "PUERTO_ESCUCHA");
-    mount_dir = config_get_string_value(config_fs, "MOUNT_DIR");
-    log_level = config_get_string_value(config_fs, "LOG_LEVEL");
-    block_size = config_get_int_value(config_fs, "BLOCK_SIZE");
-    block_count = config_get_int_value(config_fs, "BLOCK_COUNT");
-    retardo_acceso_bloque = config_get_int_value(config_fs, "RETARDO_ACCESO_BLOQUE");
-}
-
 void archivocheq(){
     sem_wait(&sem2);
      t_config* aux;
@@ -158,11 +137,11 @@ void archivocheq(){
         char* archivo=config_get_string_value(aux, "NOMBRE");
         nuevo->nombre=malloc(strlen(archivo)+1);
         strcpy(nuevo->nombre,archivo);
-        nuevo->bloque_inicial=config_get_int_value(aux,"BLOQUE_INICIAL");
-        nuevo->tamanio=config_get_int_value(aux,"TAMAÑO_ARCHIVO");
-        nuevo->cant_bloque=CANT_BLOQUES(nuevo->tamanio);
+        nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
+        nuevo->block_size=config_get_int_value(aux,"SIZE");
+        nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
         list_add(list_archivos,nuevo);
-        for (int i=nuevo->bloque_inicial;i<nuevo->bloque_inicial+nuevo->cant_bloque;i++){
+        for (int i=nuevo->index_block;i<nuevo->index_block+nuevo->cant_bloque;i++){     //ESTA FUNCION SOLO SIRVE PARA BLOQUES CONTINUOS, HAY QUE CAMBIARLO PARA QUE FUNCIONE EN INDEXADO
         bitarray_set_bit(bitarray_bitmap,i);
         }
         int tamanioBitmap = block_count / 8;
