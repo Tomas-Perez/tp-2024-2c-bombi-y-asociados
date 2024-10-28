@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
     int socket_cliente;
 
     levantar_config_memoria();
+    inicializar_estructuras();
     logger_memoria = iniciar_logger("memoria.log", "MEMORIA");
 
     int socket_memoria = iniciar_servidor(puerto_escucha);
@@ -33,6 +34,15 @@ int main(int argc, char *argv[])
     if (strcmp(esquema, "FIJAS") == 0)
     {
         inicializar_particiones_fijas();
+    }
+    else if (strcmp(esquema, "DINAMICAS") == 0)
+    {
+        inicializar_particiones_dinamicas();
+    }
+    else
+    {
+        log_error(logger_memoria, "Error con ESQUEMA de las configs");
+        exit(EXIT_FAILURE);
     }
 
     // AVISAR QUE SE CREO EL SV Y ESTA ESPERANDO QUE SE CONECTEN
@@ -175,6 +185,7 @@ int atenderKernel(int *socket_kernel)
     case PROCESS_CREATE: // SIEMPRE EL TID VA A SER 0
         int size = 0;
         char *path_kernel;
+        bool confirmacion;
         buffer = recibir_buffer(&size, *socket_kernel); // recibimos PCB
 
         if (buffer == NULL)
@@ -186,9 +197,33 @@ int atenderKernel(int *socket_kernel)
         pid = buffer_read_uint32(buffer);
         uint32_t tamanio_proceso = buffer_read_uint32(buffer);
 
-        /*if (tamanio_proceso > memoria_disponible) { // DEPENDE DEL TIPO DE MEMORIA Y DEL ESQUEMA, VEREMOS MAS ADELANTE
-            // Devolver que no hay espacio disponible (?)
-        }*/
+        t_particiones *particion_a_asignar = malloc(sizeof(t_particiones));
+
+        if (strcmp(algoritmo_busqueda, "FIRST") == 0)
+        {
+            particion_a_asignar = asignar_first_fit(particiones_fijas, tamanio_proceso);
+            if (particion_a_asignar->ocupado == 0)
+            {
+                log_info(logger_memoria, "No hay hueco en memoria disponible");
+                confirmacion = false;
+                send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                exit(-1);                                             // ver como salir del case
+            }
+        }
+        else if (strcmp(algoritmo_busqueda, "BEST") == 0)
+        {
+            // asignar_best_fit()
+        }
+        else if (strcmp(algoritmo_busqueda, "WORST") == 0)
+        {
+            // asignar_worst_fit();
+        }
+        else
+        {
+            log_error(logger_memoria, "Error con ALGORITMO_BUSQUEDA de las configs");
+            exit(EXIT_FAILURE);
+        }
+
 
         uint32_t size_path = buffer_read_uint32(buffer);
 
@@ -229,11 +264,12 @@ int atenderKernel(int *socket_kernel)
         free(path_kernel);
         free(buffer);
 
-        agregar_proceso_instrucciones(f, pid);
+        agregar_proceso_instrucciones(f, pid, particion_a_asignar);
+        free(particion_a_asignar);
 
         log_info(logger_memoria, "Proceso <Creado> -  PID: <%i> - Tamaño: <%i>", pid, tamanio_proceso);
 
-        bool confirmacion = true;
+        confirmacion = true;
         send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que pudimos reservar espacio
 
         break;
@@ -421,6 +457,23 @@ void inicializar_particiones_fijas()
     string_array_destroy(vector_particiones);
 }
 
+void inicializar_particiones_dinamicas()
+{
+    t_particiones *particion = malloc(sizeof(t_particiones));
+
+    if (particion == NULL)
+    { // Validar que malloc no falle
+        perror("Error al asignar memoria para la partición");
+        exit(EXIT_FAILURE);
+    }
+
+    particion->base = 0;
+    particion->limite = tamanio_memoria;
+    particion->ocupado = false;
+
+    list_add(particiones_dinamicas, particion);
+}
+
 char *eliminar_corchetes(char *cad)
 {
     if (strlen(cad) <= 2)
@@ -431,3 +484,30 @@ char *eliminar_corchetes(char *cad)
     cad[strlen(cad) - 1] = '\0';
     return cad;
 }
+
+t_particiones *asignar_first_fit(t_list *lista, uint32_t tamanio) // retorna 1 si puede asignar hueco, sino retorna 0
+{
+    t_particiones *particion_a_devolver = malloc(sizeof(t_particiones));
+    for (int i = 0; i < list_size(lista); i++)
+    {
+        t_particiones *particion = list_get(lista, i);
+        if (particion->limite <= tamanio && particion->ocupado == 0)
+        {
+            particion->ocupado = 1;
+            particion_a_devolver->base = particion->base;
+            particion_a_devolver->limite = particion->limite;
+            particion_a_devolver->ocupado = 1;
+            return particion_a_devolver;
+        }
+    }
+    particion_a_devolver->ocupado = 0;
+    return particion_a_devolver;
+}
+
+/*int asignar_best_fit(t_list *lista, t_proceso *proceso, uint32_t tamanio) // retorna 1 si puede asignar hueco, sino retorna 0
+{
+}
+
+int asignar_worst_fit(t_list *lista, t_proceso *proceso, uint32_t tamanio) // retorna 1 si puede asignar hueco, sino retorna 0
+{
+}*/

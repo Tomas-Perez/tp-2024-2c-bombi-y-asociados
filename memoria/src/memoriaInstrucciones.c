@@ -2,6 +2,7 @@
 
 t_list *procesos_memoria;
 t_list *particiones_fijas;
+t_list *particiones_dinamicas;
 
 pthread_mutex_t mutex_listas;
 pthread_mutex_t mutex_instrucciones;
@@ -13,19 +14,21 @@ void inicializar_estructuras()
 {
 	procesos_memoria = list_create();
 	particiones_fijas = list_create();
+	particiones_dinamicas = list_create();
 	pthread_mutex_init(&mutex_listas, NULL);
 	pthread_mutex_init(&mutex_instrucciones, NULL);
 	pthread_mutex_init(&m_instruccion, NULL);
 	pthread_mutex_init(&m_proc_mem, NULL);
 }
 
-t_proceso *agregar_proceso_instrucciones(FILE *f, int pid) // habria que mandar por parametro el archivo que nos mandan desde kernel
+t_proceso *agregar_proceso_instrucciones(FILE *f, int pid, t_particiones *particion_a_asignar) // habria que mandar por parametro el archivo que nos mandan desde kernel
 {
 	t_proceso *proceso = malloc(sizeof(t_proceso)); // reservamos espacio en memoria para el proceso
+	
 	proceso->pid = pid;
 	proceso->tids = list_create();
-
-	// Ver como agregar base y limite
+	proceso->base = particion_a_asignar->base;
+	proceso->limite = particion_a_asignar->limite;
 
 	t_hilo *hilo_main = malloc(sizeof(t_hilo));
 	inicializar_hilo(proceso, 0, hilo_main, f); // Ver si agregar prioridad
