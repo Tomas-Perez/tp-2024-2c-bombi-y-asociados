@@ -156,10 +156,10 @@ char *eliminar_corchetes(char *cad)
 	cad[strlen(cad) - 1] = '\0';
 	return cad;
 }
-
+/*----------------------------------------------------PARTICIONES FIJAS----------------------------------------------------*/
 // FUNCIONES PARA ASIGNAR HUECOS EN MEMORIA (PARTICIONES FIJAS)
 
-t_particiones *asignar_first_fit(t_list *lista, uint32_t tamanio) // retorna partición o NULL si no hay hueco
+t_particiones *asignar_first_fit_fijas(t_list *lista, uint32_t tamanio) // retorna partición o NULL si no hay hueco
 {
 	for (int i = 0; i < list_size(lista); i++)
 	{
@@ -173,7 +173,7 @@ t_particiones *asignar_first_fit(t_list *lista, uint32_t tamanio) // retorna par
 	return NULL; // Retorna NULL si no hay hueco disponible
 }
 
-t_particiones *asignar_best_fit(t_list *lista, uint32_t tamanio)
+t_particiones *asignar_best_fit_fijas(t_list *lista, uint32_t tamanio)
 {
 	uint32_t mejor_particion = UINT32_MAX;
 	uint32_t mejor_indice = UINT32_MAX;
@@ -198,7 +198,7 @@ t_particiones *asignar_best_fit(t_list *lista, uint32_t tamanio)
 	return NULL; // Retorna NULL si no hay hueco adecuado
 }
 
-t_particiones *asignar_worst_fit(t_list *lista, uint32_t tamanio)
+t_particiones *asignar_worst_fit_fijas(t_list *lista, uint32_t tamanio)
 {
 	list_sort(lista, particion_mayor); // Ordena la lista de mayor a menor segun tamaño de las particiones
 
@@ -214,13 +214,30 @@ t_particiones *asignar_worst_fit(t_list *lista, uint32_t tamanio)
 	return NULL; // Retorna NULL si no hay hueco disponible
 }
 
-bool particion_mayor(void *a, void *b)
+/*----------------------------------------------------FIN PARTICIONES FIJAS----------------------------------------------------*/
+
+/*----------------------------------------------------PARTICIONES DINAMICAS----------------------------------------------------*/
+
+t_particiones *asignar_first_fit_dinamicas(t_list *lista, uint32_t tamanio) // retorna partición o NULL si no hay hueco
 {
-	t_particiones *particion_a = (t_particiones *)a;
-	t_particiones *particion_b = (t_particiones *)b;
-	return particion_a->limite >= particion_b->limite;
+	
 }
 
+t_particiones *asignar_best_fit_dinamicas(t_list *lista, uint32_t tamanio)
+{
+	
+}
+
+t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio)
+{
+	list_sort(lista, particion_mayor); // Ordena la lista de mayor a menor segun tamaño de las particiones
+
+	return NULL; // Retorna NULL si no hay hueco disponible
+}
+
+
+
+/*----------------------------------------------------FIN PARTICIONES DINAMICAS----------------------------------------------------*/
 void liberar_espacio_memoria(t_proceso *proceso)
 {
 	t_particiones *particion_a_liberar = buscar_particion(particiones_fijas, proceso->base, proceso->limite);
@@ -244,4 +261,10 @@ t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite)
 		}
 	}
 	return NULL;
+}
+bool particion_mayor(void *a, void *b)
+{
+	t_particiones *particion_a = (t_particiones *)a;
+	t_particiones *particion_b = (t_particiones *)b;
+	return particion_a->limite >= particion_b->limite;
 }
