@@ -17,9 +17,15 @@ void liberar_espacio_memoria(t_proceso *proceso);
 
 // FUNCIONES PARA MANEJO DE PARTICIONES
 
-t_particiones *asignar_first_fit(t_list *lista, uint32_t tamanio);
-t_particiones *asignar_best_fit(t_list *lista, uint32_t tamanio);
-t_particiones *asignar_worst_fit(t_list *lista, uint32_t tamanio);
+t_particiones *asignar_first_fit_fijas(t_list *lista, uint32_t tamanio);
+t_particiones *asignar_best_fit_fijas(t_list *lista, uint32_t tamanio);
+t_particiones *asignar_worst_fit_fijas(t_list *lista, uint32_t tamanio);
+
+
+t_particiones *asignar_first_fit_dinamicas(t_list *lista, uint32_t tamanio);
+t_particiones *asignar_best_fit_dinamicas(t_list *lista, uint32_t tamanio);
+t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio);
+
 
 t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite);
 

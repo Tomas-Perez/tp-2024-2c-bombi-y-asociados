@@ -198,44 +198,87 @@ int atenderKernel(int *socket_kernel)
         uint32_t tamanio_proceso = buffer_read_uint32(buffer);
 
         t_particiones *particion_a_asignar = malloc(sizeof(t_particiones));
-
-        if (strcmp(algoritmo_busqueda, "FIRST") == 0)
+        /*-------------------------------------------------- Particiones Fijas --------------------------------------------------*/
+        if (strcmp(esquema, "FIJAS") == 0)
         {
-            particion_a_asignar = asignar_first_fit(particiones_fijas, tamanio_proceso);
-            if (particion_a_asignar == NULL)
+            if (strcmp(algoritmo_busqueda, "FIRST") == 0)
             {
-                log_info(logger_memoria, "No hay hueco en memoria disponible");
-                confirmacion = false;
-                send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                exit(-1);                                             // ver como salir del case
+                particion_a_asignar = asignar_first_fit_fijas(particiones_fijas, tamanio_proceso);
+                if (particion_a_asignar == NULL)
+                {
+                    log_info(logger_memoria, "No hay hueco en memoria disponible");
+                    confirmacion = false;
+                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    return; //chequear si esta bien el return o un exit                                           // ver como salir del case
+                }
             }
-        }
-        else if (strcmp(algoritmo_busqueda, "BEST") == 0)
-        {
-            particion_a_asignar = asignar_best_fit(particiones_fijas, tamanio_proceso);
-            if (particion_a_asignar == NULL)
+            else if (strcmp(algoritmo_busqueda, "BEST") == 0)
             {
-                log_info(logger_memoria, "No hay hueco en memoria disponible");
-                confirmacion = false;
-                send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                exit(-1);                                             // ver como salir del case
+                particion_a_asignar = asignar_best_fit_fijas(particiones_fijas, tamanio_proceso);
+                if (particion_a_asignar == NULL)
+                {
+                    log_info(logger_memoria, "No hay hueco en memoria disponible");
+                    confirmacion = false;
+                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    return; //chequear si esta bien el return o un exit                                           // ver como salir del case
+                }
             }
-        }
-        else if (strcmp(algoritmo_busqueda, "WORST") == 0)
-        {
-            particion_a_asignar = asignar_worst_fit(particiones_fijas, tamanio_proceso);
-            if (particion_a_asignar == NULL)
+            else if (strcmp(algoritmo_busqueda, "WORST") == 0)
             {
-                log_info(logger_memoria, "No hay hueco en memoria disponible");
-                confirmacion = false;
-                send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                exit(-1);                                             // ver como salir del case
+                particion_a_asignar = asignar_worst_fit_fijas(particiones_fijas, tamanio_proceso);
+                if (particion_a_asignar == NULL)
+                {
+                    log_info(logger_memoria, "No hay hueco en memoria disponible");
+                    confirmacion = false;
+                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    return; //chequear si esta bien el return o un exit                                           // ver como salir del case
+                }
             }
-        }
-        else
-        {
-            log_error(logger_memoria, "Error con ALGORITMO_BUSQUEDA de las configs");
-            exit(EXIT_FAILURE);
+            else
+            {
+                log_error(logger_memoria, "Error con ALGORITMO_BUSQUEDA de las configs");
+                exit(EXIT_FAILURE);
+            }
+            /*--------------------------------------- PARTICIONES DINAMICAS --------------------------------------- */
+        }else if(strcmp(esquema, "DINAMICAS") == 0){
+            if (strcmp(algoritmo_busqueda, "FIRST") == 0)
+            {
+                particion_a_asignar = asignar_first_fit_dinamicas(particiones_dinamicas, tamanio_proceso);
+                if (particion_a_asignar == NULL)
+                {
+                    log_info(logger_memoria, "No hay hueco en memoria disponible");
+                    confirmacion = false;
+                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    return; //chequear si esta bien el return o un exit                                           // ver como salir del case
+                }
+            }
+            else if (strcmp(algoritmo_busqueda, "BEST") == 0)
+            {
+                particion_a_asignar = asignar_best_fit_dinamicas(particiones_dinamicas, tamanio_proceso);
+                if (particion_a_asignar == NULL)
+                {
+                    log_info(logger_memoria, "No hay hueco en memoria disponible");
+                    confirmacion = false;
+                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    return; //chequear si esta bien el return o un exit                                           // ver como salir del case
+                }
+            }
+            else if (strcmp(algoritmo_busqueda, "WORST") == 0)
+            {
+                particion_a_asignar = asignar_worst_fit_dinamicas(particiones_dinamicas, tamanio_proceso);
+                if (particion_a_asignar == NULL)
+                {
+                    log_info(logger_memoria, "No hay hueco en memoria disponible");
+                    confirmacion = false;
+                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    return; //chequear si esta bien el return o un exit                                           // ver como salir del case
+                }
+            }
+            else
+            {
+                log_error(logger_memoria, "Error con ALGORITMO_BUSQUEDA de las configs");
+                exit(EXIT_FAILURE);
+            }
         }
 
         uint32_t size_path = buffer_read_uint32(buffer);
@@ -297,7 +340,7 @@ int atenderKernel(int *socket_kernel)
 
         pid = buffer_read_uint32(buffer);
         // FALTA LIBERAR ESPACIO ASIGNADO EN MEMORIA
-        
+
         eliminar_proceso(pid); // elimina las estructuras administrativas
         // enviar OK
         free(buffer);
