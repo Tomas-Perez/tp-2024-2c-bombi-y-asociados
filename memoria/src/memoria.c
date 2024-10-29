@@ -202,7 +202,7 @@ int atenderKernel(int *socket_kernel)
         if (strcmp(algoritmo_busqueda, "FIRST") == 0)
         {
             particion_a_asignar = asignar_first_fit(particiones_fijas, tamanio_proceso);
-            if (particion_a_asignar->ocupado == 0)
+            if (particion_a_asignar == NULL)
             {
                 log_info(logger_memoria, "No hay hueco en memoria disponible");
                 confirmacion = false;
@@ -212,18 +212,31 @@ int atenderKernel(int *socket_kernel)
         }
         else if (strcmp(algoritmo_busqueda, "BEST") == 0)
         {
-            // asignar_best_fit()
+            particion_a_asignar = asignar_best_fit(particiones_fijas, tamanio_proceso);
+            if (particion_a_asignar == NULL)
+            {
+                log_info(logger_memoria, "No hay hueco en memoria disponible");
+                confirmacion = false;
+                send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                exit(-1);                                             // ver como salir del case
+            }
         }
         else if (strcmp(algoritmo_busqueda, "WORST") == 0)
         {
-            // asignar_worst_fit();
+            particion_a_asignar = asignar_worst_fit(particiones_fijas, tamanio_proceso);
+            if (particion_a_asignar == NULL)
+            {
+                log_info(logger_memoria, "No hay hueco en memoria disponible");
+                confirmacion = false;
+                send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                exit(-1);                                             // ver como salir del case
+            }
         }
         else
         {
             log_error(logger_memoria, "Error con ALGORITMO_BUSQUEDA de las configs");
             exit(EXIT_FAILURE);
         }
-
 
         uint32_t size_path = buffer_read_uint32(buffer);
 
@@ -403,105 +416,6 @@ int conectarFS()
     }
 
     handshake_cliente(socket_fs, logger_memoria);
-}
-
-/*void inicilizar_particiones_fijas()
-{
-    char * particiones_char = eliminar_corchetes(particiones);
-    char** vector_particiones = string_split(particiones_char,","); //Los separo cuando encuentra un ","
-
-    int base_sgte = 0;
-
-    for(int i=0; i < string_array_size(vector_particiones); i++)
-    {
-
-        t_particiones *particion = (t_particiones*)malloc(sizeof(t_particiones));
-        //recurso->nombre=recursos_array[i];
-        particion->base = base_sgte;
-        base_sgte += particion->limite;
-        particion->limite = strdup(vector_particiones[i]);  //
-        particion->ocupado = false;
-        list_add(particiones_fijas, particion);
-    }
-    string_array_destroy(vector_particiones);
-}*/
-
-void inicializar_particiones_fijas()
-{
-    char *particiones_char = eliminar_corchetes(particiones);
-    char **vector_particiones = string_split(particiones_char, ","); // Separar por comas
-
-    int base_sgte = 0;
-
-    for (int i = 0; i < string_array_size(vector_particiones); i++)
-    {
-        t_particiones *particion = malloc(sizeof(t_particiones));
-
-        if (particion == NULL)
-        { // Validar que malloc no falle
-            perror("Error al asignar memoria para la partición");
-            exit(EXIT_FAILURE);
-        }
-
-        particion->base = base_sgte;
-        particion->limite = atoi(vector_particiones[i]);
-        particion->ocupado = false;
-
-        base_sgte += particion->limite;
-
-        // Agregar la partición a la lista
-        list_add(particiones_fijas, particion);
-    }
-
-    // Liberar la memoria del array de strings
-    string_array_destroy(vector_particiones);
-}
-
-void inicializar_particiones_dinamicas()
-{
-    t_particiones *particion = malloc(sizeof(t_particiones));
-
-    if (particion == NULL)
-    { // Validar que malloc no falle
-        perror("Error al asignar memoria para la partición");
-        exit(EXIT_FAILURE);
-    }
-
-    particion->base = 0;
-    particion->limite = tamanio_memoria;
-    particion->ocupado = false;
-
-    list_add(particiones_dinamicas, particion);
-}
-
-char *eliminar_corchetes(char *cad)
-{
-    if (strlen(cad) <= 2)
-    {
-        return 0;
-    }
-    memmove(cad, cad + 1, strlen(cad));
-    cad[strlen(cad) - 1] = '\0';
-    return cad;
-}
-
-t_particiones *asignar_first_fit(t_list *lista, uint32_t tamanio) // retorna 1 si puede asignar hueco, sino retorna 0
-{
-    t_particiones *particion_a_devolver = malloc(sizeof(t_particiones));
-    for (int i = 0; i < list_size(lista); i++)
-    {
-        t_particiones *particion = list_get(lista, i);
-        if (particion->limite <= tamanio && particion->ocupado == 0)
-        {
-            particion->ocupado = 1;
-            particion_a_devolver->base = particion->base;
-            particion_a_devolver->limite = particion->limite;
-            particion_a_devolver->ocupado = 1;
-            return particion_a_devolver;
-        }
-    }
-    particion_a_devolver->ocupado = 0;
-    return particion_a_devolver;
 }
 
 /*int asignar_best_fit(t_list *lista, t_proceso *proceso, uint32_t tamanio) // retorna 1 si puede asignar hueco, sino retorna 0
