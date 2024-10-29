@@ -297,6 +297,7 @@ int atenderKernel(int *socket_kernel)
 
         pid = buffer_read_uint32(buffer);
         // FALTA LIBERAR ESPACIO ASIGNADO EN MEMORIA
+        
         eliminar_proceso(pid); // elimina las estructuras administrativas
         // enviar OK
         free(buffer);

@@ -13,12 +13,15 @@ void inicializar_particiones_fijas();
 void inicializar_particiones_dinamicas();
 char* eliminar_corchetes(char* cad);
 bool particion_mayor(void *a, void *b);
+void liberar_espacio_memoria(t_proceso *proceso);
 
 // FUNCIONES PARA MANEJO DE PARTICIONES
 
 t_particiones *asignar_first_fit(t_list *lista, uint32_t tamanio);
 t_particiones *asignar_best_fit(t_list *lista, uint32_t tamanio);
 t_particiones *asignar_worst_fit(t_list *lista, uint32_t tamanio);
+
+t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite);
 
 
 
@@ -28,5 +31,6 @@ extern t_list *particiones_fijas;
 extern t_list *particiones_dinamicas;
 extern uint32_t tamanio_memoria;
 extern char *particiones;
+extern t_log *logger_memoria;
 
 

@@ -161,63 +161,87 @@ char *eliminar_corchetes(char *cad)
 
 t_particiones *asignar_first_fit(t_list *lista, uint32_t tamanio) // retorna partición o NULL si no hay hueco
 {
-    for (int i = 0; i < list_size(lista); i++)
-    {
-        t_particiones *particion = list_get(lista, i);
-        if (particion->limite >= tamanio && particion->ocupado == 0)
-        {
-            particion->ocupado = 1;
-            return particion;
-        }
-    }
-    return NULL; // Retorna NULL si no hay hueco disponible
+	for (int i = 0; i < list_size(lista); i++)
+	{
+		t_particiones *particion = list_get(lista, i);
+		if (particion->limite >= tamanio && particion->ocupado == 0)
+		{
+			particion->ocupado = 1;
+			return particion;
+		}
+	}
+	return NULL; // Retorna NULL si no hay hueco disponible
 }
 
 t_particiones *asignar_best_fit(t_list *lista, uint32_t tamanio)
 {
-    uint32_t mejor_particion = UINT32_MAX;
-    uint32_t mejor_indice = UINT32_MAX;
+	uint32_t mejor_particion = UINT32_MAX;
+	uint32_t mejor_indice = UINT32_MAX;
 
-    for (int i = 0; i < list_size(lista); i++)
-    {
-        t_particiones *particion = list_get(lista, i);
-        if (particion->limite >= tamanio && particion->ocupado == 0 && particion->limite < mejor_particion)
-        {
-            mejor_particion = particion->limite;
-            mejor_indice = i;
-        }
-    }
+	for (int i = 0; i < list_size(lista); i++)
+	{
+		t_particiones *particion = list_get(lista, i);
+		if (particion->limite >= tamanio && particion->ocupado == 0 && particion->limite < mejor_particion)
+		{
+			mejor_particion = particion->limite;
+			mejor_indice = i;
+		}
+	}
 
-    if (mejor_indice != UINT32_MAX) // Si se encontró una partición adecuada
-    {
-        t_particiones *particion_a_devolver = list_get(lista, mejor_indice);
-        particion_a_devolver->ocupado = 1;
-        return particion_a_devolver;
-    }
+	if (mejor_indice != UINT32_MAX) // Si se encontró una partición adecuada
+	{
+		t_particiones *particion_a_devolver = list_get(lista, mejor_indice);
+		particion_a_devolver->ocupado = 1;
+		return particion_a_devolver;
+	}
 
-    return NULL; // Retorna NULL si no hay hueco adecuado
+	return NULL; // Retorna NULL si no hay hueco adecuado
 }
 
-t_particiones *asignar_worst_fit(t_list *lista, uint32_t tamanio) 
+t_particiones *asignar_worst_fit(t_list *lista, uint32_t tamanio)
 {
 	list_sort(lista, particion_mayor); // Ordena la lista de mayor a menor segun tamaño de las particiones
 
 	for (int i = 0; i < list_size(lista); i++)
-    {
-        t_particiones *particion = list_get(lista, i);
-        if (particion->limite >= tamanio && particion->ocupado == 0)
-        {
-            particion->ocupado = 1;
-            return particion;
-        }
-    }
-    return NULL; // Retorna NULL si no hay hueco disponible
+	{
+		t_particiones *particion = list_get(lista, i);
+		if (particion->limite >= tamanio && particion->ocupado == 0)
+		{
+			particion->ocupado = 1;
+			return particion;
+		}
+	}
+	return NULL; // Retorna NULL si no hay hueco disponible
 }
 
 bool particion_mayor(void *a, void *b)
 {
-	t_particiones* particion_a = (t_particiones*) a;
-	t_particiones* particion_b = (t_particiones*) b;
+	t_particiones *particion_a = (t_particiones *)a;
+	t_particiones *particion_b = (t_particiones *)b;
 	return particion_a->limite >= particion_b->limite;
 }
 
+void liberar_espacio_memoria(t_proceso *proceso)
+{
+	t_particiones *particion_a_liberar = buscar_particion(particiones_fijas, proceso->base, proceso->limite);
+	if (particion_a_liberar == NULL)
+	{
+		log_error(logger_memoria, "No se encontro la particion");
+		exit(EXIT_FAILURE);
+	}
+	particion_a_liberar->ocupado = 0;
+}
+
+t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite)
+{
+
+	for (int i = 0; i < list_size(lista); i++)
+	{
+		t_particiones *particion = list_get(lista, i);
+		if (base == particion->base && limite == particion->limite)
+		{
+			return particion;
+		}
+	}
+	return NULL;
+}
