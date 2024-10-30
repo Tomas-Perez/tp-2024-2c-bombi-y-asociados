@@ -220,7 +220,31 @@ t_particiones *asignar_worst_fit_fijas(t_list *lista, uint32_t tamanio)
 
 t_particiones *asignar_first_fit_dinamicas(t_list *lista, uint32_t tamanio) // retorna partición o NULL si no hay hueco
 {
-	
+	for (int i = 0; i < list_size(lista); i++)
+	{
+		t_particiones *particion = list_get(lista, i);
+		if (particion->limite >= tamanio && particion->ocupado == 0)
+		{
+			particion->limite = tamanio;
+			particion->ocupado = 1;
+
+			// t_particiones *particion_anterior = list_get(lista, i-1);
+			t_particiones *nueva_particion;
+			nueva_particion->base = particion->base + particion->limite;
+			if (i == 0) 
+			{
+				nueva_particion->limite = tamanio_memoria - tamanio;
+				nueva_particion->ocupado = 0;
+			} else {
+				t_particiones *particion_anterior = list_get(lista, i-1);
+				nueva_particion->limite = particion_anterior->limite - tamanio;
+				nueva_particion->ocupado = 0;
+			}
+			list_add_in_index(lista, i+1, nueva_particion); // chequear
+			return particion;
+		}
+	}
+	return NULL; // Retorna NULL si no hay hueco disponible
 }
 
 t_particiones *asignar_best_fit_dinamicas(t_list *lista, uint32_t tamanio)
