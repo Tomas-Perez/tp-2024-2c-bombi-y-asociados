@@ -239,8 +239,8 @@ void pedir_contexto_cpu(int pid, int tid)
     registros_cpu.FX = buffer_read_uint32(buffer);
     registros_cpu.GX = buffer_read_uint32(buffer);
     registros_cpu.HX = buffer_read_uint32(buffer);
-    // base = buffer_read_uint32(buffer);
-    // limite = buffer_read_uint32(buffer);
+    registros_cpu.base = buffer_read_uint32(buffer);
+    registros_cpu.limite = buffer_read_uint32(buffer);
 }
 
 void devolver_contexto_de_ejecucion(int pid, int tid)
@@ -264,8 +264,8 @@ void empaquetar_contexto(t_paquete *paquete)
     agregar_a_paquete_solo(paquete, registros_cpu.FX, sizeof(uint32_t));
     agregar_a_paquete_solo(paquete, registros_cpu.GX, sizeof(uint32_t));
     agregar_a_paquete_solo(paquete, registros_cpu.HX, sizeof(uint32_t));
-    // agregar_a_paquete_solo(dev_contexto, base, sizeof(uint32_t));
-    // agregar_a_paquete_solo(dev_contexto, limite, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.base, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, registros_cpu.limite, sizeof(uint32_t));
 }
 
 void devolver_lista_instrucciones(int motivo, instruccion *info)

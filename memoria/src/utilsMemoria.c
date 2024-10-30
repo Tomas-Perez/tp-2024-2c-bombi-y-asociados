@@ -4,11 +4,11 @@ void inicializar_hilo(t_proceso *proceso_padre, int tid, t_hilo *hilo_a_iniciali
 {
 	hilo_a_inicializar->tid = tid;
 	hilo_a_inicializar->pid_padre = proceso_padre->pid; // nose si hace falta
-	inicializar_registros(hilo_a_inicializar);
+	inicializar_registros(hilo_a_inicializar, proceso_padre);
 	guardar_instrucciones(hilo_a_inicializar, f);
 }
 
-void inicializar_registros(t_hilo *hilo)
+void inicializar_registros(t_hilo *hilo, t_proceso *proceso)
 {
 	hilo->registros_hilo.AX = 0;
 	hilo->registros_hilo.BX = 0;
@@ -17,6 +17,10 @@ void inicializar_registros(t_hilo *hilo)
 	hilo->registros_hilo.EX = 0;
 	hilo->registros_hilo.FX = 0;
 	hilo->registros_hilo.PC = 0;
+	hilo->registros_hilo.HX = 0;
+	hilo->registros_hilo.GX = 0;
+	hilo->registros_hilo.base = proceso->base;
+	hilo->registros_hilo.limite = proceso->limite;
 }
 
 void guardar_instrucciones(t_hilo *hilo, FILE *f)
@@ -62,8 +66,8 @@ void empaquetar_contexto(t_paquete *paquete, t_proceso *proceso, t_hilo *hilo)
 	agregar_a_paquete_solo(paquete, hilo->registros_hilo.FX, sizeof(uint32_t));
 	agregar_a_paquete_solo(paquete, hilo->registros_hilo.GX, sizeof(uint32_t));
 	agregar_a_paquete_solo(paquete, hilo->registros_hilo.HX, sizeof(uint32_t));
-	// agregar_a_paquete_solo(paquete, proceso->base, sizeof(uint32_t));
-	// agregar_a_paquete_solo(paquete, proceso->limite, sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, proceso->base, sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, proceso->limite, sizeof(uint32_t));
 }
 
 t_registros_cpu recibir_contexto(t_registros_cpu registros, void *buffer)
@@ -77,6 +81,8 @@ t_registros_cpu recibir_contexto(t_registros_cpu registros, void *buffer)
 	registros.FX = buffer_read_uint32(buffer);
 	registros.GX = buffer_read_uint32(buffer);
 	registros.HX = buffer_read_uint32(buffer);
+	registros.base = buffer_read_uint32(buffer);
+	registros.limite = buffer_read_uint32(buffer);
 
 	return registros;
 }
@@ -92,8 +98,8 @@ void actualizar_contexto_en_memoria(t_proceso *proceso, t_hilo *hilo, t_registro
 	hilo->registros_hilo.FX = registros.FX;
 	hilo->registros_hilo.GX = registros.GX;
 	hilo->registros_hilo.HX = registros.HX;
-	// proceso->base = base;
-	// proceso->limite = limite;
+	proceso->base = registros.base;
+	proceso->limite = registros.limite;
 }
 
 void inicializar_particiones_fijas()
@@ -315,11 +321,9 @@ t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio)
     return NULL;
 }
 
-t_particiones *
-
 /*----------------------------------------------------FIN PARTICIONES DINAMICAS----------------------------------------------------*/
 
-void liberar_espacio_memoria(t_proceso *proceso)
+void liberar_espacio_memoria(t_proceso *proceso) // FIJAS
 {
 	t_particiones *particion_a_liberar = buscar_particion(particiones_fijas, proceso->base, proceso->limite);
 	if (particion_a_liberar == NULL)

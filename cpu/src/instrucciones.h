@@ -37,4 +37,6 @@ void mutex_unlock(instruccion *inst);
 void thread_exit(instruccion *inst);
 void process_exit(instruccion *inst);
 
+uint32_t traducir_direcciones(t_proceso *proceso, uint32_t dir_logica);
+
 #endif

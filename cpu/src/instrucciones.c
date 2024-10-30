@@ -293,6 +293,7 @@ void process_exit(instruccion *inst)
     devolver_lista_instrucciones(PROCESS_EXIT, inst);
 }
 /* ------------------------------------------- MMU ------------------------------------------- */
+
 uint32_t traducir_direcciones(t_proceso *proceso, uint32_t dir_logica)
 {
     uint32_t dir_fisica;
@@ -309,5 +310,6 @@ uint32_t traducir_direcciones(t_proceso *proceso, uint32_t dir_logica)
         agregar_a_paquete(paquete, &tid, sizeof(uint32_t));
         enviar_paquete(paquete, conexion_dispatch);
         eliminar_paquete(paquete);
+        return 0; // VER ESTO
     }
 }

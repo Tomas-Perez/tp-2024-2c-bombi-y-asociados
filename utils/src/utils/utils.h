@@ -105,6 +105,8 @@ typedef struct
     uint32_t FX;
     uint32_t GX;
     uint32_t HX;
+    uint32_t base;
+    uint32_t limite;
 } t_registros_cpu;
 
 // -------------------------------- KERNEL --------------------------------

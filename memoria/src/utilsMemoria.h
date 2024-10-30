@@ -1,7 +1,7 @@
 #include <utils/utils.h>
 
 void inicializar_hilo(t_proceso *proceso_padre, int tid, t_hilo *hilo_a_inicializar, FILE *f);
-void inicializar_registros(t_hilo *hilo);
+void inicializar_registros(t_hilo *hilo, t_proceso *proceso);
 void guardar_instrucciones(t_hilo *hilo, FILE *f);
 void empaquetar_contexto(t_paquete *paquete, t_proceso *proceso, t_hilo *hilo);
 void actualizar_contexto_en_memoria(t_proceso *proceso, t_hilo *hilo, t_registros_cpu registros);
