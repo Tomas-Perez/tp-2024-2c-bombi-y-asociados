@@ -63,7 +63,8 @@ typedef enum
     PEDIR_CONTEXTO,
     ACTUALIZAR_CONTEXTO,
     OP_ENVIO_TCB,
-    RR
+    RR,
+    SEGMENTATION_FAULT,
 } op_code;
 
 typedef struct

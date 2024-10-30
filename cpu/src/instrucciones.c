@@ -292,3 +292,22 @@ void process_exit(instruccion *inst)
 {
     devolver_lista_instrucciones(PROCESS_EXIT, inst);
 }
+/* ------------------------------------------- MMU ------------------------------------------- */
+uint32_t traducir_direcciones(t_proceso *proceso, uint32_t dir_logica)
+{
+    uint32_t dir_fisica;
+
+    if (dir_logica <= proceso->limite)
+    {
+        dir_fisica = proceso->base + dir_logica;
+        return dir_fisica;
+    }
+    else
+    {
+        devolver_contexto_de_ejecucion(pid, tid);
+        t_paquete *paquete = crear_paquete(SEGMENTATION_FAULT);
+        agregar_a_paquete(paquete, &tid, sizeof(uint32_t));
+        enviar_paquete(paquete, conexion_dispatch);
+        eliminar_paquete(paquete);
+    }
+}
