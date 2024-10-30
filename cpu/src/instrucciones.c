@@ -222,6 +222,34 @@ void read_mem(instruccion *inst)
 // física de memoria obtenida a partir de la Dirección Lógica almacenada en el Registro Dirección.
 void write_mem(instruccion *inst)
 {
+    uint32_t *dir_registro = get_direccion_registro(list_get(inst->parametros, 0));
+    uint32_t *datos = get_direccion_registro(list_get(inst->parametros, 1));
+
+    uint32_t dir_fisica = traducir_direcciones(registros_cpu, *dir_registro);
+    if (dir_fisica == -1)
+    {
+        devolver_contexto_de_ejecucion(pid, tid);
+        t_paquete *paquete = crear_paquete(SEGMENTATION_FAULT);
+        agregar_a_paquete(paquete, &tid, sizeof(uint32_t));
+        enviar_paquete(paquete, conexion_dispatch);
+        eliminar_paquete(paquete);
+        return -1;
+    }
+    
+    uint32_t tamanio = calcular_bytes(registros_cpu, dir_fisica);
+
+
+    t_paquete *paquete_write = crear_paquete(WRITE_MEM);
+    agregar_a_paquete_solo(paquete_write, &tid, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete_write, &dir_fisica, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete_write, datos, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete_write, &tamanio, sizeof(uint32_t));
+    enviar_paquete(paquete_write, socket_memoria);
+    eliminar_paquete(paquete_write);
+
+    recibir_mensaje(socket_memoria, logger_cpu);
+
+    log_info(logger_cpu, "TID: <%i> - Acción: <ESCRIBIR> - Dirección Física: <%i>", tid, dir_fisica);
 }
 
 // LOG (Registro): Escribe en el archivo de log el valor del registro.
@@ -294,22 +322,32 @@ void process_exit(instruccion *inst)
 }
 /* ------------------------------------------- MMU ------------------------------------------- */
 
-uint32_t traducir_direcciones(t_proceso *proceso, uint32_t dir_logica)
+uint32_t traducir_direcciones(t_registros_cpu registros_cpu, uint32_t dir_logica)
 {
     uint32_t dir_fisica;
 
-    if (dir_logica <= proceso->limite)
+    if (dir_logica <= registros_cpu.limite)
     {
-        dir_fisica = proceso->base + dir_logica;
+        dir_fisica = registros_cpu.base + dir_logica;
         return dir_fisica;
     }
     else
     {
-        devolver_contexto_de_ejecucion(pid, tid);
-        t_paquete *paquete = crear_paquete(SEGMENTATION_FAULT);
-        agregar_a_paquete(paquete, &tid, sizeof(uint32_t));
-        enviar_paquete(paquete, conexion_dispatch);
-        eliminar_paquete(paquete);
-        return 0; // VER ESTO
+        return -1; // VER ESTO
     }
+}
+
+uint32_t calcular_bytes(t_registros_cpu registros_cpu, uint32_t dir_fisica)
+{
+    uint32_t tamanio;
+    int limite_restante = registros_cpu.limite - dir_fisica;
+    if (limite_restante >= 4)
+    {
+        tamanio = 4;
+    }
+    else
+    {
+        tamanio = limite_restante;
+    }
+    return tamanio;
 }

@@ -15,6 +15,7 @@ int conectarFS();
 
 extern t_list *particiones_fijas;
 extern t_list *particiones_dinamicas;
+extern pthread_mutex_t mutex_espacio_usuario;
 
 
 #endif

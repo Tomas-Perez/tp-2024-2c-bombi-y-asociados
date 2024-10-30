@@ -162,9 +162,27 @@ int atenderCpu(int *socket_cpu)
 
         break;
     case READ_MEM:
+
+        buffer = recibir_buffer((&size), *socket_cpu);
+
+        tid = buffer_read_uint32(buffer);
+        uint32_t dir_fisica = buffer_read_uint32(buffer);
+        uint32_t *dato = buffer_read_uint32(buffer);
+        uint32_t tamanio = buffer_read_uint32(buffer);
+
+        pthread_mutex_lock(&mutex_espacio_usuario);
+	    memcpy(memoria + dir_fisica, dato, tamanio);
+	    pthread_mutex_unlock(&mutex_espacio_usuario);
+
+        log_info(logger_memoria, "TID: <%i> - Acción: <ESCRIBIR> - Dirección física: <%i> - Tamaño <%i>", tid, dir_fisica, tamanio);
+	    usleep(retardo_rta * 1000);
+
         enviar_mensaje("OK", *socket_cpu);
+
+        free(buffer);
         break;
     case WRITE_MEM:
+
         enviar_mensaje("OK", *socket_cpu);
         break;
     default:
@@ -460,11 +478,3 @@ int conectarFS()
 
     handshake_cliente(socket_fs, logger_memoria);
 }
-
-/*int asignar_best_fit(t_list *lista, t_proceso *proceso, uint32_t tamanio) // retorna 1 si puede asignar hueco, sino retorna 0
-{
-}
-
-int asignar_worst_fit(t_list *lista, t_proceso *proceso, uint32_t tamanio) // retorna 1 si puede asignar hueco, sino retorna 0
-{
-}*/

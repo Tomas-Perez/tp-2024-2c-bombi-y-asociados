@@ -6,6 +6,7 @@ t_list *particiones_dinamicas;
 
 pthread_mutex_t mutex_listas;
 pthread_mutex_t mutex_instrucciones;
+pthread_mutex_t mutex_espacio_usuario;
 pthread_mutex_t mutex_tids;
 pthread_mutex_t m_instruccion;
 pthread_mutex_t m_proc_mem;
@@ -17,6 +18,7 @@ void inicializar_estructuras()
 	particiones_dinamicas = list_create();
 	pthread_mutex_init(&mutex_listas, NULL);
 	pthread_mutex_init(&mutex_instrucciones, NULL);
+	pthread_mutex_init(&mutex_espacio_usuario, NULL);
 	pthread_mutex_init(&m_instruccion, NULL);
 	pthread_mutex_init(&m_proc_mem, NULL);
 }
@@ -31,7 +33,7 @@ t_proceso *agregar_proceso_instrucciones(FILE *f, int pid, t_particiones *partic
 	proceso->limite = particion_a_asignar->limite;
 
 	t_hilo *hilo_main = malloc(sizeof(t_hilo));
-	inicializar_hilo(proceso, 0, hilo_main, f); // Ver si agregar prioridad
+	inicializar_hilo(proceso, 0, hilo_main, f); 
 	list_add(proceso->tids, hilo_main);			// Agrego hilo main a lista de hilos dentro de procesos
 
 	pthread_mutex_lock(&mutex_listas);
