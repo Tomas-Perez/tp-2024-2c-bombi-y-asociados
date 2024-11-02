@@ -216,6 +216,32 @@ void jnz(instruccion *inst)
 // que se encuentra en el Registro Dirección y lo almacena en el Registro Datos.
 void read_mem(instruccion *inst)
 {
+    uint32_t *dir_registro = get_direccion_registro(list_get(inst->parametros, 1));
+    uint32_t *datos = get_direccion_registro(list_get(inst->parametros, 0));
+
+    uint32_t dir_fisica = traducir_direcciones(registros_cpu, *dir_registro);
+    if (dir_fisica == -1)
+    {
+        return;
+    } 
+
+    t_paquete *paquete_read = crear_paquete(READ_MEM);
+    agregar_a_paquete_solo(paquete_read, &tid, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete_read, &dir_fisica, sizeof(uint32_t));
+    enviar_paquete(paquete_read, socket_memoria);
+    eliminar_paquete(paquete_read);
+
+    int cod_op = recibir_operacion(socket_memoria);
+    int size_ = 0;
+    void *buffer_dato = recibir_buffer(&size_, socket_memoria);
+
+    uint32_t dato_a_guardar = buffer_read_uint32(buffer_dato);
+
+    log_info(logger_cpu, "TID: <%i> - Acción: <LEER> - Dirección Física: <%i>", tid, dir_fisica);
+
+    *datos = dato_a_guardar;
+
+    free(buffer_dato);
 }
 
 // WRITE_MEM (Registro Dirección, Registro Datos): Lee el valor del Registro Datos y lo escribe en la dirección
@@ -228,22 +254,13 @@ void write_mem(instruccion *inst)
     uint32_t dir_fisica = traducir_direcciones(registros_cpu, *dir_registro);
     if (dir_fisica == -1)
     {
-        devolver_contexto_de_ejecucion(pid, tid);
-        t_paquete *paquete = crear_paquete(SEGMENTATION_FAULT);
-        agregar_a_paquete(paquete, &tid, sizeof(uint32_t));
-        enviar_paquete(paquete, conexion_dispatch);
-        eliminar_paquete(paquete);
-        return -1;
-    }
-    
-    uint32_t tamanio = calcular_bytes(registros_cpu, dir_fisica);
-
+        return;
+    } 
 
     t_paquete *paquete_write = crear_paquete(WRITE_MEM);
     agregar_a_paquete_solo(paquete_write, &tid, sizeof(uint32_t));
     agregar_a_paquete_solo(paquete_write, &dir_fisica, sizeof(uint32_t));
     agregar_a_paquete_solo(paquete_write, datos, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete_write, &tamanio, sizeof(uint32_t));
     enviar_paquete(paquete_write, socket_memoria);
     eliminar_paquete(paquete_write);
 
@@ -326,26 +343,21 @@ uint32_t traducir_direcciones(t_registros_cpu registros_cpu, uint32_t dir_logica
 {
     uint32_t dir_fisica;
 
-    if (dir_logica <= registros_cpu.limite)
+    if (dir_logica <= registros_cpu.limite - 4) // VER ESTA CUENTA
     {
         dir_fisica = registros_cpu.base + dir_logica;
         return dir_fisica;
     }
     else
     {
+        devolver_contexto_de_ejecucion(pid, tid);
+        t_paquete *paquete = crear_paquete(SEGMENTATION_FAULT);
+        agregar_a_paquete(paquete, &tid, sizeof(uint32_t));
+        enviar_paquete(paquete, conexion_dispatch);
+        eliminar_paquete(paquete);
         return -1; // VER ESTO
     }
 }
-
-uint32_t calcular_bytes(t_registros_cpu registros_cpu, uint32_t dir_fisica)
-{
-    uint32_t tamanio;
-    int limite_restante = registros_cpu.limite - dir_fisica;
-    if (limite_restante >= 4)
-    {
-        tamanio = 4;
-    }
-    else
     {
         tamanio = limite_restante;
     }
