@@ -227,6 +227,8 @@ void pedir_contexto_cpu(int pid, int tid)
     enviar_paquete(contexto, socket_memoria);
     eliminar_paquete(contexto);
 
+    log_info(logger_cpu, "TID: <%i> - Solicito Contexto Ejecución", tid);
+
     int size = 0;
     void *buffer = recibir_buffer(&size, socket_memoria);
 
@@ -250,6 +252,7 @@ void devolver_contexto_de_ejecucion(int pid, int tid)
     agregar_a_paquete_solo(dev_contexto, &tid, sizeof(int));
     empaquetar_contexto(dev_contexto);
     enviar_paquete(dev_contexto, socket_memoria);
+    log_info(logger_cpu, "TID: <%i> - Actualizo Contexto Ejecución", tid);
     eliminar_paquete(dev_contexto);
 }
 
