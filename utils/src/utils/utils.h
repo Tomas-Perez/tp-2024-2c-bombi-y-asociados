@@ -65,6 +65,7 @@ typedef enum
     OP_ENVIO_TCB,
     RR,
     SEGMENTATION_FAULT,
+    VALOR_REGISTRO
 } op_code;
 
 typedef struct
