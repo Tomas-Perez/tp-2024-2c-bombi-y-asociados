@@ -38,6 +38,5 @@ void thread_exit(instruccion *inst);
 void process_exit(instruccion *inst);
 
 uint32_t traducir_direcciones(t_registros_cpu registros_cpu, uint32_t dir_logica);
-uint32_t calcular_bytes(t_registros_cpu registros_cpu, uint32_t dir_fisica);
 
 #endif
