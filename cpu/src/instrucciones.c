@@ -358,8 +358,3 @@ uint32_t traducir_direcciones(t_registros_cpu registros_cpu, uint32_t dir_logica
         return -1; // VER ESTO
     }
 }
-    {
-        tamanio = limite_restante;
-    }
-    return tamanio;
-}
