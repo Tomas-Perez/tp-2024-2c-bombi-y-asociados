@@ -224,32 +224,36 @@ t_particiones *asignar_worst_fit_fijas(t_list *lista, uint32_t tamanio)
 
 /*----------------------------------------------------PARTICIONES DINAMICAS----------------------------------------------------*/
 
-t_particiones *asignar_first_fit_dinamicas(t_list *lista, uint32_t tamanio) {
-    for (int i = 0; i < list_size(lista); i++) {
-        t_particiones *particion = list_get(lista, i);
+t_particiones *asignar_first_fit_dinamicas(t_list *lista, uint32_t tamanio)
+{
+	for (int i = 0; i < list_size(lista); i++)
+	{
+		t_particiones *particion = list_get(lista, i);
 
-        // Verificación: La partición debe ser suficientemente grande y estar libre
-        if (particion->limite >= tamanio && particion->ocupado == 0) {
-            uint32_t tamanio_restante = particion->limite - tamanio; 
+		// Verificación: La partición debe ser suficientemente grande y estar libre
+		if (particion->limite >= tamanio && particion->ocupado == 0)
+		{
+			uint32_t tamanio_restante = particion->limite - tamanio;
 
-            particion->limite = tamanio;
-            particion->ocupado = 1;
+			particion->limite = tamanio;
+			particion->ocupado = 1;
 
-            if (tamanio_restante > 0) {
-                
-                t_particiones *nueva_particion = malloc(sizeof(t_particiones));  
-                nueva_particion->base = particion->base + tamanio;
-                nueva_particion->limite = tamanio_restante;
-                nueva_particion->ocupado = 0;
+			if (tamanio_restante > 0)
+			{
 
-                list_add_in_index(lista, i + 1, nueva_particion);
-            }
+				t_particiones *nueva_particion = malloc(sizeof(t_particiones));
+				nueva_particion->base = particion->base + tamanio;
+				nueva_particion->limite = tamanio_restante;
+				nueva_particion->ocupado = 0;
 
-            return particion;  // Retornamos la partición asignada
-        }
-    }
+				list_add_in_index(lista, i + 1, nueva_particion);
+			}
+
+			return particion; // Retornamos la partición asignada
+		}
+	}
 	// Si no encontramos una partición adecuada, devolvemos NULL
-    return NULL;
+	return NULL;
 }
 
 t_particiones *asignar_best_fit_dinamicas(t_list *lista, uint32_t tamanio)
@@ -269,22 +273,24 @@ t_particiones *asignar_best_fit_dinamicas(t_list *lista, uint32_t tamanio)
 	if (mejor_indice != -1) // Si se encontró una partición adecuada
 	{
 		t_particiones *particion_a_devolver = list_get(lista, mejor_indice);
-		if (particion_a_devolver->limite > tamanio) {
-            // Crear nueva partición con el espacio sobrante
-            t_particiones *nueva_particion = malloc(sizeof(t_particiones));
-            nueva_particion->base = particion_a_devolver->base + tamanio;
-            nueva_particion->limite = particion_a_devolver->limite - tamanio;
-            nueva_particion->ocupado = 0;
+		if (particion_a_devolver->limite > tamanio)
+		{
+			// Crear nueva partición con el espacio sobrante
+			t_particiones *nueva_particion = malloc(sizeof(t_particiones));
+			nueva_particion->base = particion_a_devolver->base + tamanio;
+			nueva_particion->limite = particion_a_devolver->limite - tamanio;
+			nueva_particion->ocupado = 0;
 
-            particion_a_devolver->limite = tamanio;
-            particion_a_devolver->ocupado = 1;
+			particion_a_devolver->limite = tamanio;
+			particion_a_devolver->ocupado = 1;
 
-            // Agregar la nueva partición a la lista
-            list_add_in_index(lista, mejor_indice + 1, nueva_particion);
-        } else { // seria el caso en el que el proceso sea igual al tamaño libre, por lo que no creas una nueva particion
-            particion_a_devolver->ocupado = 1;
-			
-        }
+			// Agregar la nueva partición a la lista
+			list_add_in_index(lista, mejor_indice + 1, nueva_particion);
+		}
+		else
+		{ // seria el caso en el que el proceso sea igual al tamaño libre, por lo que no creas una nueva particion
+			particion_a_devolver->ocupado = 1;
+		}
 		return particion_a_devolver;
 	}
 	return NULL; // Retorna NULL si no hay hueco adecuado
@@ -294,44 +300,111 @@ t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio)
 {
 	list_sort(lista, particion_mayor); // Ordena la lista de mayor a menor segun tamaño de las particiones
 
-	for (int i = 0; i < list_size(lista); i++) {
-        t_particiones *particion = list_get(lista, i);
+	for (int i = 0; i < list_size(lista); i++)
+	{
+		t_particiones *particion = list_get(lista, i);
 
-        // Verificación: La partición debe ser suficientemente grande y estar libre
-        if (particion->limite >= tamanio && particion->ocupado == 0) {
-            uint32_t tamanio_restante = particion->limite - tamanio; 
+		// Verificación: La partición debe ser suficientemente grande y estar libre
+		if (particion->limite >= tamanio && particion->ocupado == 0)
+		{
+			uint32_t tamanio_restante = particion->limite - tamanio;
 
-            particion->limite = tamanio;
-            particion->ocupado = 1;
+			particion->limite = tamanio;
+			particion->ocupado = 1;
 
-            if (tamanio_restante > 0) {
-                
-                t_particiones *nueva_particion = malloc(sizeof(t_particiones));  
-                nueva_particion->base = particion->base + tamanio;
-                nueva_particion->limite = tamanio_restante;
-                nueva_particion->ocupado = 0;
+			if (tamanio_restante > 0)
+			{
 
-                list_add_in_index(lista, i + 1, nueva_particion);
-            }
+				t_particiones *nueva_particion = malloc(sizeof(t_particiones));
+				nueva_particion->base = particion->base + tamanio;
+				nueva_particion->limite = tamanio_restante;
+				nueva_particion->ocupado = 0;
 
-            return particion;  // Retornamos la partición asignada
-        }
-    }
+				list_add_in_index(lista, i + 1, nueva_particion);
+			}
+
+			return particion; // Retornamos la partición asignada
+		}
+	}
 	// Si no encontramos una partición adecuada, devolvemos NULL
-    return NULL;
+	return NULL;
 }
 
 /*----------------------------------------------------FIN PARTICIONES DINAMICAS----------------------------------------------------*/
 
-void liberar_espacio_memoria(t_proceso *proceso) // FIJAS
+void liberar_espacio_memoria(t_proceso *proceso)
 {
 	t_particiones *particion_a_liberar = buscar_particion(particiones_fijas, proceso->base, proceso->limite);
+
 	if (particion_a_liberar == NULL)
 	{
-		log_error(logger_memoria, "No se encontro la particion");
+		log_error(logger_memoria, "No se encontró la partición");
 		exit(EXIT_FAILURE);
 	}
-	particion_a_liberar->ocupado = 0;
+
+	if (strcmp(esquema, "FIJAS") == 0)
+	{
+		particion_a_liberar->ocupado = 0;
+	}
+	else if (strcmp(esquema, "DINAMICAS") == 0)
+	{
+		particion_a_liberar->ocupado = 0;
+		verificar_particiones_vecinas(particiones_dinamicas);
+	}
+}
+
+void verificar_particiones_vecinas(t_list *lista)
+{
+	for (int i = list_size(lista) - 1; i >= 0; i--)
+	{
+		t_particiones *particion = list_get(lista, i);
+		if (i == 0 && list_size(lista) > 1)
+		{
+			// Primer elemento: verificar con el siguiente
+			t_particiones *particion_siguiente = list_get(lista, i + 1);
+			if (particion->ocupado == 0 && particion_siguiente->ocupado == 0)
+			{
+				particion->limite += particion_siguiente->limite;
+				list_remove_element(lista, particion_siguiente;
+			}
+		}
+		else if (i == list_size(lista) - 1 && list_size(lista) > 1)
+		{
+			// Último elemento: verificar con el anterior
+			t_particiones *particion_anterior = list_get(lista, particion_anterior);
+			if (particion_anterior->ocupado == 0 && particion->ocupado == 0)
+			{
+				particion->base = particion_anterior->base;
+				particion->limite += particion_anterior->limite;
+				list_remove_element(lista, particion_anterior);
+			}
+		}
+		else if (list_size(lista) > 2)
+		{
+			// Caso intermedio
+			t_particiones *particion_anterior = list_get(lista, particion_anterior);
+			t_particiones *particion_siguiente = list_get(lista, i + 1);
+
+			if (particion_anterior->ocupado == 0 && particion->ocupado == 0 && particion_siguiente->ocupado == 0)
+			{
+				particion->base = particion_anterior->base;
+				particion->limite += particion_anterior->limite + particion_siguiente->limite;
+				list_remove_element(lista, particion_siguiente);
+				list_remove_element(lista, particion_anterior);
+			}
+			else if (particion->ocupado == 0 && particion_siguiente->ocupado == 0)
+			{
+				particion->limite += particion_siguiente->limite;
+				list_remove_element(lista, particion_siguiente;
+			}
+			else if (particion->ocupado == 0 && particion_anterior->ocupado == 0)
+			{
+				particion->base = particion_anterior->base;
+				particion->limite += particion_anterior->limite;
+				list_remove_element(lista, particion_anterior);
+			}
+		}
+	}
 }
 
 t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite)
@@ -352,4 +425,4 @@ bool particion_mayor(void *a, void *b)
 	t_particiones *particion_a = (t_particiones *)a;
 	t_particiones *particion_b = (t_particiones *)b;
 	return particion_a->limite >= particion_b->limite;
-}//particion de mayor a menor
+} // particion de mayor a menor

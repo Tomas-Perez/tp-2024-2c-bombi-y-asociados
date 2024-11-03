@@ -29,7 +29,9 @@ t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio);
 
 t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite);
 
-
+//FUNCIONES PARA FINALIZAR MEMORIA
+void verificar_particiones_vecinas(t_list *lista);
+void liberar_espacio_memoria(t_proceso *proceso);
 
 
 extern pthread_mutex_t mutex_instrucciones;
@@ -38,5 +40,4 @@ extern t_list *particiones_dinamicas;
 extern uint32_t tamanio_memoria;
 extern char *particiones;
 extern t_log *logger_memoria;
-
-
+extern char *esquema;
