@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
 
     int socket_kernel, socket_cpu;
 
-    pthread_create(&t3, NULL, (void *)conectarFS, &socket_fs);
+    // pthread_create(&t3, NULL, (void *)conectarFS, &socket_fs);
 
     while (1)
     {
@@ -449,6 +449,8 @@ int atenderKernel(int *socket_kernel)
 
         inicializar_hilo(proceso_padre, tid, hilo_nuevo, file_hilo);
 
+        log_info(logger_memoria, "Hilo <Creado> - (PID:TID) - (<%i>:<%i>)", proceso_padre->pid, tid);
+
         list_add(proceso_padre->tids, hilo_nuevo);
         break;
     case THREAD_EXIT:
@@ -464,11 +466,50 @@ int atenderKernel(int *socket_kernel)
         tid = buffer_read_uint32(buffer);
 
         eliminar_hilo(pid, tid);
+
+        log_info(logger_memoria, "Hilo <Destruido> - (PID:TID) - (<%i>:<%i>)",pid, tid);
         // MANDAR OK
         free(buffer);
 
         break;
     case DUMP_MEMORY:
+        buffer = recibir_buffer(&size, *socket_kernel);
+        pthread_t t_fs;
+
+        pthread_create(&t_fs, NULL, (void *)conectarFS, &socket_fs);
+
+        if (buffer == NULL)
+        {
+            log_info(logger_memoria, "Error al recibir el buffer\n");
+            return -1;
+        }
+
+        pid = buffer_read_uint32(buffer);
+        tid = buffer_read_uint32(buffer);
+
+        log_info(logger_memoria, "Memory Dump solicitado - (PID:TID) - (<%i>:<%i>)", pid, tid);
+
+        t_proceso *proceso_dump = buscar_proceso(procesos_memoria, pid);
+
+        void *contenido_memoria = malloc(proceso_dump->limite);
+
+        if (contenido_memoria == NULL)
+        {
+            log_warning(logger_memoria, "Error al asignar memoria para la lectura");
+            break;
+        }
+
+        pthread_mutex_lock(&mutex_espacio_usuario);
+        memcpy(contenido_memoria, memoria + proceso_dump->base, proceso_dump->limite);
+        pthread_mutex_unlock(&mutex_espacio_usuario);
+
+        t_paquete *paquete_dump = crear_paquete(DUMP_MEMORY);
+        agregar_a_paquete_solo(paquete_dump, &proceso_dump->limite, sizeof(uint32_t));
+        agregar_a_paquete_solo(paquete_dump, contenido_memoria, proceso_dump->limite);
+        enviar_paquete(paquete_dump, socket_fs);
+        eliminar_paquete(paquete_dump);
+        free(contenido_memoria);
+
         break;
     default:
         log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
@@ -486,7 +527,7 @@ void levantar_config_memoria()
     path_instrucciones = config_get_string_value(config_memoria, "PATH_INSTRUCCIONES");
     esquema = config_get_string_value(config_memoria, "ESQUEMA");
     algoritmo_busqueda = config_get_string_value(config_memoria, "ALGORITMO_BUSQUEDA");
-    particiones = config_get_string_value(config_memoria, "PARTICIONES"); // DUDOSO
+    particiones = config_get_string_value(config_memoria, "PARTICIONES");
     log_level = config_get_string_value(config_memoria, "LOG_LEVEL");
     tamanio_memoria = config_get_int_value(config_memoria, "TAM_MEMORIA");
     retardo_rta = config_get_int_value(config_memoria, "RETARDO_RESPUESTA");

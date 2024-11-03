@@ -98,6 +98,7 @@ t_hilo *buscar_hilo(t_proceso *proceso_padre, int tid_buscado)
 void eliminar_proceso(int pid)
 {
 	t_proceso *proceso_a_eliminar = buscar_proceso(procesos_memoria, pid);
+	log_info(logger_memoria, "Proceso <Destruido> -  PID: <%i> - Tamaño: <%i>", pid, proceso_a_eliminar->limite);
 	liberar_espacio_memoria(proceso_a_eliminar);
 	pthread_mutex_lock(&m_proc_mem);
 	list_remove_element(procesos_memoria, proceso_a_eliminar);
