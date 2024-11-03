@@ -334,7 +334,7 @@ t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio)
 
 void liberar_espacio_memoria(t_proceso *proceso)
 {
-	t_particiones *particion_a_liberar = buscar_particion(particiones, proceso->base, proceso->limite);
+	t_particiones *particion_a_liberar = buscar_particion(lista_particiones, proceso->base, proceso->limite);
 
 	if (particion_a_liberar == NULL)
 	{
@@ -372,7 +372,7 @@ void verificar_particiones_vecinas(t_list *lista)
 		else if (i == list_size(lista) - 1 && list_size(lista) > 1)
 		{
 			// Último elemento: verificar con el anterior
-			t_particiones *particion_anterior = list_get(lista, particion_anterior);
+			t_particiones *particion_anterior = list_get(lista, i - 1);
 			if (particion_anterior->ocupado == 0 && particion->ocupado == 0)
 			{
 				particion->base = particion_anterior->base;
@@ -383,7 +383,7 @@ void verificar_particiones_vecinas(t_list *lista)
 		else if (list_size(lista) > 2)
 		{
 			// Caso intermedio
-			t_particiones *particion_anterior = list_get(lista, particion_anterior);
+			t_particiones *particion_anterior = list_get(lista, i - 1);
 			t_particiones *particion_siguiente = list_get(lista, i + 1);
 
 			if (particion_anterior->ocupado == 0 && particion->ocupado == 0 && particion_siguiente->ocupado == 0)
