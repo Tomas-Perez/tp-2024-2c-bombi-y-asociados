@@ -204,7 +204,7 @@ void buffer_add_uint32(t_buffer *buffer, uint32_t data)
 // Lee un uint32_t del buffer y avanza el offset
 uint32_t buffer_read_uint32(t_buffer *buffer)
 {
-	uint32_t data;
+	uint32_t data = 0;
 	memcpy(&data, buffer->stream + buffer->offset, sizeof(uint32_t));
 	buffer->offset += sizeof(uint32_t);
 	return data;
@@ -221,7 +221,7 @@ void buffer_add_uint8(t_buffer *buffer, uint8_t data)
 // Lee un uint8_t del buffer y avanza el offset
 uint8_t buffer_read_uint8(t_buffer *buffer)
 {
-	uint8_t data;
+	uint8_t data = 0;
 	memcpy(&data, buffer->stream + buffer->offset, sizeof(uint8_t));
 	buffer->offset += sizeof(uint8_t);
 	return data;
