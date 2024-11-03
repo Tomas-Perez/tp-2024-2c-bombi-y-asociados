@@ -1,8 +1,8 @@
 #include "memoriaInstrucciones.h"
 
 t_list *procesos_memoria;
-t_list *particiones_fijas;
-t_list *particiones_dinamicas;
+//t_list *particiones_fijas;
+t_list *lista_particiones;
 
 pthread_mutex_t mutex_listas;
 pthread_mutex_t mutex_instrucciones;
@@ -14,8 +14,7 @@ pthread_mutex_t m_proc_mem;
 void inicializar_estructuras()
 {
 	procesos_memoria = list_create();
-	particiones_fijas = list_create();
-	particiones_dinamicas = list_create();
+	lista_particiones = list_create();
 	pthread_mutex_init(&mutex_listas, NULL);
 	pthread_mutex_init(&mutex_instrucciones, NULL);
 	pthread_mutex_init(&mutex_espacio_usuario, NULL);

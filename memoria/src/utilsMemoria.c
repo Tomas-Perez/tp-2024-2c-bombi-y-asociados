@@ -126,7 +126,7 @@ void inicializar_particiones_fijas()
 		base_sgte += particion->limite;
 
 		// Agregar la partición a la lista
-		list_add(particiones_fijas, particion);
+		list_add(lista_particiones, particion);
 	}
 
 	// Liberar la memoria del array de strings
@@ -149,7 +149,7 @@ void inicializar_particiones_dinamicas()
 	particion->limite = tamanio_memoria;
 	particion->ocupado = false;
 
-	list_add(particiones_dinamicas, particion);
+	list_add(lista_particiones, particion);
 }
 
 char *eliminar_corchetes(char *cad)
@@ -334,7 +334,7 @@ t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio)
 
 void liberar_espacio_memoria(t_proceso *proceso)
 {
-	t_particiones *particion_a_liberar = buscar_particion(particiones_fijas, proceso->base, proceso->limite);
+	t_particiones *particion_a_liberar = buscar_particion(particiones, proceso->base, proceso->limite);
 
 	if (particion_a_liberar == NULL)
 	{
@@ -349,12 +349,13 @@ void liberar_espacio_memoria(t_proceso *proceso)
 	else if (strcmp(esquema, "DINAMICAS") == 0)
 	{
 		particion_a_liberar->ocupado = 0;
-		verificar_particiones_vecinas(particiones_dinamicas);
+		verificar_particiones_vecinas(lista_particiones);
 	}
 }
 
 void verificar_particiones_vecinas(t_list *lista)
 {
+	// list_sort(lista, ordenar_og); // VER COMO REORDENAR LA LISTA
 	for (int i = list_size(lista) - 1; i >= 0; i--)
 	{
 		t_particiones *particion = list_get(lista, i);
@@ -365,7 +366,7 @@ void verificar_particiones_vecinas(t_list *lista)
 			if (particion->ocupado == 0 && particion_siguiente->ocupado == 0)
 			{
 				particion->limite += particion_siguiente->limite;
-				list_remove_element(lista, particion_siguiente;
+				list_remove_element(lista, particion_siguiente);
 			}
 		}
 		else if (i == list_size(lista) - 1 && list_size(lista) > 1)
@@ -395,7 +396,7 @@ void verificar_particiones_vecinas(t_list *lista)
 			else if (particion->ocupado == 0 && particion_siguiente->ocupado == 0)
 			{
 				particion->limite += particion_siguiente->limite;
-				list_remove_element(lista, particion_siguiente;
+				list_remove_element(lista, particion_siguiente);
 			}
 			else if (particion->ocupado == 0 && particion_anterior->ocupado == 0)
 			{
@@ -420,6 +421,7 @@ t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite)
 	}
 	return NULL;
 }
+
 bool particion_mayor(void *a, void *b)
 {
 	t_particiones *particion_a = (t_particiones *)a;

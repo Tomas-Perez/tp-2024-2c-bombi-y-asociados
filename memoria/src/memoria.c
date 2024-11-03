@@ -248,35 +248,35 @@ int atenderKernel(int *socket_kernel)
         {
             if (strcmp(algoritmo_busqueda, "FIRST") == 0)
             {
-                particion_a_asignar = asignar_first_fit_fijas(particiones_fijas, tamanio_proceso);
+                particion_a_asignar = asignar_first_fit_fijas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = false;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    return;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                              // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "BEST") == 0)
             {
-                particion_a_asignar = asignar_best_fit_fijas(particiones_fijas, tamanio_proceso);
+                particion_a_asignar = asignar_best_fit_fijas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = false;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    return;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "WORST") == 0)
             {
-                particion_a_asignar = asignar_worst_fit_fijas(particiones_fijas, tamanio_proceso);
+                particion_a_asignar = asignar_worst_fit_fijas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = false;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    return;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else
@@ -290,35 +290,35 @@ int atenderKernel(int *socket_kernel)
         {
             if (strcmp(algoritmo_busqueda, "FIRST") == 0)
             {
-                particion_a_asignar = asignar_first_fit_dinamicas(particiones_dinamicas, tamanio_proceso);
+                particion_a_asignar = asignar_first_fit_dinamicas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = false;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    return;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "BEST") == 0)
             {
-                particion_a_asignar = asignar_best_fit_dinamicas(particiones_dinamicas, tamanio_proceso);
+                particion_a_asignar = asignar_best_fit_dinamicas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = false;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    return;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "WORST") == 0)
             {
-                particion_a_asignar = asignar_worst_fit_dinamicas(particiones_dinamicas, tamanio_proceso);
+                particion_a_asignar = asignar_worst_fit_dinamicas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = false;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    return;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else

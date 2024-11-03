@@ -35,8 +35,8 @@ void liberar_espacio_memoria(t_proceso *proceso);
 
 
 extern pthread_mutex_t mutex_instrucciones;
-extern t_list *particiones_fijas;
-extern t_list *particiones_dinamicas;
+extern t_list *lista_particiones;
+// extern t_list *particiones_dinamicas;
 extern uint32_t tamanio_memoria;
 extern char *particiones;
 extern t_log *logger_memoria;
