@@ -474,9 +474,9 @@ int atenderKernel(int *socket_kernel)
         break;
     case DUMP_MEMORY:
         buffer = recibir_buffer(&size, *socket_kernel);
-        pthread_t t_fs;
+        //pthread_t t_fs;
 
-        pthread_create(&t_fs, NULL, (void *)conectarFS, &socket_fs);
+        int socket_FS = conectarFS();
 
         if (buffer == NULL)
         {
@@ -506,9 +506,12 @@ int atenderKernel(int *socket_kernel)
         t_paquete *paquete_dump = crear_paquete(DUMP_MEMORY);
         agregar_a_paquete_solo(paquete_dump, &proceso_dump->limite, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_dump, contenido_memoria, proceso_dump->limite);
-        enviar_paquete(paquete_dump, socket_fs);
+        enviar_paquete(paquete_dump, socket_FS);
         eliminar_paquete(paquete_dump);
         free(contenido_memoria);
+
+        recibir_mensaje(socket_FS, logger_memoria);
+        close(socket_FS);
 
         break;
     default:
