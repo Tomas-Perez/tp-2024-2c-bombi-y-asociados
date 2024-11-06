@@ -57,7 +57,7 @@ void aceptar_peticiones(int socket_servidor)
 void atender_petiticiones(int *socket)
 {
     int socket_cliente = *socket;
-    t_list *lista;
+    //t_list *lista;
     uint32_t handshake;
     uint32_t resultOk = 0;
     uint32_t resultError = -1;
@@ -131,16 +131,16 @@ void archivocheq(){
       //printf("%s\n", dir->d_name);
       char* auxiliar=malloc(sizeof(char)*20);
       strcpy(auxiliar,dir->d_name);
-      if (strstr(auxiliar, "txt.metada") != NULL) {
+      if (strstr(auxiliar, ".dmp") != NULL) {
         aux=iniciar_config(string_from_format("%s/%s",directorio,auxiliar));
-        t_archivo *nuevo=malloc(sizeof(t_archivo));
-        char* archivo=config_get_string_value(aux, "NOMBRE");
-        nuevo->nombre=malloc(strlen(archivo)+1);
-        strcpy(nuevo->nombre,archivo);
-        nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
-        nuevo->block_size=config_get_int_value(aux,"SIZE");
-        nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
-        list_add(list_archivos,nuevo);
+        //t_archivo *nuevo=malloc(sizeof(t_archivo));
+        //char* archivo=config_get_string_value(aux, "NOMBRE");
+        //nuevo->nombre=malloc(strlen(archivo)+1);
+        //strcpy(nuevo->nombre,archivo);
+        //nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
+        //nuevo->block_size=config_get_int_value(aux,"SIZE");
+        //nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
+        //list_add(list_archivos,nuevo);
         for (int i=nuevo->index_block;i<nuevo->index_block+nuevo->cant_bloque;i++){     //ESTA FUNCION SOLO SIRVE PARA BLOQUES CONTINUOS, HAY QUE CAMBIARLO PARA QUE FUNCIONE EN INDEXADO
         bitarray_set_bit(bitarray_bitmap,i);
         }
@@ -185,7 +185,6 @@ void inicializarBloques()
 void inicializarBitmap()
 {
     char *archivo = string_from_format("%s/bitmap.dat", mount_dir);
-    //int tamanio = interfaz->block_count / 8;
     int tamanio= BIT_CHAR(block_count);
     fpbitmap = open(archivo, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     if (fpbitmap == -1)
@@ -200,7 +199,7 @@ void inicializarBitmap()
         close(fpbitmap);
         exit(EXIT_FAILURE);
     }
-    ptr_bitarray = mmap(0, tamanio, PROT_READ|PROT_WRITE, MAP_SHARED, fpbitmap, 0);
+    ptr_bitarray = mmap(NULL, tamanio, PROT_READ|PROT_WRITE, MAP_SHARED, fpbitmap, 0);
     if (ptr_bitarray == MAP_FAILED)
     {
         log_error(logger_fs, "Error al mapear bitarray.dat");
@@ -210,7 +209,7 @@ void inicializarBitmap()
 
     memset(ptr_bitarray, 0, tamanio);
 
-    bitarray_bitmap = bitarray_create_with_mode(ptr_bitarray, block_count, LSB_FIRST);
+    bitarray_bitmap = bitarray_create_with_mode(ptr_bitarray, tamanio, LSB_FIRST);
     if (!bitarray_bitmap)
     {
         log_error(logger_fs, "Error al asignar memoria al bitarray");
@@ -226,4 +225,21 @@ void inicializarBitmap()
         exit(EXIT_FAILURE);
     }
     sem_post(&sem2);
+}
+
+int crear_archivo(char* nombre, int size){
+    int index_block;
+    int cant_bloques=redondeo_bloques(size);
+    //block_size / sizeof(uint32_t); bloques para guardar el contenido del mismo, ya que cada archivo tiene un único bloque de punteros.
+    uint32_t* ptr_bloques;
+    int bloque_disp=verificar_espacio_disp(bitarray_bitmap,cant_bloques);
+    if (bloque_disp==-1){
+        mandar_error();
+        return -1;
+    }else{
+    }
+    reservar_bloques_bitmap(bitarray_bitmap,bloque_disp,cant_bloques); //paso 2
+    crear_metadata(nombre,index_block,cant_bloques);//paso 3
+    grabar_bloques(ptr_bloques);//paso 4
+    accerder_y_escribir_bloques(ptr_bloques);//paso 5
 }

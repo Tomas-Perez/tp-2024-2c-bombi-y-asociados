@@ -17,5 +17,5 @@ void atender_petiticiones(int *socket);
 void inicializarBloques();
 void inicializarBitmap();
 void archivocheq();
-
+int crear_archivo(char* nombre, int size)
 #endif

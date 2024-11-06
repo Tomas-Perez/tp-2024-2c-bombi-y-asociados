@@ -31,3 +31,16 @@ int redondeo_bloques(int tamanio){
     bloques= tamanio/block_size;
     return bloques;
 }
+
+void crear_metadata(char* nombre,int index_block,int size){
+    char *direccion_metadata = string_from_format("%s/%s.dmp", config_get_string_value(config_fs, "PATH_BASE_DIALFS"), nombre);
+        FILE* meta=fopen(direccion_metadata, "w");
+        t_config *metadata = iniciar_config(direccion_metadata);
+        char* buffersize= string_from_format("%d",size);
+        char* bufferindex= string_from_format("%d",index_block);
+        config_set_value(metadata, "SIZE", buffersize);
+        config_set_value(metadata, "INDEX_BLOCK", bufferindex);
+        config_save(metadata);
+        config_destroy(metadata);
+        fclose(meta);
+}

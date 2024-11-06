@@ -11,5 +11,6 @@ extern t_config *config_fs;
 
 int redondeo_bloques(int tamanio);
 void levantar_config_fs();
+void crear_metadata(char* nombre,int index_block,int size);
 
 #endif
