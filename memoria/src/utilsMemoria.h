@@ -13,6 +13,7 @@ void inicializar_particiones_fijas();
 void inicializar_particiones_dinamicas();
 char* eliminar_corchetes(char* cad);
 bool particion_mayor(void *a, void *b);
+bool base_menor(void *a, void *b);
 void liberar_espacio_memoria(t_proceso *proceso);
 
 // FUNCIONES PARA MANEJO DE PARTICIONES
@@ -32,6 +33,7 @@ t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite);
 //FUNCIONES PARA FINALIZAR MEMORIA
 void verificar_particiones_vecinas(t_list *lista);
 void liberar_espacio_memoria(t_proceso *proceso);
+void ordenar_lista_original(t_list *lista);
 
 
 extern pthread_mutex_t mutex_instrucciones;

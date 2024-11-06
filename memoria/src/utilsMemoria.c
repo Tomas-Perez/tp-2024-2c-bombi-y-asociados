@@ -329,6 +329,9 @@ t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio)
 	// Si no encontramos una partición adecuada, devolvemos NULL
 	return NULL;
 }
+void ordenar_lista_original(t_list *lista){
+	list_sort(lista, base_menor);
+}
 
 /*----------------------------------------------------FIN PARTICIONES DINAMICAS----------------------------------------------------*/
 
@@ -355,7 +358,7 @@ void liberar_espacio_memoria(t_proceso *proceso)
 
 void verificar_particiones_vecinas(t_list *lista)
 {
-	// list_sort(lista, ordenar_og); // VER COMO REORDENAR LA LISTA
+	ordenar_lista_original(lista);
 	for (int i = list_size(lista) - 1; i >= 0; i--)
 	{
 		t_particiones *particion = list_get(lista, i);
@@ -428,3 +431,11 @@ bool particion_mayor(void *a, void *b)
 	t_particiones *particion_b = (t_particiones *)b;
 	return particion_a->limite >= particion_b->limite;
 } // particion de mayor a menor
+
+bool base_menor(void *a, void *b)
+{
+	t_particiones *particion_a = (t_particiones *)a;
+	t_particiones *particion_b = (t_particiones *)b;
+
+	return particion_a->base < particion_b->base;
+}
