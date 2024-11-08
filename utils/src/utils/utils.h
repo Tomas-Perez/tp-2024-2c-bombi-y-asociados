@@ -211,7 +211,7 @@ void buffer_add_string(t_buffer *buffer, uint32_t length, char *string);
 char *buffer_read_string(t_buffer *buffer, uint32_t *length);
 
 int recibir_operacion(int socket_cliente);
-void *recibir_buffer(int *size, int socket_cliente);
+t_buffer *recibir_buffer(int *size, int socket_cliente);
 
 void recibir_mensaje(int socket_cliente, t_log *logger);
 void enviar_mensaje(char *mensaje, int socket_cliente);

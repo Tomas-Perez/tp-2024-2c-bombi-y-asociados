@@ -298,32 +298,37 @@ int recibir_operacion(int socket_cliente)
 	}
 }
 
-void *recibir_buffer(int *size, int socket_cliente) {
+t_buffer *recibir_buffer(int *tamaño_buffer, int socket_cliente) { // VER SI ESTO PUEDE SER DEL DATO T_BUFFER, OJJO CON ESO NO TE LA CUENTA NADIE ESA
     void *buffer = NULL;
 
     // Intentar recibir el tamaño del buffer
-    int bytes_recibidos = recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
+    int bytes_recibidos = recv(socket_cliente, tamaño_buffer, sizeof(int), MSG_WAITALL);
     if (bytes_recibidos <= 0) {
         //log_info(logger_memoria, "Error al recibir el tamaño del buffer o conexión cerrada");
         return NULL;
     }
 
     // Asignar memoria para el buffer en función del tamaño recibido
-    buffer = malloc(*size);
+    buffer = malloc(*tamaño_buffer);
     if (buffer == NULL) {
         //log_info(logger_memoria, "Error al asignar memoria para el buffer");
         return NULL;
     }
 
     // Intentar recibir el contenido del buffer
-    bytes_recibidos = recv(socket_cliente, buffer, *size, MSG_WAITALL);
-    if (bytes_recibidos <= 0) {
+    bytes_recibidos = recv(socket_cliente, buffer, *tamaño_buffer, MSG_WAITALL);
+    if (bytes_recibidos != *tamaño_buffer) {
         //log_info(logger_memoria, "Error al recibir el contenido del buffer o conexión cerrada");
         free(buffer);  // Liberar memoria antes de salir
         return NULL;
     }
 
-    return buffer;
+	t_buffer *buffer_a_devolver = malloc(sizeof(t_buffer));
+	buffer_a_devolver->offset = 0;
+	buffer_a_devolver->size = *tamaño_buffer;
+	buffer_a_devolver->stream = buffer;
+
+    return buffer_a_devolver;
 }
 
 
