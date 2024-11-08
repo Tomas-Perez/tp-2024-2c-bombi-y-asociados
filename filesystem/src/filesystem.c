@@ -5,7 +5,7 @@ t_list* list_archivos;
 int socket_cliente,fpbitmap,fpbloc;
 t_bitarray *bitarray_bitmap;
 char *ptr_bitarray;
-void *blocmap;
+char *blocmap;
 
 sem_t semaforo,sem2;
 
@@ -57,7 +57,7 @@ void aceptar_peticiones(int socket_servidor)
 void atender_petiticiones(int *socket)
 {
     int socket_cliente = *socket;
-    //t_list *lista;
+    t_list *lista;
     uint32_t handshake;
     uint32_t resultOk = 0;
     uint32_t resultError = -1;
@@ -103,7 +103,11 @@ void atender_petiticiones(int *socket)
             pthread_exit("Peticion exitosa");
             break;
         case PAQUETE:
-            //lista = recibir_paquete(socket_cliente);
+            lista = recibir_paquete(socket_cliente);
+            char* nombr=list_get(lista,0);
+            int* tam=list_get(lista,1);
+            int tamani=*tam;
+            crear_archivo(nombr,tamani,socket_cliente);
             puts("Me llegaron los siguientes valores:\n");
             sem_post(&semaforo);
             koso = 1;
@@ -133,14 +137,14 @@ void archivocheq(){
       strcpy(auxiliar,dir->d_name);
       if (strstr(auxiliar, ".dmp") != NULL) {
         aux=iniciar_config(string_from_format("%s/%s",directorio,auxiliar));
-        //t_archivo *nuevo=malloc(sizeof(t_archivo));
-        //char* archivo=config_get_string_value(aux, "NOMBRE");
-        //nuevo->nombre=malloc(strlen(archivo)+1);
-        //strcpy(nuevo->nombre,archivo);
-        //nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
-        //nuevo->block_size=config_get_int_value(aux,"SIZE");
-        //nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
-        //list_add(list_archivos,nuevo);
+        t_archivo *nuevo=malloc(sizeof(t_archivo));
+        char* archivo=config_get_string_value(aux, "NOMBRE");
+        nuevo->nombre=malloc(strlen(archivo)+1);
+        strcpy(nuevo->nombre,archivo);
+        nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
+        nuevo->block_size=config_get_int_value(aux,"SIZE");
+        nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
+        list_add(list_archivos,nuevo);
         for (int i=nuevo->index_block;i<nuevo->index_block+nuevo->cant_bloque;i++){     //ESTA FUNCION SOLO SIRVE PARA BLOQUES CONTINUOS, HAY QUE CAMBIARLO PARA QUE FUNCIONE EN INDEXADO
         bitarray_set_bit(bitarray_bitmap,i);
         }
@@ -174,12 +178,28 @@ void inicializarBloques()
         log_error(logger_fs, "no se pudo asignar tamaño a bloques");
         exit(EXIT_FAILURE);
     }
-    blocmap = mmap(NULL, tamanio, PROT_WRITE, MAP_SHARED, fpbloc, 0);
+    blocmap = mmap(NULL, tamanio, PROT_READ|PROT_WRITE, MAP_SHARED, fpbloc, 0);
     if (blocmap == MAP_FAILED)
     {
         log_error(logger_fs, "Error al mapear bloques");
         exit(EXIT_FAILURE);
     }
+    //----------------------------------------------------------CODIGO DE PRUEBA DE ESCRITURA DE BLOQUES
+    //char A='a';                                       
+    //for (int i=(16*3);i<block_size;i++ ){//16 bytes 
+    //    blocmap[i]=A;
+    //}
+    int bloque_disp=0;
+    int cant_bloques=3;
+    //char bloq=string_from_format("%d",bloque_disp);
+        int j=1;
+    //char*B=string_from_format("%d",bloque_disp+j);
+
+    for(int i=bloque_disp*16;i<cant_bloques;i++){           
+        blocmap[i]=(char)bloque_disp+j;
+        j++;
+    }
+    //----------------------------------------------------------
 }
 
 void inicializarBitmap()
@@ -227,19 +247,20 @@ void inicializarBitmap()
     sem_post(&sem2);
 }
 
-int crear_archivo(char* nombre, int size){
-    int index_block;
+int crear_archivo(char* nombre, int size,int socket_cli){
+    //int index_block;
     int cant_bloques=redondeo_bloques(size);
     //block_size / sizeof(uint32_t); bloques para guardar el contenido del mismo, ya que cada archivo tiene un único bloque de punteros.
-    uint32_t* ptr_bloques;
+    //uint32_t* ptr_bloques;
     int bloque_disp=verificar_espacio_disp(bitarray_bitmap,cant_bloques);
     if (bloque_disp==-1){
-        mandar_error();
+        mandar_error(socket_cli);
         return -1;
     }else{
     }
     reservar_bloques_bitmap(bitarray_bitmap,bloque_disp,cant_bloques); //paso 2
-    crear_metadata(nombre,index_block,cant_bloques);//paso 3
-    grabar_bloques(ptr_bloques);//paso 4
-    accerder_y_escribir_bloques(ptr_bloques);//paso 5
+    crear_metadata(nombre,bloque_disp,size); //paso 3
+    grabar_bloques(blocmap,bloque_disp,cant_bloques); //paso 4
+    accerder_y_escribir_bloques(blocmap,bloque_disp,cant_bloques); //paso 5
+    return 0;
 }

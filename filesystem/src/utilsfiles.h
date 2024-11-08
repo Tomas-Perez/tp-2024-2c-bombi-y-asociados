@@ -12,5 +12,10 @@ extern t_config *config_fs;
 int redondeo_bloques(int tamanio);
 void levantar_config_fs();
 void crear_metadata(char* nombre,int index_block,int size);
-
+void reservar_bloques_bitmap();
+int verificar_espacio_disp(t_bitarray* bit,int size);
+void reservar_bloques_bitmap(t_bitarray* bit,int bloque_disp,int cant_bloques);
+void mandar_error(int);
+void grabar_bloques(char* blocmap,int bloque_disp,int cant_bloques);
+void accerder_y_escribir_bloques(char* blocmap,int bloque_disp,int cant_bloques);
 #endif
