@@ -1,9 +1,12 @@
 #include "memoriaInstrucciones.h"
 
 t_list *procesos_memoria;
+//t_list *particiones_fijas;
+t_list *lista_particiones;
 
 pthread_mutex_t mutex_listas;
 pthread_mutex_t mutex_instrucciones;
+pthread_mutex_t mutex_espacio_usuario;
 pthread_mutex_t mutex_tids;
 pthread_mutex_t m_instruccion;
 pthread_mutex_t m_proc_mem;
@@ -11,22 +14,25 @@ pthread_mutex_t m_proc_mem;
 void inicializar_estructuras()
 {
 	procesos_memoria = list_create();
+	lista_particiones = list_create();
 	pthread_mutex_init(&mutex_listas, NULL);
 	pthread_mutex_init(&mutex_instrucciones, NULL);
+	pthread_mutex_init(&mutex_espacio_usuario, NULL);
 	pthread_mutex_init(&m_instruccion, NULL);
 	pthread_mutex_init(&m_proc_mem, NULL);
 }
 
-t_proceso *agregar_proceso_instrucciones(FILE *f, int pid) // habria que mandar por parametro el archivo que nos mandan desde kernel
+t_proceso *agregar_proceso_instrucciones(FILE *f, int pid, t_particiones *particion_a_asignar) // habria que mandar por parametro el archivo que nos mandan desde kernel
 {
 	t_proceso *proceso = malloc(sizeof(t_proceso)); // reservamos espacio en memoria para el proceso
+	
 	proceso->pid = pid;
 	proceso->tids = list_create();
-
-	// Ver como agregar base y limite
+	proceso->base = particion_a_asignar->base;
+	proceso->limite = particion_a_asignar->limite;
 
 	t_hilo *hilo_main = malloc(sizeof(t_hilo));
-	inicializar_hilo(proceso, 0, hilo_main, f); // Ver si agregar prioridad
+	inicializar_hilo(proceso, 0, hilo_main, f); 
 	list_add(proceso->tids, hilo_main);			// Agrego hilo main a lista de hilos dentro de procesos
 
 	pthread_mutex_lock(&mutex_listas);
@@ -92,6 +98,8 @@ t_hilo *buscar_hilo(t_proceso *proceso_padre, int tid_buscado)
 void eliminar_proceso(int pid)
 {
 	t_proceso *proceso_a_eliminar = buscar_proceso(procesos_memoria, pid);
+	log_info(logger_memoria, "Proceso <Destruido> -  PID: <%i> - Tamaño: <%i>", pid, proceso_a_eliminar->limite);
+	liberar_espacio_memoria(proceso_a_eliminar);
 	pthread_mutex_lock(&m_proc_mem);
 	list_remove_element(procesos_memoria, proceso_a_eliminar);
 	pthread_mutex_unlock(&m_proc_mem);

@@ -9,7 +9,7 @@ extern t_config* config_memoria;
 extern t_list* procesos_memoria;
 
 void inicializar_estructuras();
-t_proceso* agregar_proceso_instrucciones(FILE* f, int pid);
+t_proceso* agregar_proceso_instrucciones(FILE* f, int pid, t_particiones *particion_a_asignar);
 char* buscar_instruccion(int pid, int tid, uint32_t program_counter);
 t_proceso *buscar_proceso(t_list *lista, int pid_buscado);
 t_hilo *buscar_hilo(t_proceso *proceso_padre, int tid_buscado);

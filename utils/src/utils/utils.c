@@ -6,16 +6,6 @@ void saludar(char *quien)
 {
 	printf("Hola desde %s!!\n", quien);
 }
-// -------------------------------- KERNEL --------------------------------
-
-
-/*------------------- funciones para leer consola ACCIONES --------------*/
-
-// -------------------------------- CPU --------------------------------
-
-// -------------------------------- MEMORIA --------------------------------
-
-// -------------------------------- FILESYSTEM --------------------------------
 
 // -------------------------------- LOGGER --------------------------------
 
@@ -212,12 +202,17 @@ void buffer_add_uint32(t_buffer *buffer, uint32_t data)
 }
 
 // Lee un uint32_t del buffer y avanza el offset
-uint32_t buffer_read_uint32(t_buffer *buffer)
-{
-	uint32_t data;
-	memcpy(&data, buffer->stream + buffer->offset, sizeof(uint32_t));
-	buffer->offset += sizeof(uint32_t);
-	return data;
+uint32_t buffer_read_uint32(t_buffer *buffer) {
+    uint32_t data = 0;
+
+    if (buffer->offset + sizeof(uint32_t) > buffer->size) {
+        //log_info(logger_memoria, "Error: Offset fuera de límites del buffer");
+        return 0;  // o algún valor de error
+    }
+
+    memcpy(&data, buffer->stream + buffer->offset, sizeof(uint32_t));
+    buffer->offset += sizeof(uint32_t);
+    return data;
 }
 
 // Agrega un uint8_t al buffer
@@ -229,12 +224,17 @@ void buffer_add_uint8(t_buffer *buffer, uint8_t data)
 }
 
 // Lee un uint8_t del buffer y avanza el offset
-uint8_t buffer_read_uint8(t_buffer *buffer)
-{
-	uint8_t data;
-	memcpy(&data, buffer->stream + buffer->offset, sizeof(uint8_t));
-	buffer->offset += sizeof(uint8_t);
-	return data;
+uint8_t buffer_read_uint8(t_buffer *buffer) {
+    uint8_t data = 0;
+
+    if (buffer->offset + sizeof(uint8_t) > buffer->size) {
+        //log_info(logger_memoria, "Error: Offset fuera de límites del buffer");
+        return 0;  // o algún valor de error
+    }
+
+    memcpy(&data, buffer->stream + buffer->offset, sizeof(uint8_t));
+    buffer->offset += sizeof(uint8_t);
+    return data;
 }
 
 // Agrega string al buffer con un uint32_t indicando su longitud
@@ -246,16 +246,42 @@ void buffer_add_string(t_buffer *buffer, uint32_t length, char *string)
 	buffer->size += length;
 }
 
-// Lee un string y su longitud del buffer y avanza el offset
-char *buffer_read_string(t_buffer *buffer, uint32_t *length)
-{
-	*length = buffer_read_uint32(buffer); // Leer la longitud primero
-	char *string = malloc(*length + 1);	  // +1 para el terminador NULL
-	memcpy(string, buffer->stream + buffer->offset, *length);
-	string[*length] = '\0'; // Terminar la cadena
-	buffer->offset += *length;
-	return string;
+char *buffer_read_string(t_buffer *buffer, uint32_t *length) {
+    // Verificar que el offset está dentro de los límites del buffer
+    if (buffer->offset + sizeof(uint32_t) > buffer->size) {
+        //log_info(logger_memoria, "Error: Offset fuera de límites al leer la longitud del string");
+        *length = 0;
+        return NULL;
+    }
+
+    // Leer la longitud del string
+    *length = buffer_read_uint32(buffer);
+
+    // Verificar que el buffer tiene suficiente espacio para el string
+    if (buffer->offset + *length > buffer->size) {
+        //log_info(logger_memoria, "Error: Tamaño insuficiente en el buffer para leer el string");
+        *length = 0;
+        return NULL;
+    }
+
+    // Asignar memoria para el string (+1 para el terminador NULL)
+    char *string = malloc(*length + 1);
+    if (string == NULL) {
+        //log_info(logger_memoria, "Error al asignar memoria para el string");
+        *length = 0;
+        return NULL;
+    }
+
+    // Copiar el string desde el buffer
+    memcpy(string, buffer->stream + buffer->offset, *length);
+    string[*length] = '\0'; // Añadir terminador NULL
+
+    // Avanzar el offset después de leer el string
+    buffer->offset += *length;
+
+    return string;
 }
+
 
 int recibir_operacion(int socket_cliente)
 {
@@ -271,17 +297,40 @@ int recibir_operacion(int socket_cliente)
 		return -1;
 	}
 }
-void *recibir_buffer(int *size, int socket_cliente)
-{
-	void *buffer;
 
-	recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
-	buffer = malloc(*size);
-	recv(socket_cliente, buffer, *size, MSG_WAITALL);
+t_buffer *recibir_buffer(int *tamaño_buffer, int socket_cliente) { // VER SI ESTO PUEDE SER DEL DATO T_BUFFER, OJJO CON ESO NO TE LA CUENTA NADIE ESA
+    void *buffer = NULL;
 
-	return buffer;
-	// free(buffer);
+    // Intentar recibir el tamaño del buffer
+    int bytes_recibidos = recv(socket_cliente, tamaño_buffer, sizeof(int), MSG_WAITALL);
+    if (bytes_recibidos <= 0) {
+        //log_info(logger_memoria, "Error al recibir el tamaño del buffer o conexión cerrada");
+        return NULL;
+    }
+
+    // Asignar memoria para el buffer en función del tamaño recibido
+    buffer = malloc(*tamaño_buffer);
+    if (buffer == NULL) {
+        //log_info(logger_memoria, "Error al asignar memoria para el buffer");
+        return NULL;
+    }
+
+    // Intentar recibir el contenido del buffer
+    bytes_recibidos = recv(socket_cliente, buffer, *tamaño_buffer, MSG_WAITALL);
+    if (bytes_recibidos != *tamaño_buffer) {
+        //log_info(logger_memoria, "Error al recibir el contenido del buffer o conexión cerrada");
+        free(buffer);  // Liberar memoria antes de salir
+        return NULL;
+    }
+
+	t_buffer *buffer_a_devolver = malloc(sizeof(t_buffer));
+	buffer_a_devolver->offset = 0;
+	buffer_a_devolver->size = *tamaño_buffer;
+	buffer_a_devolver->stream = buffer;
+
+    return buffer_a_devolver;
 }
+
 
 void recibir_mensaje(int socket_cliente, t_log *logger)
 {

@@ -67,7 +67,9 @@ typedef enum
     PEDIR_CONTEXTO,
     ACTUALIZAR_CONTEXTO,
     OP_ENVIO_TCB,
-    RR
+    RR,
+    SEGMENTATION_FAULT,
+    VALOR_REGISTRO
 } op_code;
 
 typedef struct
@@ -108,6 +110,8 @@ typedef struct
     uint32_t FX;
     uint32_t GX;
     uint32_t HX;
+    uint32_t base;
+    uint32_t limite;
 } t_registros_cpu;
 
 // -------------------------------- KERNEL --------------------------------
@@ -176,6 +180,12 @@ typedef struct
     t_registros_cpu registros;
 } t_contexto_ejecucion; // ENTRE CPU Y MEM
 
+typedef struct {
+    uint32_t base;
+    uint32_t limite;
+    bool ocupado;
+} t_particiones;
+
 // -------------------------------- FILESYSTEM --------------------------------
 
 // -------------------------------- LOGGER --------------------------------
@@ -205,8 +215,9 @@ void buffer_add_string(t_buffer *buffer, uint32_t length, char *string);
 char *buffer_read_string(t_buffer *buffer, uint32_t *length);
 
 int recibir_operacion(int socket_cliente);
-void *recibir_buffer(int *size, int socket_cliente);
-t_list* recibir_paquete(int socket_cliente);
+
+t_buffer *recibir_buffer(int *size, int socket_cliente);
+
 
 void recibir_mensaje(int socket_cliente, t_log *logger);
 void enviar_mensaje(char *mensaje, int socket_cliente);

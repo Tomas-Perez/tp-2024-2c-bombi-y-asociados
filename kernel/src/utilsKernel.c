@@ -101,10 +101,10 @@ void pedir_memoria(int socket)
         
 
         t_paquete* pedido_memoria = crear_paquete(motivo);
-		agregar_a_paquete(pedido_memoria, &pid,sizeof(int));
-        agregar_a_paquete(pedido_memoria, &tamanio, sizeof(int));
-        agregar_a_paquete_solo(pedido_memoria, &(size_path_hilo), sizeof(uint32_t));
-        agregar_a_paquete(pedido_memoria, path, strlen(path) + 1);// PATH PREGUNTAR
+		agregar_a_paquete_solo(pedido_memoria, &pid,sizeof(int));
+        agregar_a_paquete_solo(pedido_memoria, &tamanio, sizeof(int));
+        //agregar_a_paquete_solo(pedido_memoria, &(size_path_hilo), sizeof(uint32_t));
+        //agregar_a_paquete(pedido_memoria, path, strlen(path) + 1);// PATH PREGUNTAR
 
         enviar_paquete(pedido_memoria,socket);
 		eliminar_paquete(pedido_memoria);
