@@ -200,15 +200,15 @@ void inicializarBloques()
     //    blocmap[i]=bloque_disp+j;
     //    j++;
     //}
-    int* source=malloc(sizeof(int));
-    *source=1;
-    //int* source[3]={1,2,3};
     //blocmap[tamanio_bloq]=1;
     //blocmap[tamanio_bloq+1]=2;
-    memcpy(blocmap,source,sizeof(int));
-    memcpy(blocmap+1,source,sizeof(int));
-    
-    free(source);
+    //int* source[3]={1,2,3};
+    //int* source=malloc(sizeof(int));
+    //*source=1;
+    //memcpy(blocmap,source,sizeof(int));
+    //memcpy(blocmap+1,source,sizeof(int));
+    //
+    //free(source);
     //----------------------------------------------------------
 }
 
