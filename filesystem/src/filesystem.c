@@ -184,21 +184,31 @@ void inicializarBloques()
         log_error(logger_fs, "Error al mapear bloques");
         exit(EXIT_FAILURE);
     }
+
+    memset(blocmap, 0, tamanio);                                //retorna todo bloques.dat en 0
+
+    tamanio_bloq=block_size/sizeof(uint32_t);
     //----------------------------------------------------------CODIGO DE PRUEBA DE ESCRITURA DE BLOQUES
     //char A='a';                                       
     //for (int i=(16*3);i<block_size;i++ ){//16 bytes 
     //    blocmap[i]=A;
     //}
-    int bloque_disp=0;
-    int cant_bloques=3;
-    //char bloq=string_from_format("%d",bloque_disp);
-        int j=1;
-    //char*B=string_from_format("%d",bloque_disp+j);
-
-    for(int i=bloque_disp*16;i<cant_bloques;i++){           
-        blocmap[i]=(char)bloque_disp+j;
-        j++;
-    }
+    //int bloque_disp=0;
+    //int cant_bits=3;
+    //int j=1;
+    //for(int i=bloque_disp*tamanio_bloq;i<cant_bits;i++){           
+    //    blocmap[i]=bloque_disp+j;
+    //    j++;
+    //}
+    int* source=malloc(sizeof(int));
+    *source=1;
+    //int* source[3]={1,2,3};
+    //blocmap[tamanio_bloq]=1;
+    //blocmap[tamanio_bloq+1]=2;
+    memcpy(blocmap,source,sizeof(int));
+    memcpy(blocmap+1,source,sizeof(int));
+    
+    free(source);
     //----------------------------------------------------------
 }
 

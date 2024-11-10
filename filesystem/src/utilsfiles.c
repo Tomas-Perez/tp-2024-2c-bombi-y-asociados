@@ -1,8 +1,9 @@
 #include "utilsfiles.h"
 pthread_mutex_t mconteo;
-uint32_t block_size,block_count,retardo_acceso_bloque;
+int block_size,block_count,retardo_acceso_bloque;
 char *puerto_escucha, *mount_dir, *log_level;
 t_config *config_fs;
+int tamanio_bloq;
 
 void levantar_config_fs()
 {
@@ -74,13 +75,17 @@ void reservar_bloques_bitmap(t_bitarray* bit,int bloque_disp,int cant_bloques){
 void mandar_error(int socke){
     enviar_mensaje("no se pudo crear archivo de la operacion",socke);
 }
-void grabar_bloques(char* blocmap,int bloque_disp,int cant_bloques){
+void grabar_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques){
+    int bloque_index=bloque_disp*tamanio_bloq;
+    int* source=malloc(sizeof(int));
     int j=1;
-    for(int i=bloque_disp*(block_size/sizeof(uint32_t));i<cant_bloques;i++){
-        blocmap[i]=bloque_disp+j;
+    for(int i=0;i<cant_bloques;i++){
+        *source=bloque_disp+tamanio_bloq*j;
+        memcpy(blocmap+bloque_index+i,source,sizeof(int));
         j++;
     }
+    free(source);
 }
-void accerder_y_escribir_bloques(char* blocmap,int bloque_disp,int cant_bloques){
+void accerder_y_escribir_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques){
 
 }
