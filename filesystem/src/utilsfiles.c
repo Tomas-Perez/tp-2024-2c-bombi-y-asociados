@@ -76,7 +76,7 @@ void mandar_error(int socke){
 }
 void grabar_bloques(char* blocmap,int bloque_disp,int cant_bloques){
     int j=1;
-    for(int i=bloque_disp*16;i<cant_bloques;i++){
+    for(int i=bloque_disp*(block_size/sizeof(uint32_t));i<cant_bloques;i++){
         blocmap[i]=bloque_disp+j;
         j++;
     }
