@@ -5,7 +5,7 @@ t_list* list_archivos;
 int socket_cliente,fpbitmap,fpbloc;
 t_bitarray *bitarray_bitmap;
 char *ptr_bitarray;
-char *blocmap;
+uint32_t *blocmap;
 
 sem_t semaforo,sem2;
 
