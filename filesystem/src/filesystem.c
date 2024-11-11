@@ -107,7 +107,8 @@ void atender_petiticiones(int *socket)
             char* nombr=list_get(lista,0);
             int* tam=list_get(lista,1);
             int tamani=*tam;
-            crear_archivo(nombr,tamani,socket_cliente);
+            void* data=list_get(lista,2);
+            crear_archivo(nombr,tamani,socket_cliente,data);
             puts("Me llegaron los siguientes valores:\n");
             sem_post(&semaforo);
             koso = 1;
@@ -187,7 +188,7 @@ void inicializarBloques()
 
     memset(blocmap, 0, tamanio);                                //retorna todo bloques.dat en 0
 
-    tamanio_bloq=block_size/sizeof(uint32_t);
+    tamanio_bloq_puntero=block_size/sizeof(uint32_t);
     //----------------------------------------------------------CODIGO DE PRUEBA DE ESCRITURA DE BLOQUES
     //char A='a';                                       
     //for (int i=(16*3);i<block_size;i++ ){//16 bytes 
@@ -196,19 +197,22 @@ void inicializarBloques()
     //int bloque_disp=0;
     //int cant_bits=3;
     //int j=1;
-    //for(int i=bloque_disp*tamanio_bloq;i<cant_bits;i++){           
+    //for(int i=bloque_disp*tamanio_bloq_puntero;i<cant_bits;i++){           
     //    blocmap[i]=bloque_disp+j;
     //    j++;
     //}
-    //blocmap[tamanio_bloq]=1;
-    //blocmap[tamanio_bloq+1]=2;
-    //int* source[3]={1,2,3};
+    //blocmap[tamanio_bloq_puntero]=1;
+    //blocmap[tamanio_bloq_puntero+1]=2;
+
     //int* source=malloc(sizeof(int));
     //*source=1;
+    //int* source2=malloc(sizeof(int));
+    //*source2=2;
     //memcpy(blocmap,source,sizeof(int));
-    //memcpy(blocmap+1,source,sizeof(int));
-    //
+    //memcpy((void*)blocmap+14,source,10);
+    //memcpy(blocmap+1,source2,sizeof(int));
     //free(source);
+    //free(source2);
     //----------------------------------------------------------
 }
 
@@ -257,11 +261,10 @@ void inicializarBitmap()
     sem_post(&sem2);
 }
 
-int crear_archivo(char* nombre, int size,int socket_cli){
+int crear_archivo(char* nombre, int size,int socket_cli,void* data){
     //int index_block;
     int cant_bloques=redondeo_bloques(size);
     //block_size / sizeof(uint32_t); bloques para guardar el contenido del mismo, ya que cada archivo tiene un único bloque de punteros.
-    //uint32_t* ptr_bloques;
     int bloque_disp=verificar_espacio_disp(bitarray_bitmap,cant_bloques);
     if (bloque_disp==-1){
         mandar_error(socket_cli);
@@ -271,6 +274,6 @@ int crear_archivo(char* nombre, int size,int socket_cli){
     reservar_bloques_bitmap(bitarray_bitmap,bloque_disp,cant_bloques); //paso 2
     crear_metadata(nombre,bloque_disp,size); //paso 3
     grabar_bloques(blocmap,bloque_disp,cant_bloques); //paso 4
-    accerder_y_escribir_bloques(blocmap,bloque_disp,cant_bloques); //paso 5
+    accerder_y_escribir_bloques(blocmap,bloque_disp,cant_bloques,data,size); //paso 5
     return 0;
 }

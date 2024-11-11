@@ -3,7 +3,7 @@ pthread_mutex_t mconteo;
 int block_size,block_count,retardo_acceso_bloque;
 char *puerto_escucha, *mount_dir, *log_level;
 t_config *config_fs;
-int tamanio_bloq;
+int tamanio_bloq_puntero;
 
 void levantar_config_fs()
 {
@@ -76,16 +76,34 @@ void mandar_error(int socke){
     enviar_mensaje("no se pudo crear archivo de la operacion",socke);
 }
 void grabar_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques){
-    int bloque_index=bloque_disp*tamanio_bloq;
+    int bloque_index=bloque_disp*tamanio_bloq_puntero;
     int* source=malloc(sizeof(int));
     int j=1;
     for(int i=0;i<cant_bloques;i++){
-        *source=bloque_disp+tamanio_bloq*j;
+        *source=bloque_disp+tamanio_bloq_puntero*j;
         memcpy(blocmap+bloque_index+i,source,sizeof(int));
         j++;
     }
     free(source);
 }
-void accerder_y_escribir_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques){
-
+void accerder_y_escribir_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques,void* data,int size){
+    int bloque_index_s=bloque_disp*block_size;
+    int j=1;
+    if(size<=block_size){
+        memcpy((void*)blocmap+(bloque_index_s+block_size),data,size);
+    }else{
+        int aux=size;
+        int size_aux[cant_bloques];
+        int h=0;
+        while(aux>block_size){
+            size_aux[h]=block_size;
+            aux=aux-block_size;
+            h++;
+        }
+        size_aux[h]=aux;
+        for(int i=0;i<cant_bloques;i++){
+            memcpy((void*)blocmap+(bloque_index_s+(block_size*j)),data+(block_size*i),size_aux[i]);
+            j++;
+        }
+    }
 }
