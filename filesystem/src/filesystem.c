@@ -1,6 +1,5 @@
 #include "filesystem.h"
 
-t_log *logger_fs;
 t_list* list_archivos;
 int socket_cliente,fpbitmap,fpbloc;
 t_bitarray *bitarray_bitmap;
@@ -271,9 +270,11 @@ int crear_archivo(char* nombre, int size,int socket_cli,void* data){
         return -1;
     }else{
     }
-    reservar_bloques_bitmap(bitarray_bitmap,bloque_disp,cant_bloques); //paso 2
+    log_info(logger_fs,"## Archivo Creado: %s- Tamaño: %d",nombre,size);
+    reservar_bloques_bitmap(bitarray_bitmap,bloque_disp,cant_bloques,nombre); //paso 2
     crear_metadata(nombre,bloque_disp,size); //paso 3
-    grabar_bloques(blocmap,bloque_disp,cant_bloques); //paso 4
-    accerder_y_escribir_bloques(blocmap,bloque_disp,cant_bloques,data,size); //paso 5
+    grabar_bloques(blocmap,bloque_disp,cant_bloques,nombre); //paso 4
+    accerder_y_escribir_bloques(blocmap,bloque_disp,cant_bloques,data,size,nombre); //paso 5
+    log_info(logger_fs, "## Fin de solicitud - Archivo: %s",nombre);
     return 0;
 }

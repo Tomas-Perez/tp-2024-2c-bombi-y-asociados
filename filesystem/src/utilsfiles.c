@@ -4,6 +4,7 @@ int block_size,block_count,retardo_acceso_bloque;
 char *puerto_escucha, *mount_dir, *log_level;
 t_config *config_fs;
 int tamanio_bloq_puntero;
+t_log *logger_fs;
 
 void levantar_config_fs()
 {
@@ -66,16 +67,21 @@ int verificar_espacio_disp(t_bitarray* bit,int size){
     }
 }
 
-void reservar_bloques_bitmap(t_bitarray* bit,int bloque_disp,int cant_bloques){
-    for(int i=0;i<cant_bloques;i++){
+void reservar_bloques_bitmap(t_bitarray* bit,int bloque_disp,int cant_bloques,char* nombre){
+    int bloq_asig=bloque_disp;
+    for(int i=0;i<cant_bloques+1;i++){
         bitarray_set_bit(bit,bloque_disp+i);
+        int bits_usados= bitarray_get_max_bit(bit);
+        int bits_disp=(block_count/8)-bits_usados;
+        log_info(logger_fs,"## Bloque asignado: %d - Archivo: %s - Bloques Libres: %d",bloq_asig,nombre,bits_disp);
+        bloq_asig++;
     }
 }
 
 void mandar_error(int socke){
     enviar_mensaje("no se pudo crear archivo de la operacion",socke);
 }
-void grabar_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques){
+void grabar_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques,char* nombre){
     int bloque_index=bloque_disp*tamanio_bloq_puntero;
     int* source=malloc(sizeof(int));
     int j=1;
@@ -84,13 +90,17 @@ void grabar_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques){
         memcpy(blocmap+bloque_index+i,source,sizeof(int));
         j++;
     }
+    log_info(logger_fs,"## Acceso Bloque - Archivo: %s - Tipo Bloque: ÍNDICE - Bloque File System %d",nombre,bloque_disp);
+    usleep(1000*retardo_acceso_bloque);
     free(source);
 }
-void accerder_y_escribir_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques,void* data,int size){
+void accerder_y_escribir_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques,void* data,int size,char* nombre){
     int bloque_index_s=bloque_disp*block_size;
     int j=1;
     if(size<=block_size){
         memcpy((void*)blocmap+(bloque_index_s+block_size),data,size);
+        log_info(logger_fs,"## Acceso Bloque - Archivo: %s - Tipo Bloque: DATOS - Bloque File System %d",nombre,(bloque_index_s+block_size));
+        usleep(1000*retardo_acceso_bloque);
     }else{
         int aux=size;
         int size_aux[cant_bloques];
@@ -103,6 +113,8 @@ void accerder_y_escribir_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloq
         size_aux[h]=aux;
         for(int i=0;i<cant_bloques;i++){
             memcpy((void*)blocmap+(bloque_index_s+(block_size*j)),data+(block_size*i),size_aux[i]);
+            log_info(logger_fs,"## Acceso Bloque - Archivo: %s - Tipo Bloque: DATOS - Bloque File System %d",nombre,(bloque_index_s+(block_size)*j));
+            usleep(1000*retardo_acceso_bloque);
             j++;
         }
     }
