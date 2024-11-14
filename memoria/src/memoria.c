@@ -230,7 +230,7 @@ int atenderKernel(int *socket_kernel)
     case PROCESS_CREATE: // SIEMPRE EL TID VA A SER 0
         int size = 0;
         char *path_kernel;
-        bool confirmacion;
+        int confirmacion;
         buffer = recibir_buffer(&size, *socket_kernel); // recibimos PCB
 
         if (buffer == NULL)
@@ -252,7 +252,7 @@ int atenderKernel(int *socket_kernel)
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
-                    confirmacion = false;
+                    confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                              // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
@@ -263,7 +263,7 @@ int atenderKernel(int *socket_kernel)
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
-                    confirmacion = false;
+                    confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
@@ -274,7 +274,7 @@ int atenderKernel(int *socket_kernel)
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
-                    confirmacion = false;
+                    confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
@@ -294,7 +294,7 @@ int atenderKernel(int *socket_kernel)
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
-                    confirmacion = false;
+                    confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
@@ -305,7 +305,7 @@ int atenderKernel(int *socket_kernel)
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
-                    confirmacion = false;
+                    confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
@@ -316,8 +316,8 @@ int atenderKernel(int *socket_kernel)
                 if (particion_a_asignar == NULL)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
-                    confirmacion = false;
-                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    confirmacion = 0;
+                    send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
@@ -372,9 +372,9 @@ int atenderKernel(int *socket_kernel)
 
         log_info(logger_memoria, "Proceso <Creado> -  PID: <%i> - Tamaño: <%i>", pid, tamanio_proceso);
 
-        confirmacion = true;
+        confirmacion = 1;
         send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que pudimos reservar espacio
-
+        printf("hay vida despues del send?\n");
         break;
     case PROCESS_EXIT:
         buffer = recibir_buffer(&size, *socket_kernel); // recibimos pid

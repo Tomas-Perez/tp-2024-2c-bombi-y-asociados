@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
 
     pthread_join(t2, NULL);
 
-    inicializar_hilos_planificacion();
+    
 
      //./bin/kernel [archivo_pseudocodigo] [tamanio_proceso] [...args]
 
@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
     printf("tam proc %d archivo: %s\n", tam_proc, argv[1]);
 
     pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc, socket);
+    inicializar_hilos_planificacion();
     /*pthread_mutex_lock(&m_lista_procesos_new);
     list_add(lista_procesos_new, proceso_nuevo);
     pthread_mutex_unlock(&m_lista_procesos_new);
@@ -54,7 +55,7 @@ int main(int argc, char* argv[]) {
     tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
 	iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);*/
 
-    close(socket);
+    //close(socket);
 
 
     liberar_conexion(conexion_memoria);

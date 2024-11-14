@@ -23,9 +23,24 @@ sem_t finalizo_un_proc;
 sem_t hilos_en_exit;
 sem_t hilos_en_ready;
 
+void inicializar_hilos_planificacion()
+{ 
+    pthread_t hilo_plani_corto,hilo_exitt;
+
+	pthread_create(&hilo_plani_corto, NULL,(void*) planificador_corto_plazo,NULL);
+    pthread_create(&hilo_exitt,NULL, (void*) hilo_exit, NULL);
+
+	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
+	
+	pthread_detach(hilo_plani_largo);*/
+	pthread_detach(hilo_exitt); 
+    pthread_join(hilo_plani_corto,NULL);
+}
+
 
 void agregar_a_ready(tcb* hilo)
 {
+	printf("agregar a ready\n");
 	pthread_mutex_lock(&m_lista_de_ready);
 	list_add(lista_de_ready, hilo);
 	pthread_mutex_unlock(&m_lista_de_ready);
@@ -54,6 +69,7 @@ void agregar_a_ready_multinivel(tcb* hilo)
 
 void planificador_corto_plazo()
 {
+	printf("Plani corto plazo\n");
 	sem_wait(&hilos_en_ready);
 	tcb* hilo_a_ejecutar;
 

@@ -73,7 +73,7 @@ void inicializar_estructuras_kernel()
     pthread_mutex_init(&m_lista_finalizados,NULL);
     pthread_mutex_init(&m_lista_prioridad,NULL);
     //semaforo
-    sem_init(&finalizo_un_proc, 0, 1);
+    sem_init(&finalizo_un_proc, 0, 0);
     sem_init(&hilos_en_exit, 0, 0);
     sem_init(&hilos_en_ready,0,0);
 	 //cola de procesos
@@ -113,20 +113,31 @@ void pedir_memoria(int socket)
 		eliminar_paquete(pedido_memoria);
 
         int confirmacion_mem_disponible = 0;
-        recv(socket,&confirmacion_mem_disponible, sizeof(int), MSG_WAITALL);
+        //recv(socket,&confirmacion_mem_disponible, sizeof(int), MSG_WAITALL);
+
+        int bytes_recibidos = recv(socket, &confirmacion_mem_disponible, sizeof(int), 0);
+    if (bytes_recibidos == -1) {
+        perror("Error en recv");
+        return;
+    } else if (bytes_recibidos == 0) {
+        printf("La conexión se cerró inesperadamente\n");
+        return; 
+    }   
+
 
         if(!confirmacion_mem_disponible)
         {
-
+            printf("entra en que no hay memoria disponible\n");
             sem_wait(&finalizo_un_proc);
             pedir_memoria(socket);	
         }
         else {
+            printf("entra en que hay memoria disponible\n");
                 pthread_mutex_lock(&m_lista_procesos_new);
                 list_remove(lista_procesos_new, 0);
                 pthread_mutex_unlock(&m_lista_procesos_new);
         }
-        
+        close(socket);
 }
 
 
@@ -163,7 +174,7 @@ pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio, int socket)
     
     hilo_main = list_get(nuevo_pcb->lista_tcb, 0);       
 	//iniciar_hilo(hilo_main, socket, nuevo_pcb->path_proc);
-
+    printf("entra aca?\n");
     agregar_a_ready_segun_alg(hilo_main);
 
     return nuevo_pcb;
@@ -215,7 +226,7 @@ void crear_cola_nivel(int prioridad, tcb* hilo, nivel_prioridad* nuevo_nivel)
 
 
 // -------------------------- Funciones planificador  --------------------------- 
-void inicializar_hilos_planificacion()
+/*void inicializar_hilos_planificacion()
 { 
     pthread_t hilo_plani_corto,hilo_exitt;
 
@@ -224,10 +235,10 @@ void inicializar_hilos_planificacion()
 
 	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
 	
-	pthread_detach(hilo_plani_largo);*/
+	pthread_detach(hilo_plani_largo);*//*
 	pthread_detach(hilo_exitt); 
     pthread_detach(hilo_plani_corto);
-}
+}*/
 
 void mandar_tcb_dispatch(tcb* tcb_listo)
 {
@@ -267,6 +278,7 @@ void agregar_a_ready_segun_alg(tcb* hilo)
 	}
 	else
 	{
+        printf("agregar_a_ready_segun_alg(tcb* hilo)\n");
 		agregar_a_ready(hilo);
 	}
 }
@@ -332,7 +344,7 @@ void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
         enviar_paquete(paquete, conexion_memoria);
         eliminar_paquete(paquete);
 
-        bool confirmacion;
+        int confirmacion;
         recv(conexion_memoria, &confirmacion, sizeof(bool), MSG_WAITALL);
 
         if (confirmacion)
@@ -444,7 +456,7 @@ tcb* buscar_TID(tcb* tcb_pedido, int tid_buscado){
 
 tcb* buscar_hilos_listas(tcb* main, int tid){
 	tcb* hilo = buscar_TID(main, tid);
-	bool confirmacion = 0;
+	int confirmacion = 0;
 	if (hilo != NULL) {
 		pthread_mutex_lock(&m_lista_de_ready);
         confirmacion = list_remove_element(lista_de_ready, hilo);

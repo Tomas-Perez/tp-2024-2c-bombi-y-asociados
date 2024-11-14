@@ -57,17 +57,17 @@ void guardar_instrucciones(t_hilo *hilo, FILE *f)
 
 void empaquetar_contexto(t_paquete *paquete, t_proceso *proceso, t_hilo *hilo)
 {
-	agregar_a_paquete_solo(paquete, hilo->registros_hilo.PC, sizeof(uint32_t)); // ver si los registros van con "&"
-	agregar_a_paquete_solo(paquete, hilo->registros_hilo.AX, sizeof(uint32_t));
-	agregar_a_paquete_solo(paquete, hilo->registros_hilo.BX, sizeof(uint32_t));
-	agregar_a_paquete_solo(paquete, hilo->registros_hilo.CX, sizeof(uint32_t));
-	agregar_a_paquete_solo(paquete, hilo->registros_hilo.DX, sizeof(uint32_t));
-	agregar_a_paquete_solo(paquete, hilo->registros_hilo.EX, sizeof(uint32_t));
-	agregar_a_paquete_solo(paquete, hilo->registros_hilo.FX, sizeof(uint32_t));
-	agregar_a_paquete_solo(paquete, hilo->registros_hilo.GX, sizeof(uint32_t));
-	agregar_a_paquete_solo(paquete, hilo->registros_hilo.HX, sizeof(uint32_t));
-	agregar_a_paquete_solo(paquete, proceso->base, sizeof(uint32_t));
-	agregar_a_paquete_solo(paquete, proceso->limite, sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.PC), sizeof(uint32_t)); // ver si los registros van con "&"
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.AX), sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.BX), sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.CX), sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.DX), sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.EX), sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.FX), sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.GX), sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.HX), sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(proceso->base), sizeof(uint32_t));
+	agregar_a_paquete_solo(paquete, &(proceso->limite), sizeof(uint32_t));
 }
 
 t_registros_cpu recibir_contexto(t_registros_cpu registros, void *buffer)
