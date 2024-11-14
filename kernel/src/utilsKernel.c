@@ -73,7 +73,7 @@ void inicializar_estructuras_kernel()
     pthread_mutex_init(&m_lista_finalizados,NULL);
     pthread_mutex_init(&m_lista_prioridad,NULL);
     //semaforo
-    sem_init(&finalizo_un_proc, 0, 0);
+    sem_init(&finalizo_un_proc, 0, 1);
     sem_init(&hilos_en_exit, 0, 0);
     sem_init(&hilos_en_ready,0,0);
 	 //cola de procesos
@@ -97,15 +97,18 @@ void pedir_memoria(int socket)
         int tamanio = proceso_nuevo->tam_proc;
         char* path = proceso_nuevo->path_proc;
         int motivo = PROCESS_CREATE; //preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
-        uint32_t size_path_hilo = sizeof(path);
+        uint32_t size_path_hilo = strlen(path);
         
+        printf("2 Tamanio Path: %i\n", size_path_hilo);
+        printf("2 Path: %s\n", path);
 
         t_paquete* pedido_memoria = crear_paquete(motivo);
 		agregar_a_paquete_solo(pedido_memoria, &pid,sizeof(int));
         agregar_a_paquete_solo(pedido_memoria, &tamanio, sizeof(int));
-        //agregar_a_paquete_solo(pedido_memoria, &(size_path_hilo), sizeof(uint32_t));
-        //agregar_a_paquete(pedido_memoria, path, strlen(path) + 1);// PATH PREGUNTAR
+        agregar_a_paquete_solo(pedido_memoria, &(size_path_hilo), sizeof(uint32_t));
+        agregar_a_paquete_solo(pedido_memoria, path, size_path_hilo + 1);
 
+        
         enviar_paquete(pedido_memoria,socket);
 		eliminar_paquete(pedido_memoria);
 
@@ -129,7 +132,7 @@ void pedir_memoria(int socket)
 
 //  --------------------------- Crear  --------------------------- 
 
-pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
+pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio, int socket)
 {
     pcb* nuevo_pcb = (pcb *)malloc(sizeof(pcb));
     tcb* hilo_main;
@@ -152,6 +155,16 @@ pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio)
     }
     log_info(logger_kernel, "## (<PID>:%d) Se crea el proceso - Estado: NEW", nuevo_pcb->pid);
     hilo_main = crear_tcb(nuevo_pcb, prioridad_h_main);
+
+    pthread_mutex_lock(&m_lista_procesos_new);
+    list_add(lista_procesos_new, nuevo_pcb);
+    pthread_mutex_unlock(&m_lista_procesos_new);
+    pedir_memoria(socket);
+    
+    hilo_main = list_get(nuevo_pcb->lista_tcb, 0);       
+	//iniciar_hilo(hilo_main, socket, nuevo_pcb->path_proc);
+
+    agregar_a_ready_segun_alg(hilo_main);
 
     return nuevo_pcb;
 }

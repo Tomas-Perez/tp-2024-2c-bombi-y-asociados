@@ -328,17 +328,17 @@ int atenderKernel(int *socket_kernel)
             }
         }
 
-        uint32_t size_path = buffer_read_uint32(buffer);
+        //uint32_t size_path = buffer_read_uint32(buffer);
 
-        path_kernel = malloc(size_path + 1); // asignamos memoria, +1 para el carácter nulo
-        if (path_kernel == NULL)
+        //path_kernel = malloc(size_path + 1); // asignamos memoria, +1 para el carácter nulo
+        /*if (path_kernel == NULL)
         {
             log_info(logger_memoria, "Error al asignar memoria para path_kernel\n");
             return -1;
-        }
+        }*/
 
-        path_kernel = buffer_read_string(buffer, size_path);
-        path_kernel[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+        path_kernel = buffer_read_string(buffer);
+        //path_kernel[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
 
         char *path_script_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_kernel) + 1);
         if (path_script_completo == NULL)
@@ -414,8 +414,8 @@ int atenderKernel(int *socket_kernel)
             return -1;
         }
 
-        path_hilo = buffer_read_string(buffer, size_path_hilo);
-        path_hilo[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+        //path_hilo = buffer_read_string(buffer, size_path_hilo);
+        //path_hilo[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
 
         char *path_hilo_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_hilo) + 1); // VER QUE ONDA PATH INSTRUCCIONES
         if (path_hilo_completo == NULL)
@@ -519,6 +519,7 @@ int atenderKernel(int *socket_kernel)
         printf("Cod Op: %i", cod_op);
         break;
     }
+    return 0;
 }
 
 void levantar_config_memoria()

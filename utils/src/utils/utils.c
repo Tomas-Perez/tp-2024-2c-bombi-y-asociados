@@ -246,38 +246,38 @@ void buffer_add_string(t_buffer *buffer, uint32_t length, char *string)
 	buffer->size += length;
 }
 
-char *buffer_read_string(t_buffer *buffer, uint32_t *length) {
+char *buffer_read_string(t_buffer *buffer) {
     // Verificar que el offset está dentro de los límites del buffer
     if (buffer->offset + sizeof(uint32_t) > buffer->size) {
         //log_info(logger_memoria, "Error: Offset fuera de límites al leer la longitud del string");
-        *length = 0;
+        //*length = 0;
         return NULL;
     }
 
     // Leer la longitud del string
-    *length = buffer_read_uint32(buffer);
+    uint32_t length = buffer_read_uint32(buffer);
 
     // Verificar que el buffer tiene suficiente espacio para el string
-    if (buffer->offset + *length > buffer->size) {
+    if (buffer->offset + length > buffer->size) {
         //log_info(logger_memoria, "Error: Tamaño insuficiente en el buffer para leer el string");
-        *length = 0;
+        length = 0;
         return NULL;
     }
 
     // Asignar memoria para el string (+1 para el terminador NULL)
-    char *string = malloc(*length + 1);
+    char *string = malloc(length + 1);
     if (string == NULL) {
         //log_info(logger_memoria, "Error al asignar memoria para el string");
-        *length = 0;
+        length = 0;
         return NULL;
     }
 
     // Copiar el string desde el buffer
-    memcpy(string, buffer->stream + buffer->offset, *length);
-    string[*length] = '\0'; // Añadir terminador NULL
+    memcpy(string, buffer->stream + buffer->offset, length);
+    string[length] = '\0'; // Añadir terminador NULL
 
     // Avanzar el offset después de leer el string
-    buffer->offset += *length;
+    buffer->offset += length;
 
     return string;
 }

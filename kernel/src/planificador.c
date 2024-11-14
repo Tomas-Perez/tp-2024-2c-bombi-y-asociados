@@ -201,14 +201,14 @@ void atender_syscall()
 			prioridad =  list_get(instrucc->parametros, 2);
 			printf("PRUEBA: tamanio: %d prioridad %d\n", tamanio, prioridad);
 			
-			pcb* proceso_nuevo = crear_pcb(prioridad, archivo, tamanio);
-			pthread_mutex_lock(&m_lista_procesos_new);
-			list_add(lista_procesos_new, proceso_nuevo);
-			pthread_mutex_unlock(&m_lista_procesos_new);
-			pedir_memoria(socket);
+			pcb* proceso_nuevo = crear_pcb(prioridad, archivo, tamanio, socket);
+			//pthread_mutex_lock(&m_lista_procesos_new);
+			//list_add(lista_procesos_new, proceso_nuevo);
+			//pthread_mutex_unlock(&m_lista_procesos_new);
+			//pedir_memoria(socket);
 			
-			tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
-			iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
+			//tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
+			//iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
 			// PREGUNTAR proceso_nuevo = NULL
 			free(archivo);
 			close(socket);

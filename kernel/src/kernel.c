@@ -16,17 +16,17 @@ int conexion_memoria;
 
 int main(int argc, char* argv[]) {
 
-   
-
     levantar_config_kernel();
     logger_kernel = iniciar_logger("kernel.log", "KERNEL");
     
-    if(argc < 3)
+    /*if(argc < 3)
     {
         log_error(logger_kernel, "Cantidad incorrecta de argumentos pasados por parametro");
         return 1;
-    }
+    }*/
    
+    argv[1] = "PLANI_PROC";
+    argv[2] = "32"; 
 
     pthread_t t1, t2;
     
@@ -45,14 +45,15 @@ int main(int argc, char* argv[]) {
     int tam_proc = atoi(argv[2]);
     printf("tam proc %d archivo: %s\n", tam_proc, argv[1]);
 
-    pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc);
-    pthread_mutex_lock(&m_lista_procesos_new);
+    pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc, socket);
+    /*pthread_mutex_lock(&m_lista_procesos_new);
     list_add(lista_procesos_new, proceso_nuevo);
     pthread_mutex_unlock(&m_lista_procesos_new);
     pedir_memoria(socket);
     
     tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
-	iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
+	iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);*/
+
     close(socket);
 
 

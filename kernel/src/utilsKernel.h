@@ -1,6 +1,6 @@
 #include <utils/utils.h>
 char* generar_path_archivo(char* nombre_archivo);
-pcb *crear_pcb(int prioridad, char* path, int tamanio);
+pcb *crear_pcb(int prioridad, char* path, int tamanio, int socket);
 tcb* crear_tcb(pcb* proc_padre, int prioridad);
 void inicializar_registros(tcb* hilos);
 void finalizar_hilos_proceso(pcb* proceso);
