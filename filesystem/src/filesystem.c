@@ -189,7 +189,7 @@ void inicializarBloques()
         exit(EXIT_FAILURE);
     }
 
-    //memset(blocmap, 0, tamanio);                                //retorna todo bloques.dat en 0
+    memset(blocmap, 0, tamanio);                                //retorna todo bloques.dat en 0
 
     tamanio_bloq_puntero=block_size/sizeof(uint32_t);
     //----------------------------------------------------------CODIGO DE PRUEBA DE ESCRITURA DE BLOQUES
@@ -244,7 +244,7 @@ void inicializarBitmap()
         exit(EXIT_FAILURE);
     }
 
-    //memset(ptr_bitarray, 0, tamanio);
+    memset(ptr_bitarray, 0, tamanio);
 
     bitarray_bitmap = bitarray_create_with_mode(ptr_bitarray, tamanio, LSB_FIRST);
     if (!bitarray_bitmap)
