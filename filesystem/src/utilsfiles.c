@@ -1,6 +1,7 @@
 #include "utilsfiles.h"
+t_bitarray *bitarray_bitmap;
 pthread_mutex_t mconteo;
-int block_size,block_count,retardo_acceso_bloque;
+int block_size,block_count,retardo_acceso_bloque,bits_disp;
 char *puerto_escucha, *mount_dir, *log_level;
 t_config *config_fs;
 int tamanio_bloq_puntero;
@@ -35,7 +36,7 @@ int redondeo_bloques(int tamanio){
 }
 
 void crear_metadata(char* nombre,int index_block,int size){
-    char *direccion_metadata = string_from_format("%s/%s.dmp", config_get_string_value(config_fs, "PATH_BASE_DIALFS"), nombre);
+    char *direccion_metadata = string_from_format("%s/files/%s.dmp", config_get_string_value(config_fs, "MOUNT_DIR"), nombre);
         FILE* meta=fopen(direccion_metadata, "w");
         t_config *metadata = iniciar_config(direccion_metadata);
         char* buffersize= string_from_format("%d",size);
@@ -48,8 +49,7 @@ void crear_metadata(char* nombre,int index_block,int size){
 }
 
 int verificar_espacio_disp(t_bitarray* bit,int size){
-    int bits_usados= bitarray_get_max_bit(bit);
-    int bits_disp=(block_count/8)-bits_usados;
+    //int bits_disp=(block_count/8)-bits_usados;
     if (bits_disp<size){
         return -1;
     }else{
@@ -63,18 +63,18 @@ int verificar_espacio_disp(t_bitarray* bit,int size){
             break;
         }
     }
+    bits_disp--;
     return busqueda;
     }
 }
 
 void reservar_bloques_bitmap(t_bitarray* bit,int bloque_disp,int cant_bloques,char* nombre){
-    int bloq_asig=bloque_disp;
-    for(int i=0;i<cant_bloques+1;i++){
+    bitarray_set_bit(bit,bloque_disp);
+    log_info(logger_fs,"## Bloque asignado: %d - Archivo: %s - Bloques Libres: %d",bloque_disp,nombre,bits_disp);
+    for(int i=1;i<cant_bloques+1;i++){
         bitarray_set_bit(bit,bloque_disp+i);
-        int bits_usados= bitarray_get_max_bit(bit);
-        int bits_disp=(block_count/8)-bits_usados;
-        log_info(logger_fs,"## Bloque asignado: %d - Archivo: %s - Bloques Libres: %d",bloq_asig,nombre,bits_disp);
-        bloq_asig++;
+        bits_disp--;
+        log_info(logger_fs,"## Bloque asignado: %d - Archivo: %s - Bloques Libres: %d",bloque_disp+i,nombre,bits_disp);
     }
 }
 
@@ -86,7 +86,7 @@ void grabar_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques,char* nom
     int* source=malloc(sizeof(int));
     int j=1;
     for(int i=0;i<cant_bloques;i++){
-        *source=bloque_disp+tamanio_bloq_puntero*j;
+        *source=bloque_disp+block_size*j;
         memcpy(blocmap+bloque_index+i,source,sizeof(int));
         j++;
     }

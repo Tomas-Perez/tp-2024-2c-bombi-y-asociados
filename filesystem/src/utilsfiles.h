@@ -9,6 +9,8 @@ extern char *puerto_escucha, *mount_dir, *log_level;
 extern t_config *config_fs;
 extern int tamanio_bloq_puntero;
 extern t_log *logger_fs;
+extern t_bitarray *bitarray_bitmap;
+extern int bits_disp;
 
 int redondeo_bloques(int tamanio);
 void levantar_config_fs();

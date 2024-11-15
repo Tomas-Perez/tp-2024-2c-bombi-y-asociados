@@ -2,7 +2,6 @@
 
 t_list* list_archivos;
 int socket_cliente,fpbitmap,fpbloc;
-t_bitarray *bitarray_bitmap;
 char *ptr_bitarray;
 uint32_t *blocmap;
 
@@ -20,7 +19,11 @@ int main(int argc, char *argv[])
     inicializarBitmap();
     archivocheq();
     // HILOS PARA CONEXIONES
-
+    char* nombr="carpeta_ejemplo";
+    int tamani=322;
+    void* data="I'm so glad you made time to see meHow's life? Tell me how's your familyI haven't seen them in a whileYou've been good, busier than everWe small talk, work and the weatherYour guard is up and I know whyBecause the last time you saw meIs still burning in the back of your mindYou gave me roses and I left them there to die";
+    socket_cliente=1;
+    crear_archivo(nombr,tamani,socket_cliente,data); //CODIGO DE PRUEBA PARA AL RECIBIR DATOS
     pthread_t t1;
     pthread_create(&t1, NULL, (void *)atenderMemoria, NULL);
     pthread_join(t1, NULL);
@@ -124,43 +127,43 @@ void atender_petiticiones(int *socket)
 }
 
 void archivocheq(){
-    sem_wait(&sem2);
-     t_config* aux;
-     char* directorio=string_from_format("%s/files",mount_dir);
-    DIR *d;
-  struct dirent *dir;
-  d = opendir(directorio);
-  if (d) {
-    while ((dir = readdir(d)) != NULL) {
-      //printf("%s\n", dir->d_name);
-      char* auxiliar=malloc(sizeof(char)*20);
-      strcpy(auxiliar,dir->d_name);
-      if (strstr(auxiliar, ".dmp") != NULL) {
-        aux=iniciar_config(string_from_format("%s/%s",directorio,auxiliar));
-        t_archivo *nuevo=malloc(sizeof(t_archivo));
-        char* archivo=config_get_string_value(aux, "NOMBRE");
-        nuevo->nombre=malloc(strlen(archivo)+1);
-        strcpy(nuevo->nombre,archivo);
-        nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
-        nuevo->block_size=config_get_int_value(aux,"SIZE");
-        nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
-        list_add(list_archivos,nuevo);
-        for (int i=nuevo->index_block;i<nuevo->index_block+nuevo->cant_bloque;i++){     //ESTA FUNCION SOLO SIRVE PARA BLOQUES CONTINUOS, HAY QUE CAMBIARLO PARA QUE FUNCIONE EN INDEXADO
-        bitarray_set_bit(bitarray_bitmap,i);
-        }
-        int tamanioBitmap = block_count / 8;
-        if (msync(ptr_bitarray, tamanioBitmap, MS_SYNC) == -1)
-        {
-        log_error(logger_fs, "Error al sincronizar el archivo bitmap.");
-        }
-    }
-    free(auxiliar);
-    }
-    }
-    if (aux->path!=NULL){
-    config_destroy(aux);
-    }
-    closedir(d);
+//    sem_wait(&sem2);
+//     t_config* aux;
+//     char* directorio=string_from_format("%s/files",mount_dir);
+//    DIR *d;
+//  struct dirent *dir;
+//  d = opendir(directorio);
+//  if (d) {
+//    while ((dir = readdir(d)) != NULL) {
+//      //printf("%s\n", dir->d_name);
+//      char* auxiliar=malloc(sizeof(char)*20);
+//      strcpy(auxiliar,dir->d_name);
+//      if (strstr(auxiliar, ".dmp") != NULL) {
+//        aux=iniciar_config(string_from_format("%s/%s",directorio,auxiliar));
+//        t_archivo *nuevo=malloc(sizeof(t_archivo));
+//        char* archivo=config_get_string_value(aux, "NOMBRE");
+//        nuevo->nombre=malloc(strlen(archivo)+1);
+//        strcpy(nuevo->nombre,archivo);
+//        nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
+//        nuevo->block_size=config_get_int_value(aux,"SIZE");
+//        nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
+//        list_add(list_archivos,nuevo);
+//        for (int i=nuevo->index_block;i<nuevo->index_block+nuevo->cant_bloque;i++){     //ESTA FUNCION SOLO SIRVE PARA BLOQUES CONTINUOS, HAY QUE CAMBIARLO PARA QUE FUNCIONE EN INDEXADO
+//        bitarray_set_bit(bitarray_bitmap,i);
+//        }
+//        int tamanioBitmap = block_count / 8;
+//        if (msync(ptr_bitarray, tamanioBitmap, MS_SYNC) == -1)
+//        {
+//        log_error(logger_fs, "Error al sincronizar el archivo bitmap.");
+//        }
+//    }
+//    free(auxiliar);
+//    }
+//    }
+//    if (aux->path!=NULL){
+//    config_destroy(aux);
+//    }
+//    closedir(d);
 }
 
 void inicializarBloques()
@@ -257,6 +260,7 @@ void inicializarBitmap()
         close(fpbitmap);
         exit(EXIT_FAILURE);
     }
+    bits_disp= bitarray_get_max_bit(bitarray_bitmap);
     sem_post(&sem2);
 }
 
