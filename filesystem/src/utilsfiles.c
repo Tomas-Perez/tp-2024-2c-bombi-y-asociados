@@ -86,11 +86,11 @@ void grabar_bloques(uint32_t* blocmap,int bloque_disp,int cant_bloques,char* nom
     int* source=malloc(sizeof(int));
     int j=1;
     for(int i=0;i<cant_bloques;i++){
-        *source=bloque_disp+block_size*j;
+        *source=bloque_disp*block_size+block_size*j;
         memcpy(blocmap+bloque_index+i,source,sizeof(int));
         j++;
     }
-    log_info(logger_fs,"## Acceso Bloque - Archivo: %s - Tipo Bloque: ÍNDICE - Bloque File System %d",nombre,bloque_disp);
+    log_info(logger_fs,"## Acceso Bloque - Archivo: %s - Tipo Bloque: ÍNDICE - Bloque File System %d",nombre,bloque_disp*block_size);
     usleep(1000*retardo_acceso_bloque);
     free(source);
 }
