@@ -97,7 +97,7 @@ char *recibir_instruccion(int socket_cliente)
 {
     int size = 0;
     recibir_operacion(socket_cliente);
-    char *buffer = recibir_buffer(&size, socket_cliente);
+    char *buffer = recibir_buffer_mensaje(&size, socket_cliente);
 
     return buffer;
 }
@@ -262,17 +262,17 @@ void devolver_contexto_de_ejecucion(int pid, int tid)
 
 void empaquetar_contexto(t_paquete *paquete)
 {
-    agregar_a_paquete_solo(paquete, registros_cpu.PC, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.AX, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.BX, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.CX, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.DX, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.EX, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.FX, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.GX, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.HX, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.base, sizeof(uint32_t));
-    agregar_a_paquete_solo(paquete, registros_cpu.limite, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.PC, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.AX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.BX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.CX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.DX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.EX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.FX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.GX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.HX, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.base, sizeof(uint32_t));
+    agregar_a_paquete_solo(paquete, &registros_cpu.limite, sizeof(uint32_t));
 }
 
 void devolver_lista_instrucciones(int motivo, instruccion *info)

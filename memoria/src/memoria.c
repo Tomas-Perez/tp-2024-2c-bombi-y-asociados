@@ -91,130 +91,134 @@ int atenderCpu(int *socket_cpu)
     t_buffer *buffer;
     log_info(logger_memoria, "Memoria conectada con CPU");
 
-    int cod_op = recibir_operacion(*socket_cpu);
+   
 
-    switch (cod_op)
+    while (*socket_cpu)
     {
-    case FETCH_INSTRUCCION:
-
-        buffer = recibir_buffer((&size), *socket_cpu);
-
-        uint32_t program_counter;
-
-        pid = buffer_read_uint32(buffer);
-        tid = buffer_read_uint32(buffer);
-        program_counter = buffer_read_uint32(buffer);
-
-        usleep(retardo_rta * 1000);
-
-        char *instruccion = buscar_instruccion(pid, tid, program_counter);
-
-        log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%c>", pid, tid, instruccion); // VER LOS ARGS
-
-        enviar_mensaje(instruccion, *socket_cpu);
-
-        free(instruccion); // si tira error comentar
-        free(buffer);
-
-        break;
-    case PEDIR_CONTEXTO:
-
-        buffer = recibir_buffer((&size), *socket_cpu);
-
-        pid = buffer_read_uint32(buffer);
-        tid = buffer_read_uint32(buffer);
-
-        log_info(logger_memoria, "Contexto <Solicitado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
-
-        free(buffer);
-
-        usleep(retardo_rta * 1000);
-
-        t_proceso *proceso = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
-        t_hilo *hilo = buscar_hilo(proceso, tid);
-
-        t_paquete *mandar_contexto = crear_paquete(PEDIR_CONTEXTO);
-        empaquetar_contexto(mandar_contexto, proceso, hilo);
-        enviar_paquete(mandar_contexto, *socket_cpu);
-        eliminar_paquete(mandar_contexto);
-
-        break;
-    case ACTUALIZAR_CONTEXTO:
-
-        buffer = recibir_buffer((&size), *socket_cpu);
-
-        pid = buffer_read_uint32(buffer);
-        tid = buffer_read_uint32(buffer);
-        t_registros_cpu registros_a_actualizar = recibir_contexto(registros_a_actualizar, buffer);
-
-        t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
-        t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid);
-
-        usleep(retardo_rta * 1000);
-
-        actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar); // Falta ver base y limite
-
-        log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
-
-        enviar_mensaje("OK", *socket_cpu);
-
-        free(buffer);
-
-        break;
-    case READ_MEM:
-
-        buffer = recibir_buffer((&size), *socket_cpu);
-
-        uint32_t tid_read = buffer_read_uint32(buffer);
-        uint32_t dir_fisica_read = buffer_read_uint32(buffer);
-
-        void *dato_a_retornar = malloc(sizeof(uint32_t));
-
-        if (dato_a_retornar == NULL)
+        int cod_op = recibir_operacion(*socket_cpu);
+        switch (cod_op)
         {
-            log_warning(logger_memoria, "Error al asignar memoria para la lectura");
+        case FETCH_INSTRUCCION:
+
+            buffer = recibir_buffer((&size), *socket_cpu);
+
+            uint32_t program_counter;
+
+            pid = buffer_read_uint32(buffer);
+            tid = buffer_read_uint32(buffer);
+            program_counter = buffer_read_uint32(buffer);
+
+            usleep(retardo_rta * 1000);
+
+            char *instruccion = buscar_instruccion(pid, tid, program_counter);
+
+            log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%c>", pid, tid, instruccion); // VER LOS ARGS
+
+            enviar_mensaje(instruccion, *socket_cpu);
+
+            free(instruccion); // si tira error comentar
+            free(buffer);
+
+            break;
+        case PEDIR_CONTEXTO:
+
+            buffer = recibir_buffer((&size), *socket_cpu);
+
+            pid = buffer_read_uint32(buffer);
+            tid = buffer_read_uint32(buffer);
+
+            log_info(logger_memoria, "Contexto <Solicitado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
+
+            free(buffer);
+
+            usleep(retardo_rta * 1000);
+
+            t_proceso *proceso = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
+            t_hilo *hilo = buscar_hilo(proceso, tid);
+
+            t_paquete *mandar_contexto = crear_paquete(PEDIR_CONTEXTO);
+            empaquetar_contexto(mandar_contexto, proceso, hilo);
+            enviar_paquete(mandar_contexto, *socket_cpu);
+            eliminar_paquete(mandar_contexto);
+
+            break;
+        case ACTUALIZAR_CONTEXTO:
+
+            buffer = recibir_buffer((&size), *socket_cpu);
+
+            pid = buffer_read_uint32(buffer);
+            tid = buffer_read_uint32(buffer);
+            t_registros_cpu registros_a_actualizar = recibir_contexto(registros_a_actualizar, buffer);
+
+            t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
+            t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid);
+
+            usleep(retardo_rta * 1000);
+
+            actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar); // Falta ver base y limite
+
+            log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
+
+            enviar_mensaje("OK", *socket_cpu);
+
+            free(buffer);
+
+            break;
+        case READ_MEM:
+
+            buffer = recibir_buffer((&size), *socket_cpu);
+
+            uint32_t tid_read = buffer_read_uint32(buffer);
+            uint32_t dir_fisica_read = buffer_read_uint32(buffer);
+
+            void *dato_a_retornar = malloc(sizeof(uint32_t));
+
+            if (dato_a_retornar == NULL)
+            {
+                log_warning(logger_memoria, "Error al asignar memoria para la lectura");
+                break;
+            }
+
+            pthread_mutex_lock(&mutex_espacio_usuario);
+            memcpy(dato_a_retornar, memoria + dir_fisica_read, sizeof(uint32_t));
+            pthread_mutex_unlock(&mutex_espacio_usuario);
+
+            log_info(logger_memoria, "TID: <%i> - Accion: <LEER> - Direccion fisica: <%i> - Tamaño <4>", tid_read, dir_fisica_read);
+            usleep(retardo_rta * 1000);
+
+            t_paquete *paquete_dato = crear_paquete(VALOR_REGISTRO);
+            agregar_a_paquete_solo(paquete_dato, dato_a_retornar, sizeof(uint32_t));
+            enviar_paquete(paquete_dato, *socket_cpu);
+            eliminar_paquete(paquete_dato);
+
+            // enviar_mensaje("OK", *socket_cpu);
+
+            free(buffer);
+
+            break;
+        case WRITE_MEM:
+
+            buffer = recibir_buffer((&size), *socket_cpu);
+
+            uint32_t tid_mem = buffer_read_uint32(buffer);
+            uint32_t dir_fisica = buffer_read_uint32(buffer);
+            uint32_t *dato = buffer_read_uint32(buffer);
+
+            pthread_mutex_lock(&mutex_espacio_usuario);
+            memcpy(memoria + dir_fisica, dato, 4);
+            pthread_mutex_unlock(&mutex_espacio_usuario);
+
+            log_info(logger_memoria, "TID: <%i> - Acción: <ESCRIBIR> - Dirección física: <%i> - Tamaño <4>", tid_mem, dir_fisica);
+            usleep(retardo_rta * 1000);
+
+            enviar_mensaje("OK", *socket_cpu);
+
+            free(buffer);
+            break;
+        default:
+            log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
             break;
         }
-
-        pthread_mutex_lock(&mutex_espacio_usuario);
-        memcpy(dato_a_retornar, memoria + dir_fisica_read, sizeof(uint32_t));
-        pthread_mutex_unlock(&mutex_espacio_usuario);
-
-        log_info(logger_memoria, "TID: <%i> - Accion: <LEER> - Direccion fisica: <%i> - Tamaño <4>", tid_read, dir_fisica_read);
-        usleep(retardo_rta * 1000);
-
-        t_paquete *paquete_dato = crear_paquete(VALOR_REGISTRO);
-        agregar_a_paquete_solo(paquete_dato, dato_a_retornar, sizeof(uint32_t));
-        enviar_paquete(paquete_dato, *socket_cpu);
-        eliminar_paquete(paquete_dato);
-
-        //enviar_mensaje("OK", *socket_cpu);
-
-        free(buffer);
-
-        break;
-    case WRITE_MEM:
-
-        buffer = recibir_buffer((&size), *socket_cpu);
-
-        uint32_t tid_mem = buffer_read_uint32(buffer);
-        uint32_t dir_fisica = buffer_read_uint32(buffer);
-        uint32_t *dato = buffer_read_uint32(buffer);
-
-        pthread_mutex_lock(&mutex_espacio_usuario);
-        memcpy(memoria + dir_fisica, dato, 4);
-        pthread_mutex_unlock(&mutex_espacio_usuario);
-
-        log_info(logger_memoria, "TID: <%i> - Acción: <ESCRIBIR> - Dirección física: <%i> - Tamaño <4>", tid_mem, dir_fisica);
-        usleep(retardo_rta * 1000);
-
-        enviar_mensaje("OK", *socket_cpu);
-
-        free(buffer);
-        break;
-    default:
-        log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
-        break;
     }
 }
 
@@ -254,7 +258,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                              // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "BEST") == 0)
@@ -276,7 +280,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else
@@ -296,7 +300,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "BEST") == 0)
@@ -307,7 +311,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "WORST") == 0)
@@ -328,9 +332,9 @@ int atenderKernel(int *socket_kernel)
             }
         }
 
-        //uint32_t size_path = buffer_read_uint32(buffer);
+        // uint32_t size_path = buffer_read_uint32(buffer);
 
-        //path_kernel = malloc(size_path + 1); // asignamos memoria, +1 para el carácter nulo
+        // path_kernel = malloc(size_path + 1); // asignamos memoria, +1 para el carácter nulo
         /*if (path_kernel == NULL)
         {
             log_info(logger_memoria, "Error al asignar memoria para path_kernel\n");
@@ -338,7 +342,7 @@ int atenderKernel(int *socket_kernel)
         }*/
 
         path_kernel = buffer_read_string(buffer);
-        //path_kernel[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+        // path_kernel[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
 
         char *path_script_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_kernel) + 1);
         if (path_script_completo == NULL)
@@ -414,8 +418,8 @@ int atenderKernel(int *socket_kernel)
             return -1;
         }
 
-        //path_hilo = buffer_read_string(buffer, size_path_hilo);
-        //path_hilo[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+        // path_hilo = buffer_read_string(buffer, size_path_hilo);
+        // path_hilo[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
 
         char *path_hilo_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_hilo) + 1); // VER QUE ONDA PATH INSTRUCCIONES
         if (path_hilo_completo == NULL)
@@ -467,14 +471,14 @@ int atenderKernel(int *socket_kernel)
 
         eliminar_hilo(pid, tid);
 
-        log_info(logger_memoria, "Hilo <Destruido> - (PID:TID) - (<%i>:<%i>)",pid, tid);
+        log_info(logger_memoria, "Hilo <Destruido> - (PID:TID) - (<%i>:<%i>)", pid, tid);
         // MANDAR OK
         free(buffer);
 
         break;
     case DUMP_MEMORY:
         buffer = recibir_buffer(&size, *socket_kernel);
-        //pthread_t t_fs;
+        // pthread_t t_fs;
 
         int socket_FS = conectarFS();
 
