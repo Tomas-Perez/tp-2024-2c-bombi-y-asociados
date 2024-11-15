@@ -230,19 +230,23 @@ void pedir_contexto_cpu(int pid, int tid)
     log_info(logger_cpu, "TID: <%i> - Solicito Contexto Ejecución", tid);
 
     int size = 0;
-    void *buffer = recibir_buffer(&size, socket_memoria);
 
-    registros_cpu.PC = buffer_read_uint32(buffer);
-    registros_cpu.AX = buffer_read_uint32(buffer);
-    registros_cpu.BX = buffer_read_uint32(buffer);
-    registros_cpu.CX = buffer_read_uint32(buffer);
-    registros_cpu.DX = buffer_read_uint32(buffer);
-    registros_cpu.EX = buffer_read_uint32(buffer);
-    registros_cpu.FX = buffer_read_uint32(buffer);
-    registros_cpu.GX = buffer_read_uint32(buffer);
-    registros_cpu.HX = buffer_read_uint32(buffer);
-    registros_cpu.base = buffer_read_uint32(buffer);
-    registros_cpu.limite = buffer_read_uint32(buffer);
+    if (recibir_operacion(socket_memoria) == 27)
+    {
+        t_buffer *buffer = recibir_buffer(&size, socket_memoria);
+
+        registros_cpu.PC = buffer_read_uint32(buffer);
+        registros_cpu.AX = buffer_read_uint32(buffer);
+        registros_cpu.BX = buffer_read_uint32(buffer);
+        registros_cpu.CX = buffer_read_uint32(buffer);
+        registros_cpu.DX = buffer_read_uint32(buffer);
+        registros_cpu.EX = buffer_read_uint32(buffer);
+        registros_cpu.FX = buffer_read_uint32(buffer);
+        registros_cpu.GX = buffer_read_uint32(buffer);
+        registros_cpu.HX = buffer_read_uint32(buffer);
+        registros_cpu.base = buffer_read_uint32(buffer);
+        registros_cpu.limite = buffer_read_uint32(buffer);
+    }
 }
 
 void devolver_contexto_de_ejecucion(int pid, int tid)

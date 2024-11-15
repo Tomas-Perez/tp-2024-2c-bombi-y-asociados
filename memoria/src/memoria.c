@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
 int atenderCpu(int *socket_cpu)
 {
     int size = 0;
-    void *buffer;
+    t_buffer *buffer;
     log_info(logger_memoria, "Memoria conectada con CPU");
 
     int cod_op = recibir_operacion(*socket_cpu);

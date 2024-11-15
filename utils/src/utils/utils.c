@@ -298,7 +298,7 @@ int recibir_operacion(int socket_cliente)
 	}
 }
 
-t_buffer *recibir_buffer(int *tamaño_buffer, int socket_cliente) { // VER SI ESTO PUEDE SER DEL DATO T_BUFFER, OJJO CON ESO NO TE LA CUENTA NADIE ESA
+t_buffer *recibir_buffer(int *tamaño_buffer, int socket_cliente) {
     void *buffer = NULL;
 
     // Intentar recibir el tamaño del buffer

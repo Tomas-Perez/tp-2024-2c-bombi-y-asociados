@@ -57,7 +57,7 @@ void guardar_instrucciones(t_hilo *hilo, FILE *f)
 
 void empaquetar_contexto(t_paquete *paquete, t_proceso *proceso, t_hilo *hilo)
 {
-	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.PC), sizeof(uint32_t)); // ver si los registros van con "&"
+	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.PC), sizeof(uint32_t));
 	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.AX), sizeof(uint32_t));
 	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.BX), sizeof(uint32_t));
 	agregar_a_paquete_solo(paquete, &(hilo->registros_hilo.CX), sizeof(uint32_t));
@@ -70,7 +70,7 @@ void empaquetar_contexto(t_paquete *paquete, t_proceso *proceso, t_hilo *hilo)
 	agregar_a_paquete_solo(paquete, &(proceso->limite), sizeof(uint32_t));
 }
 
-t_registros_cpu recibir_contexto(t_registros_cpu registros, void *buffer)
+t_registros_cpu recibir_contexto(t_registros_cpu registros, t_buffer *buffer)
 {
 	registros.PC = buffer_read_uint32(buffer);
 	registros.AX = buffer_read_uint32(buffer);
