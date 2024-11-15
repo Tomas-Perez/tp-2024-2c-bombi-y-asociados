@@ -18,13 +18,22 @@ int main(int argc, char *argv[])
     inicializarBloques();
     inicializarBitmap();
     archivocheq();
-    // HILOS PARA CONEXIONES
-    char* nombr="carpeta_ejemplo4";
+
+    int pid=1;
+    int tid=2;
+    time_t timestamp= time(NULL);
+    struct tm *tm = localtime(&timestamp);
+    char* tiempo=malloc(sizeof(char)*50);
+    strftime(tiempo,24,"%I:%M:%S%p",tm);
+    char* nombr=string_from_format("%d-%d-%s",pid,tid,tiempo);
+
     int tamani=10;
     //void* data="I'm so glad you made time to see meHow's life? Tell me how's your familyI haven't seen them in a whileYou've been good, busier than everWe small talk, work and the weatherYour guard is up and I know whyBecause the last time you saw meIs still burning in the back of your mindYou gave me roses and I left them there to die";
     void* data="123456789";
     socket_cliente=1;
     crear_archivo(nombr,tamani,socket_cliente,data); //CODIGO DE PRUEBA PARA AL RECIBIR DATOS
+
+    // HILOS PARA CONEXIONES
     pthread_t t1;
     pthread_create(&t1, NULL, (void *)atenderMemoria, NULL);
     pthread_join(t1, NULL);
@@ -101,18 +110,24 @@ void atender_petiticiones(int *socket)
         int cod_op = recibir_operacion(socket_cliente);
         switch (cod_op)
         {
-        case MENSAJE:
-            recibir_mensaje(socket_cliente,logger_fs);
-            pthread_exit("Peticion exitosa");
-            break;
-        case PAQUETE:
+        case DUMP_MEMORY:
             lista = recibir_paquete(socket_cliente);
-            char* nombr=list_get(lista,0);
-            int* tam=list_get(lista,1);
+            int* pid=list_get(lista,0);
+            int* tid=list_get(lista,1);
+            int* tam=list_get(lista,2);
             int tamani=*tam;
-            void* data=list_get(lista,2);
-            crear_archivo(nombr,tamani,socket_cliente,data);
-            puts("Me llegaron los siguientes valores:\n");
+            void* data=list_get(lista,3);
+            time_t timestamp= time(NULL);
+            struct tm *tm = localtime(&timestamp);
+            char* tiempo=malloc(sizeof(char)*50);
+            strftime(tiempo,24,"%I:%M:%S%p",tm);
+            char* nombr=string_from_format("%d-%d-%s",*pid,*tid,tiempo);
+            if(crear_archivo(nombr,tamani,socket_cliente,data)==-1){
+                pthread_exit(string_from_format("peticion %s fallida",nombr));
+            }else{
+                pthread_exit(string_from_format("peticion %s exitosa",nombr));
+            }
+            free(nombr);
             sem_post(&semaforo);
             koso = 1;
             break;
