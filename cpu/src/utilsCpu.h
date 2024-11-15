@@ -19,6 +19,7 @@ void empaquetar_contexto(t_paquete *paquete);
 // FUNCION PARA MANDAR PARAMETROS A KERNEL
 
 void devolver_lista_instrucciones(int motivo, instruccion *info);
+void  empaquetar_contexto_kl( int motivo, instruccion *info);
 
 extern t_log* logger_cpu;
 extern int tid;

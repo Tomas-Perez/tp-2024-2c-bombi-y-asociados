@@ -298,36 +298,43 @@ t_particiones *asignar_best_fit_dinamicas(t_list *lista, uint32_t tamanio)
 
 t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio)
 {
-	list_sort(lista, particion_mayor); // Ordena la lista de mayor a menor segun tamaño de las particiones
+
+	uint32_t peor_particion = 0;
+	uint32_t mejor_indice = -1;
 
 	for (int i = 0; i < list_size(lista); i++)
 	{
 		t_particiones *particion = list_get(lista, i);
-
-		// Verificación: La partición debe ser suficientemente grande y estar libre
-		if (particion->limite >= tamanio && particion->ocupado == 0)
+		if (particion->limite >= tamanio && particion->ocupado == 0 && particion->limite > peor_particion)
 		{
-			uint32_t tamanio_restante = particion->limite - tamanio;
-
-			particion->limite = tamanio;
-			particion->ocupado = 1;
-
-			if (tamanio_restante > 0)
-			{
-
-				t_particiones *nueva_particion = malloc(sizeof(t_particiones));
-				nueva_particion->base = particion->base + tamanio;
-				nueva_particion->limite = tamanio_restante;
-				nueva_particion->ocupado = 0;
-
-				list_add_in_index(lista, i + 1, nueva_particion);
-			}
-
-			return particion; // Retornamos la partición asignada
+			peor_particion = particion->limite;
+			mejor_indice = i;
 		}
 	}
-	// Si no encontramos una partición adecuada, devolvemos NULL
-	return NULL;
+	if (mejor_indice != -1) // Si se encontró una partición adecuada
+	{
+		t_particiones *particion_a_devolver = list_get(lista, mejor_indice);
+		if (particion_a_devolver->limite > tamanio)
+		{
+			// Crear nueva partición con el espacio sobrante
+			t_particiones *nueva_particion = malloc(sizeof(t_particiones));
+			nueva_particion->base = particion_a_devolver->base + tamanio;
+			nueva_particion->limite = particion_a_devolver->limite - tamanio;
+			nueva_particion->ocupado = 0;
+
+			particion_a_devolver->limite = tamanio;
+			particion_a_devolver->ocupado = 1;
+
+			// Agregar la nueva partición a la lista
+			list_add_in_index(lista, mejor_indice + 1, nueva_particion);
+		}
+		else
+		{ // seria el caso en el que el proceso sea igual al tamaño libre, por lo que no creas una nueva particion
+			particion_a_devolver->ocupado = 1;
+		}
+		return particion_a_devolver;
+	}
+	return NULL; // Retorna NULL si no hay hueco adecuado
 }
 void ordenar_lista_original(t_list *lista){
 	list_sort(lista, base_menor);
@@ -358,7 +365,7 @@ void liberar_espacio_memoria(t_proceso *proceso)
 
 void verificar_particiones_vecinas(t_list *lista)
 {
-	ordenar_lista_original(lista);
+	//ordenar_lista_original(lista);
 	for (int i = list_size(lista) - 1; i >= 0; i--)
 	{
 		t_particiones *particion = list_get(lista, i);

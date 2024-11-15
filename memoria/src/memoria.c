@@ -378,7 +378,6 @@ int atenderKernel(int *socket_kernel)
 
         confirmacion = 1;
         send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que pudimos reservar espacio
-        printf("hay vida despues del send?\n");
         break;
     case PROCESS_EXIT:
         buffer = recibir_buffer(&size, *socket_kernel); // recibimos pid
@@ -508,6 +507,8 @@ int atenderKernel(int *socket_kernel)
         pthread_mutex_unlock(&mutex_espacio_usuario);
 
         t_paquete *paquete_dump = crear_paquete(DUMP_MEMORY);
+        agregar_a_paquete_solo(paquete_dump, &pid, sizeof(uint32_t));
+        agregar_a_paquete_solo(paquete_dump, &tid, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_dump, &proceso_dump->limite, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_dump, contenido_memoria, proceso_dump->limite);
         enviar_paquete(paquete_dump, socket_FS);

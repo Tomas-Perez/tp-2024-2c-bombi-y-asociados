@@ -280,13 +280,36 @@ void devolver_lista_instrucciones(int motivo, instruccion *info)
 
     t_paquete *paquete_instrucciones = crear_paquete(motivo);
 
-    for (int i = 0; i < list_size(info->parametros); i++)
+    int cant_parametros = list_size(info->parametros); 
+
+    agregar_a_paquete_solo(paquete_instrucciones, &cant_parametros, sizeof(uint32_t));
+    for (int i = 0; i < cant_parametros; i++)
     {
         char *aux = list_get(info->parametros, i);
         // printf("%s\n",aux);
-        agregar_a_paquete(paquete_instrucciones, aux, strlen(aux) + 1);
+        agregar_a_paquete_solo(paquete_instrucciones, aux, strlen(aux) + 1);
     }
-    devolver_contexto_de_ejecucion(pid, tid);
+    //devolver_contexto_de_ejecucion(pid, tid);
     enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
     eliminar_paquete(paquete_instrucciones);
+}
+
+
+
+void  empaquetar_contexto_kl( int motivo, instruccion *info){
+	//agregar_a_paquete_solo(paquete_contexto, (&program_counter), sizeof(int));
+	t_paquete *paquete_contexto  = crear_paquete(SYSCALL);
+   
+	agregar_a_paquete_solo(paquete_contexto, &motivo, sizeof(int)); // SE LE SUMA EL MOTIVO
+	
+    agregar_a_paquete_solo(paquete_contexto, &(info->cant_parametros), sizeof(int));
+
+	for (int i = 0; i < info->cant_parametros; i++)
+	{
+		char *parametro = list_get(info->parametros, i);
+		agregar_a_paquete(paquete_contexto, parametro, strlen(parametro) + 1);
+	}
+
+	 enviar_paquete(paquete_contexto, conexion_dispatch); // CAMBIAR NOMBRE
+    eliminar_paquete(paquete_contexto);
 }

@@ -3,7 +3,17 @@
 #include<stdlib.h>*/
 
 #include "utilsKernel.h"
+
+t_config* config_kernel;
 t_log* logger_kernel;
+char *ip_memoria;
+char *puerto_memoria; 
+char *ip_cpu; 
+char *puerto_cpu_dispatch; 
+char *puerto_cpu_interrupt; 
+char *algoritmo_de_planificacion;  
+int quantum; 
+char *log_level;
 
 //---------------------------------------------------------------- 
 // --------------------------- inidice --------------------------- 
@@ -42,6 +52,23 @@ char* generar_path_archivo(char* nombre_archivo)
 
 
 // --------------------------- Inicializar ---------------------------
+
+
+void levantar_config_kernel()
+{ 
+    config_kernel = iniciar_config("kernel.config");
+    ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
+    puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
+    ip_cpu = config_get_string_value(config_kernel, "IP_CPU");    
+    puerto_cpu_dispatch = config_get_string_value(config_kernel, "PUERTO_CPU_DISPATCH");
+    puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
+    algoritmo_de_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
+    quantum = config_get_int_value(config_kernel, "QUANTUM");
+    log_level = config_get_string_value(config_kernel, "LOG_LEVEL");
+
+}
+
+
 
 void inicializar_registros(tcb* hilo)
 {
@@ -85,7 +112,19 @@ void inicializar_estructuras_kernel()
 }
 
 
+void inicializar_hilos_planificacion()
+{ 
+    pthread_t hilo_plani_corto,hilo_exitt;
 
+	pthread_create(&hilo_plani_corto, NULL,(void*) planificador_corto_plazo,NULL);
+    pthread_create(&hilo_exitt,NULL, (void*) hilo_exit, NULL);
+
+	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
+	
+	pthread_detach(hilo_plani_largo);*/
+	pthread_detach(hilo_exitt); 
+    pthread_join(hilo_plani_corto,NULL);
+}
 // --------------------------- Pedidos memoria ---------------------------
 void pedir_memoria(int socket)
 { 
@@ -127,12 +166,10 @@ void pedir_memoria(int socket)
 
         if(!confirmacion_mem_disponible)
         {
-            printf("entra en que no hay memoria disponible\n");
             sem_wait(&finalizo_un_proc);
             pedir_memoria(socket);	
         }
         else {
-            printf("entra en que hay memoria disponible\n");
                 pthread_mutex_lock(&m_lista_procesos_new);
                 list_remove(lista_procesos_new, 0);
                 pthread_mutex_unlock(&m_lista_procesos_new);
@@ -174,7 +211,6 @@ pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio, int socket)
     
     hilo_main = list_get(nuevo_pcb->lista_tcb, 0);       
 	//iniciar_hilo(hilo_main, socket, nuevo_pcb->path_proc);
-    printf("entra aca?\n");
     agregar_a_ready_segun_alg(hilo_main);
 
     return nuevo_pcb;
@@ -278,41 +314,43 @@ void agregar_a_ready_segun_alg(tcb* hilo)
 	}
 	else
 	{
-        printf("agregar_a_ready_segun_alg(tcb* hilo)\n");
 		agregar_a_ready(hilo);
 	}
 }
 // // -------------------------- Parametros  --------------------------- 
 void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
-		int cod_op = recibir_operacion(conexion_dispatch);
+		/*int cod_op = recibir_operacion(conexion_dispatch);
 		if(cod_op == SYSCALL){
             desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
 			printf("TID: %i, motivo: %i", hilo->tid, *motivo);
             
 		}
-		else {
+		/*else {
             printf("Codigo de Operacion de CPU incorrecto\n");
-        }
+        }*/
+       desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
 }
 
 void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
 		int tam;
-		void* buffer = recibir_buffer(&tam, conexion_dispatch);
+		void* buffer = recibir_buffer_vieja(&tam, conexion_dispatch);
 		int desplazamiento = 0;
 		/*memcpy(&(proc->program_counter), buffer + desplazamiento, sizeof(uint32_t));
 		desplazamiento+= sizeof(int)*/;
 		memcpy(motivo, buffer + desplazamiento, sizeof(int));
-		desplazamiento+= sizeof(int);
+		desplazamiento += sizeof(int);
 		printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
 		memcpy(&(instrucc->cant_parametros), buffer + desplazamiento, sizeof(int));
-		desplazamiento+= sizeof(int);
+		desplazamiento += sizeof(int);
+
 		for(int i = 0; i < instrucc->cant_parametros; i++){
 
 			char* parametro; 
 			int tamanio_parametro;
 			memcpy(&(tamanio_parametro), buffer + desplazamiento, sizeof(int));
-			desplazamiento+= sizeof(int);
-			parametro= (char*) calloc(1,sizeof(tamanio_parametro));
+			desplazamiento += sizeof(int);
+            
+			parametro = (char *) calloc(1,tamanio_parametro);
 			//parametro=malloc(size_parametro);
 			if (parametro == NULL) 
             {
@@ -321,10 +359,10 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
                 // Liberar recursos y salir de la función
                 free(buffer);
                 return;
-            }
-			memcpy(parametro, buffer + desplazamiento, tamanio_parametro);
-			desplazamiento+= tamanio_parametro;
-
+            }			
+            memcpy(parametro, buffer + desplazamiento, tamanio_parametro);
+			desplazamiento += tamanio_parametro;
+            printf("%d\n",i);
 			list_add(instrucc->parametros, parametro);
             
 		}

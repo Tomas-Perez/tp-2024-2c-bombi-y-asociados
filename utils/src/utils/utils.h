@@ -216,6 +216,7 @@ char *buffer_read_string(t_buffer *buffer);
 
 int recibir_operacion(int socket_cliente);
 
+void* recibir_buffer_vieja(int* size, int socket_cliente);
 t_buffer *recibir_buffer(int *size, int socket_cliente);
 void* recibir_buffer_mensaje(int* size, int socket_cliente);
 

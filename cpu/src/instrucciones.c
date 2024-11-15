@@ -298,7 +298,8 @@ void process_create(instruccion *inst)
 
 void thread_create(instruccion *inst)
 {
-    devolver_lista_instrucciones(THREAD_CREATE, inst);
+    //devolver_lista_instrucciones(THREAD_CREATE, inst);
+    empaquetar_contexto_kl(THREAD_CREATE, inst);
 }
 
 void thread_join(instruccion *inst)

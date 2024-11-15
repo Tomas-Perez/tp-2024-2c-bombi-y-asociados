@@ -11,4 +11,4 @@ tcb* hilo_prioritario_en_ready();
 tcb* elegir_segun_prioridades();
 void atender_syscall();
 
-void inicializar_hilos_planificacion();
+//void inicializar_hilos_planificacion();

@@ -331,6 +331,18 @@ t_buffer *recibir_buffer(int *tamaño_buffer, int socket_cliente) {
     return buffer_a_devolver;
 }
 
+void* recibir_buffer_vieja(int* size, int socket_cliente)
+{
+	void * buffer;
+
+	recv(socket_cliente, size, sizeof(int), MSG_WAITALL);
+	buffer = malloc(*size);
+	recv(socket_cliente, buffer, *size, MSG_WAITALL);
+
+	return buffer;
+	//free(buffer);
+}
+
 void* recibir_buffer_mensaje(int* size, int socket_cliente)
 {
 	void * buffer;
