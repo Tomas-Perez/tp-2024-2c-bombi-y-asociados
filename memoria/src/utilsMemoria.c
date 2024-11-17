@@ -27,9 +27,9 @@ void guardar_instrucciones(t_hilo *hilo, FILE *f)
 {
 	char *instruccion = NULL;
 	size_t longitud = 0;
-
+	pthread_mutex_lock(&mutex_instrucciones);
 	hilo->instrucciones = list_create();
-
+	pthread_mutex_unlock(&mutex_instrucciones);
 	while (getline(&instruccion, &longitud, f) != -1) // Se leen las instrucciones del archivo línea por línea
 	{
 		if (strcmp(instruccion, "\n")) // Verifica si la línea no es un salto de línea vacío
@@ -50,7 +50,9 @@ void guardar_instrucciones(t_hilo *hilo, FILE *f)
 	fclose(f);
 	for (int i = 0; i < list_size(hilo->instrucciones); i++)
 	{
+		pthread_mutex_lock(&mutex_instrucciones);
 		char *aux = list_get(hilo->instrucciones, i);
+		pthread_mutex_unlock(&mutex_instrucciones);
 		printf("%s\n", aux); // muestra las instrucciones linea por linea
 	}
 }

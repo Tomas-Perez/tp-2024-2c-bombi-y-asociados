@@ -278,15 +278,15 @@ void empaquetar_contexto(t_paquete *paquete)
 void devolver_lista_instrucciones(int motivo, instruccion *info)
 {
 
-    t_paquete *paquete_instrucciones = crear_paquete(motivo);
+    t_paquete *paquete_instrucciones = crear_paquete(SYSCALL);
 
     int cant_parametros = list_size(info->parametros); 
-
+    agregar_a_paquete_solo(paquete_instrucciones, &motivo, sizeof(uint32_t));
     agregar_a_paquete_solo(paquete_instrucciones, &cant_parametros, sizeof(uint32_t));
     for (int i = 0; i < cant_parametros; i++)
     {
         char *aux = list_get(info->parametros, i);
-        // printf("%s\n",aux);
+        printf("parametro %d: %s\n",i,aux);
         agregar_a_paquete_solo(paquete_instrucciones, aux, strlen(aux) + 1);
     }
     //devolver_contexto_de_ejecucion(pid, tid);

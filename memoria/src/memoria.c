@@ -377,7 +377,7 @@ int atenderKernel(int *socket_kernel)
         log_info(logger_memoria, "Proceso <Creado> -  PID: <%i> - Tamaño: <%i>", pid, tamanio_proceso);
 
         confirmacion = 1;
-        send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que pudimos reservar espacio
+        send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que pudimos reservar espacio
         break;
     case PROCESS_EXIT:
         buffer = recibir_buffer(&size, *socket_kernel); // recibimos pid
@@ -397,7 +397,7 @@ int atenderKernel(int *socket_kernel)
     case INICIAR_HILO:
         int size_hilo = 0;
         char *path_hilo;
-        buffer = recibir_buffer(&size, *socket_kernel); // recibimos TCB
+        buffer = recibir_buffer(&size_hilo, *socket_kernel); // recibimos TCB
 
         if (buffer == NULL)
         {
@@ -408,17 +408,17 @@ int atenderKernel(int *socket_kernel)
         pid = buffer_read_uint32(buffer);
         tid = buffer_read_uint32(buffer);
 
-        uint32_t size_path_hilo = buffer_read_uint32(buffer);
+        /*uint32_t size_path_hilo = buffer_read_uint32(buffer);
 
         path_hilo = malloc(size_path_hilo + 1); // asignamos memoria, +1 para el carácter nulo
         if (path_hilo == NULL)
         {
             log_info(logger_memoria, "Error al asignar memoria para path_kernel\n");
             return -1;
-        }
+        }*/
 
-        // path_hilo = buffer_read_string(buffer, size_path_hilo);
-        // path_hilo[size_path] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+        path_hilo = buffer_read_string(buffer);
+         //path_hilo[size_path_hilo] = '\0'; // aseguramos que la cadena termine en un carácter nulo
 
         char *path_hilo_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_hilo) + 1); // VER QUE ONDA PATH INSTRUCCIONES
         if (path_hilo_completo == NULL)

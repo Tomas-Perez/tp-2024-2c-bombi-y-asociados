@@ -227,11 +227,11 @@ void atender_syscall()
 
 		case THREAD_CREATE:
 			archivo = list_get(instrucc->parametros, 0);
-			prioridad = list_get(instrucc->parametros,1);
+			prioridad =  atoi(list_get(instrucc->parametros,1));
 			pcb* proceso = hilo_en_ejecucion->pcb_padre_tcb;
 			tcb* hilo = crear_tcb(proceso, prioridad);
 			socket = conectarMemoria();
-				
+			printf("%s priori: %d\n", archivo, prioridad);
 			iniciar_hilo(hilo, socket, archivo);
 			close(socket);
 			free(archivo);

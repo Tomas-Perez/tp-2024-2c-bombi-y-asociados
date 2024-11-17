@@ -126,13 +126,14 @@ void eliminar_hilo(int pid, int tid)
 
 
 void liberar_hilo(t_hilo *hilo)
-{
+{	pthread_mutex_lock(&mutex_instrucciones);
 	for (int i = 0; i < list_size(hilo->instrucciones); i++)
 	{
-		pthread_mutex_lock(&mutex_instrucciones);
 		free(list_get(hilo->instrucciones, i));
-		pthread_mutex_unlock(&mutex_instrucciones);
 	}
+	pthread_mutex_unlock(&mutex_instrucciones);
+	pthread_mutex_lock(&mutex_instrucciones);
 	list_destroy(hilo->instrucciones);
+	pthread_mutex_unlock(&mutex_instrucciones);
 	free(hilo);
 }

@@ -154,7 +154,7 @@ void pedir_memoria(int socket)
         int confirmacion_mem_disponible = 0;
         //recv(socket,&confirmacion_mem_disponible, sizeof(int), MSG_WAITALL);
 
-        int bytes_recibidos = recv(socket, &confirmacion_mem_disponible, sizeof(int), 0);
+        int bytes_recibidos = recv(socket, &confirmacion_mem_disponible, sizeof(int), MSG_WAITALL);
     if (bytes_recibidos == -1) {
         perror("Error en recv");
         return;
@@ -319,24 +319,23 @@ void agregar_a_ready_segun_alg(tcb* hilo)
 }
 // // -------------------------- Parametros  --------------------------- 
 void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
-		/*int cod_op = recibir_operacion(conexion_dispatch);
+		int cod_op = recibir_operacion(conexion_dispatch);
 		if(cod_op == SYSCALL){
             desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
 			printf("TID: %i, motivo: %i", hilo->tid, *motivo);
             
 		}
-		/*else {
+		else {
             printf("Codigo de Operacion de CPU incorrecto\n");
-        }*/
-       desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
+        }
+       //desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
 }
 
 void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
 		int tam;
 		void* buffer = recibir_buffer_vieja(&tam, conexion_dispatch);
 		int desplazamiento = 0;
-		/*memcpy(&(proc->program_counter), buffer + desplazamiento, sizeof(uint32_t));
-		desplazamiento+= sizeof(int)*/;
+		
 		memcpy(motivo, buffer + desplazamiento, sizeof(int));
 		desplazamiento += sizeof(int);
 		printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
@@ -383,9 +382,9 @@ void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
         eliminar_paquete(paquete);
 
         int confirmacion;
-        recv(conexion_memoria, &confirmacion, sizeof(bool), MSG_WAITALL);
+        recv(conexion_memoria, &confirmacion, sizeof(int), MSG_WAITALL);
 
-        if (confirmacion)
+        if (confirmacion == 1)
         {
            // agregue este sem post xq si no nunca podia pasar el semwait de agregar a nuevos!!
             if (hilo == NULL)
