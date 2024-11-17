@@ -18,6 +18,8 @@ int main(int argc, char *argv[])
     inicializarBloques();
     inicializarBitmap();
     archivocheq();
+    bitmap_check();
+    
 
     int pid=1;
     int tid=2;
@@ -182,6 +184,15 @@ void archivocheq(){
 //    closedir(d);
 }
 
+void bitmap_check(){
+    sem_wait(&sem2);
+    bits_disp= bitarray_get_max_bit(bitarray_bitmap);
+    for(int i=0;i<BIT_CHAR(block_count);i++)
+    if(bitarray_test_bit(bitarray_bitmap,i)==true){
+        bits_disp--;
+    }
+}
+
 void inicializarBloques()
 {
     int tamanio = block_count * block_size;
@@ -204,9 +215,7 @@ void inicializarBloques()
         exit(EXIT_FAILURE);
     }
 
-    memset(blocmap, 0, tamanio);                                //retorna todo bloques.dat en 0
-
-    tamanio_bloq_puntero=block_size/sizeof(uint32_t);
+    //memset(blocmap, 0, tamanio);                                //retorna todo bloques.dat en 0
     //----------------------------------------------------------CODIGO DE PRUEBA DE ESCRITURA DE BLOQUES
     //char A='a';                                       
     //for (int i=(16*3);i<block_size;i++ ){//16 bytes 
@@ -232,6 +241,7 @@ void inicializarBloques()
     //free(source);
     //free(source2);
     //----------------------------------------------------------
+    sem_post(&sem2);
 }
 
 void inicializarBitmap()
@@ -259,7 +269,7 @@ void inicializarBitmap()
         exit(EXIT_FAILURE);
     }
 
-    memset(ptr_bitarray, 0, tamanio);
+    //memset(ptr_bitarray, 0, tamanio);
 
     bitarray_bitmap = bitarray_create_with_mode(ptr_bitarray, tamanio, LSB_FIRST);
     if (!bitarray_bitmap)
@@ -276,7 +286,7 @@ void inicializarBitmap()
         close(fpbitmap);
         exit(EXIT_FAILURE);
     }
-    bits_disp= bitarray_get_max_bit(bitarray_bitmap);
+    tamanio_bloq_puntero=block_size/sizeof(uint32_t);
     sem_post(&sem2);
 }
 
