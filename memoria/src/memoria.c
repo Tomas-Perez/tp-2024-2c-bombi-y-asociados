@@ -112,7 +112,7 @@ int atenderCpu(int *socket_cpu)
 
             char *instruccion = buscar_instruccion(pid, tid, program_counter);
 
-            log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%c>", pid, tid, instruccion); // VER LOS ARGS
+            log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%s>", pid, tid, instruccion); // VER LOS ARGS
 
             enviar_mensaje(instruccion, *socket_cpu);
 
@@ -125,16 +125,16 @@ int atenderCpu(int *socket_cpu)
             buffer = recibir_buffer((&size), *socket_cpu);
 
             pid = buffer_read_uint32(buffer);
-            tid = buffer_read_uint32(buffer);
+            uint32_t tid_solicitado = buffer_read_uint32(buffer);
 
-            log_info(logger_memoria, "Contexto <Solicitado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
+            log_info(logger_memoria, "Contexto <Solicitado> - (PID:TID) - (<%i>:<%i>)", pid, tid_solicitado);
 
             free(buffer);
 
             usleep(retardo_rta * 1000);
 
             t_proceso *proceso = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
-            t_hilo *hilo = buscar_hilo(proceso, tid);
+            t_hilo *hilo = buscar_hilo(proceso, tid_solicitado);
 
             t_paquete *mandar_contexto = crear_paquete(PEDIR_CONTEXTO);
             empaquetar_contexto(mandar_contexto, proceso, hilo);
@@ -147,17 +147,17 @@ int atenderCpu(int *socket_cpu)
             buffer = recibir_buffer((&size), *socket_cpu);
 
             pid = buffer_read_uint32(buffer);
-            tid = buffer_read_uint32(buffer);
+            uint32_t tid_a_actualizar = buffer_read_uint32(buffer);
             t_registros_cpu registros_a_actualizar = recibir_contexto(registros_a_actualizar, buffer);
 
             t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid); // si tira error ver malloc
-            t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid);
+            t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid_a_actualizar);
 
             usleep(retardo_rta * 1000);
 
             actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar); // Falta ver base y limite
 
-            log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid);
+            log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid_a_actualizar);
 
             enviar_mensaje("OK", *socket_cpu);
 
@@ -356,7 +356,7 @@ int atenderKernel(int *socket_kernel)
 
         // usleep(retardo_memoria() * 1000);
 
-        printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
+        //printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
 
         FILE *f;
         if (!(f = fopen(path_script_completo, "r")))
@@ -432,7 +432,7 @@ int atenderKernel(int *socket_kernel)
 
         usleep(retardo_rta * 1000);
 
-        printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
+        // printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
 
         FILE *file_hilo;
         if (!(file_hilo = fopen(path_hilo_completo, "r")))
@@ -455,6 +455,9 @@ int atenderKernel(int *socket_kernel)
         log_info(logger_memoria, "Hilo <Creado> - (PID:TID) - (<%i>:<%i>)", proceso_padre->pid, tid);
 
         list_add(proceso_padre->tids, hilo_nuevo);
+        
+        confirmacion = 1;
+        send(*socket_kernel, &confirmacion, sizeof(int), 0); 
         break;
     case THREAD_EXIT:
         buffer = recibir_buffer(&size, *socket_kernel); // recibimos TID, PID

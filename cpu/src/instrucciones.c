@@ -283,60 +283,80 @@ void log_instruccion(instruccion *inst)
 
 void dump_memory(instruccion *inst)
 {
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(DUMP_MEMORY, inst);
+    ejecutando_un_proceso = false;
 }
 
 void io(instruccion *inst)
 {
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(IO, inst);
+    ejecutando_un_proceso = false;
 }
 
 void process_create(instruccion *inst)
 {
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(PROCESS_CREATE, inst);
+    ejecutando_un_proceso = false;
 }
 
 void thread_create(instruccion *inst)
 {
-    //devolver_lista_instrucciones(THREAD_CREATE, inst);
-    empaquetar_contexto_kl(THREAD_CREATE, inst);
+    devolver_contexto_de_ejecucion(pid, tid);
+    devolver_lista_instrucciones(THREAD_CREATE, inst);
+    ejecutando_un_proceso = false;
+    //empaquetar_contexto_kl(THREAD_CREATE, inst);
 }
 
 void thread_join(instruccion *inst)
 {
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(THREAD_JOIN, inst);
+    ejecutando_un_proceso = false;
 }
 
 void thread_cancel(instruccion *inst)
 {
-
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(THREAD_CANCEL, inst);
+    ejecutando_un_proceso = false;
 }
 
 void mutex_create(instruccion *inst)
 {
-
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(MUTEX_CREATE, inst);
+    ejecutando_un_proceso = false;
 }
 
 void mutex_lock(instruccion *inst)
 {
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(MUTEX_LOCK, inst);
+    ejecutando_un_proceso = false;
 }
 
 void mutex_unlock(instruccion *inst)
 {
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(MUTEX_UNLOCK, inst);
+    ejecutando_un_proceso = false;
 }
 
 void thread_exit(instruccion *inst)
 {
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(THREAD_EXIT, inst);
+    ejecutando_un_proceso = false;
 }
 
 void process_exit(instruccion *inst)
 {
+    devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(PROCESS_EXIT, inst);
+    ejecutando_un_proceso = false;
 }
 /* ------------------------------------------- MMU ------------------------------------------- */
 

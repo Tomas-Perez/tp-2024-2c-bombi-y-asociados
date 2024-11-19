@@ -233,6 +233,7 @@ void atender_syscall()
 			socket = conectarMemoria();
 			printf("%s priori: %d\n", archivo, prioridad);
 			iniciar_hilo(hilo, socket, archivo);
+			pasar_a_running_tcb(hilo_en_ejecucion);
 			close(socket);
 			free(archivo);
 		break;
@@ -250,8 +251,10 @@ void atender_syscall()
 		}
 		else 
 		{
+			
 			log_info(logger_kernel,"No se encontró el hilo");
 		}
+		pasar_a_running_tcb(hilo_en_ejecucion);
 		break;
 
 		case THREAD_CANCEL:
@@ -343,7 +346,8 @@ void atender_syscall()
 			hilo_en_ejecucion = NULL;
 		break;
 	}
-
+	
+	free(instrucc);
 }
 
 

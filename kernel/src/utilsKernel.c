@@ -361,7 +361,7 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
             }			
             memcpy(parametro, buffer + desplazamiento, tamanio_parametro);
 			desplazamiento += tamanio_parametro;
-            printf("%d\n",i);
+           // printf("%d\n",i);
 			list_add(instrucc->parametros, parametro);
             
 		}
@@ -376,7 +376,7 @@ void iniciar_hilo(tcb* hilo, int conexion_memoria, char* path){
         t_paquete *paquete = crear_paquete(INICIAR_HILO);
         agregar_a_paquete_solo(paquete, &(hilo->pcb_padre_tcb->pid), sizeof(uint32_t));
         agregar_a_paquete_solo(paquete, &(hilo->tid), sizeof(uint32_t));
-        agregar_a_paquete_solo(paquete, &(size_path_hilo), sizeof(uint32_t));
+       // agregar_a_paquete_solo(paquete, &(size_path_hilo), sizeof(uint32_t));
         agregar_a_paquete(paquete, path, strlen(path) + 1);
         enviar_paquete(paquete, conexion_memoria);
         eliminar_paquete(paquete);

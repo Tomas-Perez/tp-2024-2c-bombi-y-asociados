@@ -286,14 +286,13 @@ void devolver_lista_instrucciones(int motivo, instruccion *info)
     for (int i = 0; i < cant_parametros; i++)
     {
         char *aux = list_get(info->parametros, i);
-        printf("parametro %d: %s\n",i,aux);
-        agregar_a_paquete_solo(paquete_instrucciones, aux, strlen(aux) + 1);
+        // printf("parametro %d: %s\n",i,aux);
+        agregar_a_paquete(paquete_instrucciones, aux, strlen(aux) + 1);
     }
     //devolver_contexto_de_ejecucion(pid, tid);
     enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
     eliminar_paquete(paquete_instrucciones);
 }
-
 
 
 void  empaquetar_contexto_kl( int motivo, instruccion *info){
@@ -310,6 +309,6 @@ void  empaquetar_contexto_kl( int motivo, instruccion *info){
 		agregar_a_paquete(paquete_contexto, parametro, strlen(parametro) + 1);
 	}
 
-	 enviar_paquete(paquete_contexto, conexion_dispatch); // CAMBIAR NOMBRE
+	enviar_paquete(paquete_contexto, conexion_dispatch); // CAMBIAR NOMBRE
     eliminar_paquete(paquete_contexto);
 }
