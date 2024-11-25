@@ -256,8 +256,13 @@ void devolver_contexto_de_ejecucion(int pid, int tid)
     agregar_a_paquete_solo(dev_contexto, &tid, sizeof(int));
     empaquetar_contexto(dev_contexto);
     enviar_paquete(dev_contexto, socket_memoria);
-    log_info(logger_cpu, "TID: <%i> - Actualizo Contexto Ejecución", tid);
     eliminar_paquete(dev_contexto);
+
+    int conf;
+    recv(socket_memoria,&conf,sizeof(int),MSG_WAITALL);
+    if (conf==1){
+    log_info(logger_cpu, "TID: <%i> - Actualizo Contexto Ejecución", tid);
+    }
 }
 
 void empaquetar_contexto(t_paquete *paquete)

@@ -86,12 +86,12 @@ void planificador_corto_plazo()
 		}	
 		pthread_mutex_unlock(&m_hilo_a_ejecutar);
 		pasar_a_running_tcb(hilo_a_ejecutar);
-		atender_syscall();
+		//atender_syscall();
 	}
 	if(strcmp(algoritmo_de_planificacion,"PRIORIDADES")== 0)
 	{
 		pasar_a_running_tcb_prioridades();
-		atender_syscall();
+		//atender_syscall();
 	}
 	if(strcmp(algoritmo_de_planificacion,"CMN")==0)
 	{
@@ -104,7 +104,7 @@ void planificador_corto_plazo()
 		pasar_a_running_tcb(hilo_a_ejecutar);
 
 		pthread_t tround_robin;
-		atender_syscall();		
+		//atender_syscall();		
 		pthread_create(&tround_robin, NULL, (void*) desalojar_por_RR, (void*) hilo_a_ejecutar);
 		pthread_detach(tround_robin);
 
@@ -122,6 +122,7 @@ void pasar_a_running_tcb(tcb* tcb_listo)
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
     log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Anterior: READY - Estado Actual: EXEC",
     hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
+	atender_syscall();
 }
 
 
@@ -134,6 +135,7 @@ void pasar_a_running_tcb_prioridades(){
 	mandar_tcb_dispatch(tcb_listo);
     log_info(logger_kernel, "PID <%d> TID: <%d>  - Estado Anterior: READY - Estado Actual: EXEC",
     hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
+	atender_syscall();
 }
 
 tcb* hilo_prioritario_en_ready(){
@@ -190,7 +192,6 @@ void atender_syscall()
 
 	log_info(logger_kernel, "## (PID <%d> TID: <%d> ) - Solicitó syscall: <%d>",
 	hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid,motivo); 
-
 	
 	switch(motivo)
 	{
@@ -236,9 +237,9 @@ void atender_syscall()
 			tcb* hilo = crear_tcb(proceso, prioridad);
 			socket = conectarMemoria();
 			printf("%s priori: %d\n", archivo, prioridad);
+			agregar_a_ready_segun_alg(hilo_en_ejecucion);			
 			iniciar_hilo(hilo, socket, archivo);
-			pasar_a_running_tcb(hilo_en_ejecucion);
-			//agregar_a_ready_segun_alg(hilo_en_ejecucion);			
+			//pasar_a_running_tcb(hilo_en_ejecucion);
 			close(socket);
 			free(archivo);
 		break;
@@ -277,6 +278,7 @@ void atender_syscall()
 		break;
 		case THREAD_EXIT:
 			finalizar_tcb(hilo_en_ejecucion);
+			hilo_en_ejecucion=NULL;
 		break;
 		case MUTEX_CREATE:
 			mutex_k* nuevo_mutex;

@@ -432,7 +432,7 @@ void finalizar_tcb(tcb* hilo_a_finalizar)
     pthread_mutex_unlock(&m_lista_finalizados);
 
     sem_post(&hilos_en_exit);
-    log_info(logger_kernel,"## (PID <%d>:TID <%d>) Finaliza el hilo", hilo_a_finalizar->tid);
+    log_info(logger_kernel,"## (PID <%d>:TID <%d>) Finaliza el hilo", hilo_a_finalizar->pcb_padre_tcb->pid,hilo_a_finalizar->tid);
 }
 
 void* hilo_exit()

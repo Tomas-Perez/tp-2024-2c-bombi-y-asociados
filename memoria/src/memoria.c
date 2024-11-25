@@ -157,7 +157,8 @@ int atenderCpu(int *socket_cpu)
 
             log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid_a_actualizar);
 
-            enviar_mensaje("OK", *socket_cpu);
+            int ok=1;
+            send(*socket_cpu,&ok,sizeof(int),0);
 
             free(buffer);
 
@@ -209,7 +210,7 @@ int atenderCpu(int *socket_cpu)
             log_info(logger_memoria, "TID: <%i> - Acción: <ESCRIBIR> - Dirección física: <%i> - Tamaño <4>", tid_mem, dir_fisica);
             usleep(retardo_rta * 1000);
 
-            enviar_mensaje("OK", *socket_cpu);
+            //enviar_mensaje("OK", *socket_cpu);
 
             free(buffer);
             break;
