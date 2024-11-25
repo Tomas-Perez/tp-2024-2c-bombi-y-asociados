@@ -2,7 +2,6 @@
 
 t_list* list_archivos;
 int socket_cliente,fpbitmap,fpbloc;
-t_bitarray *bitarray_bitmap;
 char *ptr_bitarray;
 uint32_t *blocmap;
 
@@ -19,8 +18,24 @@ int main(int argc, char *argv[])
     inicializarBloques();
     inicializarBitmap();
     archivocheq();
-    // HILOS PARA CONEXIONES
+    bitmap_check();
+    
 
+    int pid=1;
+    int tid=2;
+    time_t timestamp= time(NULL);
+    struct tm *tm = localtime(&timestamp);
+    char* tiempo=malloc(sizeof(char)*50);
+    strftime(tiempo,24,"%I:%M:%S%p",tm);
+    char* nombr=string_from_format("%d-%d-%s",pid,tid,tiempo);
+
+    int tamani=10;
+    //void* data="I'm so glad you made time to see meHow's life? Tell me how's your familyI haven't seen them in a whileYou've been good, busier than everWe small talk, work and the weatherYour guard is up and I know whyBecause the last time you saw meIs still burning in the back of your mindYou gave me roses and I left them there to die";
+    void* data="123456789";
+    socket_cliente=1;
+    crear_archivo(nombr,tamani,socket_cliente,data); //CODIGO DE PRUEBA PARA AL RECIBIR DATOS
+
+    // HILOS PARA CONEXIONES
     pthread_t t1;
     pthread_create(&t1, NULL, (void *)atenderMemoria, NULL);
     pthread_join(t1, NULL);
@@ -97,18 +112,24 @@ void atender_petiticiones(int *socket)
         int cod_op = recibir_operacion(socket_cliente);
         switch (cod_op)
         {
-        case MENSAJE:
-            recibir_mensaje(socket_cliente,logger_fs);
-            pthread_exit("Peticion exitosa");
-            break;
-        case PAQUETE:
+        case DUMP_MEMORY:
             lista = recibir_paquete(socket_cliente);
-            char* nombr=list_get(lista,0);
-            int* tam=list_get(lista,1);
+            int* pid=list_get(lista,0);
+            int* tid=list_get(lista,1);
+            int* tam=list_get(lista,2);
             int tamani=*tam;
-            void* data=list_get(lista,2);
-            crear_archivo(nombr,tamani,socket_cliente,data);
-            puts("Me llegaron los siguientes valores:\n");
+            void* data=list_get(lista,3);
+            time_t timestamp= time(NULL);
+            struct tm *tm = localtime(&timestamp);
+            char* tiempo=malloc(sizeof(char)*50);
+            strftime(tiempo,24,"%I:%M:%S%p",tm);
+            char* nombr=string_from_format("%d-%d-%s",*pid,*tid,tiempo);
+            if(crear_archivo(nombr,tamani,socket_cliente,data)==-1){
+                pthread_exit(string_from_format("peticion %s fallida",nombr));
+            }else{
+                pthread_exit(string_from_format("peticion %s exitosa",nombr));
+            }
+            free(nombr);
             sem_post(&semaforo);
             koso = 1;
             break;
@@ -124,43 +145,52 @@ void atender_petiticiones(int *socket)
 }
 
 void archivocheq(){
+//    sem_wait(&sem2);
+//     t_config* aux;
+//     char* directorio=string_from_format("%s/files",mount_dir);
+//    DIR *d;
+//  struct dirent *dir;
+//  d = opendir(directorio);
+//  if (d) {
+//    while ((dir = readdir(d)) != NULL) {
+//      //printf("%s\n", dir->d_name);
+//      char* auxiliar=malloc(sizeof(char)*20);
+//      strcpy(auxiliar,dir->d_name);
+//      if (strstr(auxiliar, ".dmp") != NULL) {
+//        aux=iniciar_config(string_from_format("%s/%s",directorio,auxiliar));
+//        t_archivo *nuevo=malloc(sizeof(t_archivo));
+//        char* archivo=config_get_string_value(aux, "NOMBRE");
+//        nuevo->nombre=malloc(strlen(archivo)+1);
+//        strcpy(nuevo->nombre,archivo);
+//        nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
+//        nuevo->block_size=config_get_int_value(aux,"SIZE");
+//        nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
+//        list_add(list_archivos,nuevo);
+//        for (int i=nuevo->index_block;i<nuevo->index_block+nuevo->cant_bloque;i++){     //ESTA FUNCION SOLO SIRVE PARA BLOQUES CONTINUOS, HAY QUE CAMBIARLO PARA QUE FUNCIONE EN INDEXADO
+//        bitarray_set_bit(bitarray_bitmap,i);
+//        }
+//        int tamanioBitmap = block_count / 8;
+//        if (msync(ptr_bitarray, tamanioBitmap, MS_SYNC) == -1)
+//        {
+//        log_error(logger_fs, "Error al sincronizar el archivo bitmap.");
+//        }
+//    }
+//    free(auxiliar);
+//    }
+//    }
+//    if (aux->path!=NULL){
+//    config_destroy(aux);
+//    }
+//    closedir(d);
+}
+
+void bitmap_check(){
     sem_wait(&sem2);
-     t_config* aux;
-     char* directorio=string_from_format("%s/files",mount_dir);
-    DIR *d;
-  struct dirent *dir;
-  d = opendir(directorio);
-  if (d) {
-    while ((dir = readdir(d)) != NULL) {
-      //printf("%s\n", dir->d_name);
-      char* auxiliar=malloc(sizeof(char)*20);
-      strcpy(auxiliar,dir->d_name);
-      if (strstr(auxiliar, ".dmp") != NULL) {
-        aux=iniciar_config(string_from_format("%s/%s",directorio,auxiliar));
-        t_archivo *nuevo=malloc(sizeof(t_archivo));
-        char* archivo=config_get_string_value(aux, "NOMBRE");
-        nuevo->nombre=malloc(strlen(archivo)+1);
-        strcpy(nuevo->nombre,archivo);
-        nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
-        nuevo->block_size=config_get_int_value(aux,"SIZE");
-        nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
-        list_add(list_archivos,nuevo);
-        for (int i=nuevo->index_block;i<nuevo->index_block+nuevo->cant_bloque;i++){     //ESTA FUNCION SOLO SIRVE PARA BLOQUES CONTINUOS, HAY QUE CAMBIARLO PARA QUE FUNCIONE EN INDEXADO
-        bitarray_set_bit(bitarray_bitmap,i);
-        }
-        int tamanioBitmap = block_count / 8;
-        if (msync(ptr_bitarray, tamanioBitmap, MS_SYNC) == -1)
-        {
-        log_error(logger_fs, "Error al sincronizar el archivo bitmap.");
-        }
+    bits_disp= bitarray_get_max_bit(bitarray_bitmap);
+    for(int i=0;i<BIT_CHAR(block_count);i++)
+    if(bitarray_test_bit(bitarray_bitmap,i)==true){
+        bits_disp--;
     }
-    free(auxiliar);
-    }
-    }
-    if (aux->path!=NULL){
-    config_destroy(aux);
-    }
-    closedir(d);
 }
 
 void inicializarBloques()
@@ -185,9 +215,7 @@ void inicializarBloques()
         exit(EXIT_FAILURE);
     }
 
-    memset(blocmap, 0, tamanio);                                //retorna todo bloques.dat en 0
-
-    tamanio_bloq_puntero=block_size/sizeof(uint32_t);
+    //memset(blocmap, 0, tamanio);                                //retorna todo bloques.dat en 0
     //----------------------------------------------------------CODIGO DE PRUEBA DE ESCRITURA DE BLOQUES
     //char A='a';                                       
     //for (int i=(16*3);i<block_size;i++ ){//16 bytes 
@@ -213,6 +241,7 @@ void inicializarBloques()
     //free(source);
     //free(source2);
     //----------------------------------------------------------
+    sem_post(&sem2);
 }
 
 void inicializarBitmap()
@@ -240,7 +269,7 @@ void inicializarBitmap()
         exit(EXIT_FAILURE);
     }
 
-    memset(ptr_bitarray, 0, tamanio);
+    //memset(ptr_bitarray, 0, tamanio);
 
     bitarray_bitmap = bitarray_create_with_mode(ptr_bitarray, tamanio, LSB_FIRST);
     if (!bitarray_bitmap)
@@ -257,6 +286,7 @@ void inicializarBitmap()
         close(fpbitmap);
         exit(EXIT_FAILURE);
     }
+    tamanio_bloq_puntero=block_size/sizeof(uint32_t);
     sem_post(&sem2);
 }
 
