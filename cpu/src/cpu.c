@@ -72,7 +72,7 @@ int atenderCpuDispatch()
             ejecutar_proceso();
             break;
         case -1:
-            log_error(logger_cpu, "El cliente se desconecto. Terminando servidor\n");
+            log_error(logger_cpu, "El cliente se desconecto. Terminando servidorD\n");
             return EXIT_FAILURE;
         default:
             log_warning(logger_cpu, "Operacion desconocida. No quieras meter la pata\n");
@@ -106,7 +106,7 @@ int atenderCpuInterrupt()
             free(buffer);
             break;
         case -1:
-            log_error(logger_cpu, "El cliente se desconecto. Terminando servidor\n");
+            log_error(logger_cpu, "El cliente se desconecto. Terminando servidorI\n");
             return EXIT_FAILURE;
         default:
             log_warning(logger_cpu, "Operacion desconocida. No quieras meter la pata\n");

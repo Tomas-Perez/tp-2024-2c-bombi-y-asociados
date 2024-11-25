@@ -113,9 +113,7 @@ int atenderCpu(int *socket_cpu)
             char *instruccion = buscar_instruccion(pid, tid, program_counter);
 
             log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%s>", pid, tid, instruccion); // VER LOS ARGS
-
             enviar_mensaje(instruccion, *socket_cpu);
-
             free(instruccion); // si tira error comentar
             free(buffer);
 

@@ -55,7 +55,10 @@ void agregar_a_ready_multinivel(tcb* hilo)
 
 
 void planificador_corto_plazo()
-{
+{	
+	while(1){
+		if(hilo_en_ejecucion==NULL){
+
 	sem_wait(&hilos_en_ready);
 	tcb* hilo_a_ejecutar;
 
@@ -106,7 +109,8 @@ void planificador_corto_plazo()
 		pthread_detach(tround_robin);
 
 	}
-	
+		}
+	}
 }
 
 
@@ -234,6 +238,7 @@ void atender_syscall()
 			printf("%s priori: %d\n", archivo, prioridad);
 			iniciar_hilo(hilo, socket, archivo);
 			pasar_a_running_tcb(hilo_en_ejecucion);
+			//agregar_a_ready_segun_alg(hilo_en_ejecucion);			
 			close(socket);
 			free(archivo);
 		break;

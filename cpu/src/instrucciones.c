@@ -44,6 +44,7 @@ char *fetch()
     enviar_paquete(paquete, socket_memoria);
 
     char *instruccion_a_ejecutar = recibir_instruccion(socket_memoria);
+    printf("me llego %s \n",instruccion_a_ejecutar);
     // program_counter++;
     registros_cpu.PC++;
     log_info(logger_cpu, "Program Counter actualizado: %d", registros_cpu.PC);

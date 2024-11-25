@@ -122,7 +122,7 @@ void inicializar_hilos_planificacion()
 	/*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
 	
 	pthread_detach(hilo_plani_largo);*/
-	pthread_detach(hilo_exitt); 
+	pthread_join(hilo_exitt,NULL); 
     pthread_join(hilo_plani_corto,NULL);
 }
 // --------------------------- Pedidos memoria ---------------------------
