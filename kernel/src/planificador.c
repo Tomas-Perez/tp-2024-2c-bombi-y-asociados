@@ -245,13 +245,14 @@ void atender_syscall()
 			free(archivo);
 		break;
 		case THREAD_JOIN:
-		int *tid_j = list_get(instrucc->parametros, 0);
-		tid=*tid_j;
+		char* tid_j = list_get(instrucc->parametros, 0);
+		tid = atoi(tid_j);
 		tcb* tcb_invocado = buscar_hilos_listas(hilo_en_ejecucion,tid);
 
 		if(tcb_invocado != NULL){
 			pthread_mutex_lock(&m_hilo_a_ejecutar);
 			list_add(tcb_invocado->block_join, hilo_en_ejecucion);
+			buscar_hilos_listas(hilo_en_ejecucion,hilo_en_ejecucion->tid);
 			hilo_en_ejecucion = tcb_invocado;  
 			pthread_mutex_unlock(&m_hilo_a_ejecutar);
 			log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <PTHREAD_JOIN>",
@@ -262,12 +263,14 @@ void atender_syscall()
 			
 			log_info(logger_kernel,"No se encontró el hilo");
 		}
-		pasar_a_running_tcb(hilo_en_ejecucion);
+		//pasar_a_running_tcb(hilo_en_ejecucion);
+		agregar_a_ready_segun_alg(hilo_en_ejecucion);	
+		sem_post(&binario_corto_plazo);
 		break;
 
 		case THREAD_CANCEL:
-			int* tid_c = list_get(instrucc->parametros, 0);
-			tid=*tid_c;
+			char* tid_c = list_get(instrucc->parametros, 0);
+			tid= atoi(tid_c);
 			tcb* hilo_a_finalizar;
 			hilo_a_finalizar = buscar_hilos_listas(hilo_en_ejecucion,tid);
 			if(hilo_a_finalizar != NULL){

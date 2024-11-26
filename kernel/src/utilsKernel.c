@@ -57,8 +57,8 @@ char* generar_path_archivo(char* nombre_archivo)
 
 void levantar_config_kernel()
 { 
-    config_kernel = iniciar_config("kernelFS.config");
-    //config_kernel = iniciar_config("kernelPlani.config");
+    //config_kernel = iniciar_config("kernelFS.config");
+    config_kernel = iniciar_config("kernelPlani.config");
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
     ip_cpu = config_get_string_value(config_kernel, "IP_CPU");    
@@ -421,7 +421,7 @@ void finalizar_proceso(pcb *proc)
         finalizar_hilos_proceso(proc);
     }
     avisar_memoria_liberar_pcb(proc);
-    log_info(logger_kernel,"## Finaliza el proceso <PID>",proc->pid);
+    log_info(logger_kernel,"## Finaliza el proceso <%d>",proc->pid);
 
     list_destroy(proc->lista_tcb);
     free(proc->path_proc); 
@@ -466,7 +466,7 @@ void* hilo_exit()
 		
 		liberar_tcb(hilo);
         sem_post(&binario_corto_plazo);
-		printf("BORRAR: en hilo_exit-> termino todo");
+		printf("BORRAR: en hilo_exit-> termino todo\n");
 	}
 	
 }

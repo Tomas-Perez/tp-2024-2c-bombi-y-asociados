@@ -53,8 +53,9 @@ void atenderMemoria()
 
 void aceptar_peticiones(int socket_servidor)
 {
-    void* valrec;
-    sem_init(&semaforo, 0, 1);
+    //char* valrec=NULL;
+    int confirmemo;
+    sem_init(&semaforo, 0, 0);
     while (1)
     {
         
@@ -63,8 +64,9 @@ void aceptar_peticiones(int socket_servidor)
         // puts("cliente aceptado");
         pthread_create(&thread, NULL, (void *)atender_petiticiones, &socket_cliente);
         sem_wait(&semaforo);
-        pthread_join(thread, &valrec);
-        enviar_mensaje((char*)valrec,socket_cliente);
+        pthread_join(thread, &confirmemo);
+        send(socket_cliente,&confirmemo,sizeof(int),0);
+        //enviar_mensaje(valrec,socket_cliente);
         close(socket_cliente);
         // puts("siguiente hilo");
     }
@@ -73,6 +75,7 @@ void aceptar_peticiones(int socket_servidor)
 void atender_petiticiones(int *socket)
 {
     int socket_cliente = *socket;
+    printf("el socket memoria es %d \n",socket_cliente);
     t_list *lista;
     uint32_t handshake;
     uint32_t resultOk = 0;
@@ -104,7 +107,11 @@ void atender_petiticiones(int *socket)
             close(socket_cliente);
         }
     }
+    puts("handshake hecho");
     int koso = 0;
+    int size =0;
+    int exit_status;
+    t_buffer *buffer;
     while (socket_cliente) // cambiar para registrar cada interfaz , importante guardar socket de cada interfaz
     {
         if (koso == 1)
@@ -115,24 +122,26 @@ void atender_petiticiones(int *socket)
         switch (cod_op)
         {
         case DUMP_MEMORY:
-            lista = recibir_paquete(socket_cliente);
-            int* pid=list_get(lista,0);
-            int* tid=list_get(lista,1);
-            int* tam=list_get(lista,2);
-            int tamani=*tam;
-            void* data=list_get(lista,3);
+            buffer=recibir_buffer(&size,socket_cliente);
+
+            int pid=buffer_read_uint32(buffer);
+            int tid=buffer_read_uint32(buffer);
+            int tam=buffer_read_uint32(buffer);
+            void* data=buffer_read_string(buffer);
+
             time_t timestamp= time(NULL);
             struct tm *tm = localtime(&timestamp);
             char* tiempo=malloc(sizeof(char)*50);
             strftime(tiempo,24,"%I:%M:%S%p",tm);
-            char* nombr=string_from_format("%d-%d-%s",*pid,*tid,tiempo);
-            if(crear_archivo(nombr,tamani,socket_cliente,data)==-1){
-                pthread_exit(string_from_format("peticion %s fallida",nombr));
+            char* nombr=string_from_format("%d-%d-%s",pid,tid,tiempo);
+            if(crear_archivo(nombr,tam,socket_cliente,data)==-1){
+                exit_status=0;;
+                pthread_exit((void*)exit_status);
             }else{
-                pthread_exit(string_from_format("peticion %s exitosa",nombr));
+                exit_status=1;
+                sem_post(&semaforo);
+                pthread_exit((void*)exit_status);
             }
-            free(nombr);
-            sem_post(&semaforo);
             koso = 1;
             break;
         case -1:
@@ -298,7 +307,7 @@ int crear_archivo(char* nombre, int size,int socket_cli,void* data){
     //block_size / sizeof(uint32_t); bloques para guardar el contenido del mismo, ya que cada archivo tiene un único bloque de punteros.
     int bloque_disp=verificar_espacio_disp(bitarray_bitmap,cant_bloques);
     if (bloque_disp==-1){
-        mandar_error(socket_cli);
+        //mandar_error(socket_cli);
         return -1;
     }else{
     }

@@ -16,13 +16,12 @@ char *puerto_filesystem;
 
 int socket_fs;
 int pid, tid;
-
 void *memoria;
 
 int main(int argc, char *argv[])
 {
     int socket_cliente;
-
+  
     levantar_config_memoria();
     inicializar_estructuras();
     logger_memoria = iniciar_logger("memoria.log", "MEMORIA");
@@ -487,7 +486,6 @@ int atenderKernel(int *socket_kernel)
         // pthread_t t_fs;
 
         int socket_FS = conectarFS();
-
         if (buffer == NULL)
         {
             log_info(logger_memoria, "Error al recibir el buffer\n");
@@ -522,11 +520,14 @@ int atenderKernel(int *socket_kernel)
         eliminar_paquete(paquete_dump);
         free(contenido_memoria);
 
+        int confirmado_fs;
+        recv(socket_FS,&confirmado_fs,sizeof(int),MSG_WAITALL);
         recibir_mensaje(socket_FS, logger_memoria);
         close(socket_FS);
-        //int confirmacion = 1;
-        send(*socket_kernel, &confirmacion, sizeof(int), 0); 
+        int confirm= 0;
+        send(*socket_kernel, &confirm, sizeof(int), 0); 
         break;
+        
     default:
         log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
         printf("Cod Op: %i", cod_op);
@@ -537,8 +538,8 @@ int atenderKernel(int *socket_kernel)
 
 void levantar_config_memoria()
 {
-    //config_memoria = config_create("memoriaPlani.config");
-    config_memoria = config_create("memoriaFS.config");
+    config_memoria = config_create("memoriaPlani.config");
+    //config_memoria = config_create("memoriaFS.config");
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");
     puerto_filesystem = config_get_string_value(config_memoria, "PUERTO_FILESYSTEM");
@@ -565,4 +566,5 @@ int conectarFS()
     }
 
     handshake_cliente(socket_fs, logger_memoria);
+    return socket_fs;
 }
