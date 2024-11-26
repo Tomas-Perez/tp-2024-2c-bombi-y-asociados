@@ -25,8 +25,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }*/
    
-    argv[1] = "PLANI_PROC";
-    argv[2] = "32"; 
+    argv[1] = "PRUEBA_FS";
+    argv[2] = "0";
 
     pthread_t t1, t2;
     

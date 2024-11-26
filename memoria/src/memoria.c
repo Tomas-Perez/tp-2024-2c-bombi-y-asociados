@@ -201,16 +201,18 @@ int atenderCpu(int *socket_cpu)
 
             uint32_t tid_mem = buffer_read_uint32(buffer);
             uint32_t dir_fisica = buffer_read_uint32(buffer);
-            uint32_t *dato = buffer_read_uint32(buffer);
+            uint32_t dato = buffer_read_uint32(buffer);
 
             pthread_mutex_lock(&mutex_espacio_usuario);
-            memcpy(memoria + dir_fisica, dato, 4);
+            memcpy(memoria + dir_fisica, &dato, sizeof(uint32_t));
             pthread_mutex_unlock(&mutex_espacio_usuario);
 
             log_info(logger_memoria, "TID: <%i> - Acción: <ESCRIBIR> - Dirección física: <%i> - Tamaño <4>", tid_mem, dir_fisica);
             usleep(retardo_rta * 1000);
 
             //enviar_mensaje("OK", *socket_cpu);
+            int confirmacion = 1;
+            send(*socket_cpu,&confirmacion,sizeof(int),0);
 
             free(buffer);
             break;
@@ -534,7 +536,8 @@ int atenderKernel(int *socket_kernel)
 
 void levantar_config_memoria()
 {
-    config_memoria = config_create("memoriaPlani.config");
+    //config_memoria = config_create("memoriaPlani.config");
+    config_memoria = config_create("memoriaFS.config");
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");
     puerto_filesystem = config_get_string_value(config_memoria, "PUERTO_FILESYSTEM");

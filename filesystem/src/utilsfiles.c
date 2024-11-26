@@ -9,7 +9,8 @@ t_log *logger_fs;
 
 void levantar_config_fs()
 {
-    config_fs = config_create("filesystemPlani.config");
+    //config_fs = config_create("filesystemPlani.config");
+    config_fs = config_create("filesystemFS.config");
     puerto_escucha = config_get_string_value(config_fs, "PUERTO_ESCUCHA");
     mount_dir = config_get_string_value(config_fs, "MOUNT_DIR");
     log_level = config_get_string_value(config_fs, "LOG_LEVEL");

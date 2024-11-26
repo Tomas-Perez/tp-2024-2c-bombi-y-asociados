@@ -266,7 +266,10 @@ void write_mem(instruccion *inst)
     enviar_paquete(paquete_write, socket_memoria);
     eliminar_paquete(paquete_write);
 
-    recibir_mensaje(socket_memoria, logger_cpu);
+    //recibir_mensaje(socket_memoria, logger_cpu);
+
+    int confirmacion;
+    recv(socket_memoria,&confirmacion,sizeof(int),MSG_WAITALL);
 
     log_info(logger_cpu, "TID: <%i> - Acción: <ESCRIBIR> - Dirección Física: <%i>", tid, dir_fisica);
 }

@@ -57,8 +57,8 @@ char* generar_path_archivo(char* nombre_archivo)
 
 void levantar_config_kernel()
 { 
-   // config_kernel = iniciar_config("kernelFS.config");
-    config_kernel = iniciar_config("kernelPlani.config");
+    config_kernel = iniciar_config("kernelFS.config");
+    //config_kernel = iniciar_config("kernelPlani.config");
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
     ip_cpu = config_get_string_value(config_kernel, "IP_CPU");    
