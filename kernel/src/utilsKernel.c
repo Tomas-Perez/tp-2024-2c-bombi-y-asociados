@@ -513,19 +513,22 @@ tcb* buscar_hilos_listas(tcb* main, int tid){
 	tcb* hilo = buscar_TID(main, tid);
 	int confirmacion = 0;
 	if (hilo != NULL) {
-		pthread_mutex_lock(&m_lista_de_ready);
-        confirmacion = list_remove_element(lista_de_ready, hilo);
-		pthread_mutex_unlock(&m_lista_de_ready);
-        if (confirmacion) {
-            return hilo;  
-        }
+        if(strcmp(algoritmo_de_planificacion,"CMN") == 0){
+			hilo = buscar_hilo_en_multinivel(hilo->prioridad, hilo->tid);
+            if (hilo) {
+                 return hilo;  
+             }
+		} 
+        else {
+            pthread_mutex_lock(&m_lista_de_ready);
+            confirmacion = list_remove_element(lista_de_ready, hilo);
+		    pthread_mutex_unlock(&m_lista_de_ready);
+            if (confirmacion) {
+                 return hilo;  
+             }
         
-		if(strcmp(algoritmo_de_planificacion,"CMN")){
-			buscar_hilo_en_multinivel(hilo->prioridad, hilo->tid);
-		}
-
+        }
     }
-
 
     return NULL;
 	}
@@ -542,8 +545,13 @@ tcb* buscar_hilo_en_multinivel(int prioridad, int tid) {
             for (int j = 0; j < list_size(cola_aux->hilos_asociados); j++) {
                 tcb* hilo = list_get(cola_aux->hilos_asociados, j);
                 if (hilo->tid == tid) {
-                   	list_remove(cola_aux->hilos_asociados, i);
+                   	list_remove(cola_aux->hilos_asociados, j);
+                    if(list_size(cola_aux->hilos_asociados) == 0) //VER
+                    {
+                        list_destroy(cola_aux->hilos_asociados);
+                    }
                     pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
+                    printf("Aca lo encontro TID: %d Prioridad: %d \n", hilo->tid, hilo->prioridad);
                     return hilo; 
            		 }
             
@@ -643,7 +651,7 @@ nivel_prioridad* encontrar_nivel_mas_prioritario(t_list* multinivel)
         nivel_prioridad* nivel_a = (nivel_prioridad*) a;
         nivel_prioridad* nivel_b = (nivel_prioridad*) b;
         
-    return nivel_a->prioridad  >= nivel_b->prioridad ? nivel_a : nivel_b;
+    return nivel_a->prioridad  <= nivel_b->prioridad ? nivel_a : nivel_b;
     }
 
     mayor_prioridad = list_get_maximum(multinivel, _max_prioridad);
