@@ -540,9 +540,13 @@ tcb* buscar_hilo_en_multinivel(int prioridad, int tid) {
             pthread_mutex_lock(&(cola_aux->m_lista_prioridad));
             
             for (int j = 0; j < list_size(cola_aux->hilos_asociados); j++) {
+                pthread_mutex_lock(&cola_aux->m_lista_prioridad);
                 tcb* hilo = list_get(cola_aux->hilos_asociados, j);
+                pthread_mutex_unlock(&cola_aux->m_lista_prioridad);
                 if (hilo->tid == tid) {
+                    pthread_mutex_lock(&cola_aux->m_lista_prioridad);
                    	list_remove(cola_aux->hilos_asociados, i);
+                    pthread_mutex_lock(&cola_aux->m_lista_prioridad);
                     pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
                     return hilo; 
            		 }
