@@ -524,7 +524,8 @@ int atenderKernel(int *socket_kernel)
 
         recibir_mensaje(socket_FS, logger_memoria);
         close(socket_FS);
-
+        //int confirmacion = 1;
+        send(*socket_kernel, &confirmacion, sizeof(int), 0); 
         break;
     default:
         log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");

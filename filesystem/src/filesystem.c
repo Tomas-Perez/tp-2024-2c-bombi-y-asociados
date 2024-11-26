@@ -54,9 +54,10 @@ void atenderMemoria()
 void aceptar_peticiones(int socket_servidor)
 {
     void* valrec;
+    sem_init(&semaforo, 0, 1);
     while (1)
     {
-        sem_init(&semaforo, 0, 0);
+        
         pthread_t thread;
         int socket_cliente = accept(socket_servidor, NULL, NULL);
         // puts("cliente aceptado");

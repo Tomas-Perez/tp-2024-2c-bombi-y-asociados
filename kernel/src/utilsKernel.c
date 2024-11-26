@@ -657,8 +657,8 @@ int bloquear_por_dump(tcb* hilo, int socket)
 {
     int finalizo_operacion = 0;
     t_paquete* dump = crear_paquete(DUMP_MEMORY);
-	agregar_a_paquete(dump, &(hilo->pcb_padre_tcb->pid), sizeof(int));
-	agregar_a_paquete(dump, &hilo->tid, sizeof(int));
+	agregar_a_paquete_solo(dump, &(hilo->pcb_padre_tcb->pid), sizeof(int));
+	agregar_a_paquete_solo(dump, &hilo->tid, sizeof(int));
 	enviar_paquete(dump, socket);
 	eliminar_paquete(dump);
      
