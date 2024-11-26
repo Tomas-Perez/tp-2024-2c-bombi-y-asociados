@@ -13,6 +13,7 @@ char *puerto_cpu_dispatch;
 char *puerto_cpu_interrupt; 
 char *algoritmo_de_planificacion;  
 int quantum; 
+int syscall_solicitada;
 char *log_level;
 
 //---------------------------------------------------------------- 
@@ -88,7 +89,7 @@ void inicializar_estructuras_kernel()
 {
 	int id_counter = 1;
     
-
+    syscall_solicitada = 0;
 	//mutex 
 	pthread_mutex_init(&m_hilo_en_ejecucion,NULL);
 	pthread_mutex_init(&m_lista_de_ready,NULL);
@@ -103,6 +104,7 @@ void inicializar_estructuras_kernel()
     sem_init(&finalizo_un_proc, 0, 0);
     sem_init(&hilos_en_exit, 0, 0);
     sem_init(&hilos_en_ready,0,0);
+    sem_init(&binario_corto_plazo,0,1);
 	 //cola de procesos
 	lista_de_ready = list_create();
     lista_procesos_new = list_create();
@@ -212,7 +214,7 @@ pcb *crear_pcb(int prioridad_h_main, char* path, int tamanio, int socket)
     hilo_main = list_get(nuevo_pcb->lista_tcb, 0);       
 	//iniciar_hilo(hilo_main, socket, nuevo_pcb->path_proc);
     agregar_a_ready_segun_alg(hilo_main);
-
+    //sem_post(&binario_corto_plazo);
     return nuevo_pcb;
 }
 
@@ -243,6 +245,7 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
 
 void crear_cola_nivel(int prioridad, tcb* hilo, nivel_prioridad* nuevo_nivel) 
 {
+
     nuevo_nivel->prioridad = prioridad;
     nuevo_nivel->hilos_asociados = list_create();
     pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
@@ -276,6 +279,18 @@ void crear_cola_nivel(int prioridad, tcb* hilo, nivel_prioridad* nuevo_nivel)
     pthread_detach(hilo_plani_corto);
 }*/
 
+int verificar_lista_ready(t_list* lista_de_ready) {
+    pthread_mutex_lock(&m_lista_de_ready);
+    if (list_is_empty(lista_de_ready)) 
+    {
+    	log_error(logger_kernel, "Cola de ready esta vacia en planificador corto plazo\n");
+    	pthread_mutex_unlock(&m_lista_de_ready);
+		exit (1);
+	}
+      pthread_mutex_unlock(&m_lista_de_ready);   
+      return 1;
+}
+
 void mandar_tcb_dispatch(tcb* tcb_listo)
 {
 	t_paquete* tcb_a_dispatch = crear_paquete(OP_ENVIO_TCB);
@@ -289,7 +304,7 @@ void mandar_tcb_dispatch(tcb* tcb_listo)
 void desalojar_hilo(int motivo)
 {
     t_paquete *paquete_a_desalojar = crear_paquete(DESALOJAR_PROCESO);
-	agregar_a_paquete_solo(paquete_a_desalojar,&motivo, sizeof(int));
+	//agregar_a_paquete_solo(paquete_a_desalojar,&motivo, sizeof(int));
 	agregar_a_paquete_solo(paquete_a_desalojar,&hilo_en_ejecucion->tid, sizeof(int));
 	enviar_paquete(paquete_a_desalojar, conexion_interrupt);
 	eliminar_paquete(paquete_a_desalojar);
@@ -298,11 +313,11 @@ void desalojar_hilo(int motivo)
 void* desalojar_por_RR(tcb* hilo)
 {
     usleep(quantum*1000);
-    if(hilo_en_ejecucion->tid == hilo->tid)
+    if((hilo_en_ejecucion->tid == hilo->tid) && syscall_solicitada == 0)
 	{		
 		desalojar_hilo(RR);
 		log_info(logger_kernel,"## (PID <%d>:TID <%d>) - Desalojado por fin de Quantum”",hilo->pcb_padre_tcb->pid,hilo->tid);
-		return;
+		//return;
 	}
 }
 
@@ -322,7 +337,7 @@ void recibir_syscall_de_cpu(tcb* hilo, int* motivo, instruccion* instrucc){
 		int cod_op = recibir_operacion(conexion_dispatch);
 		if(cod_op == SYSCALL){
             desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
-			printf("TID: %i, motivo: %i", hilo->tid, *motivo);
+			printf("TID: %i, motivo: %i\n", hilo->tid, *motivo);
             
 		}
 		else {
@@ -338,7 +353,7 @@ void desempaquetar_parametros_syscall_de_cpu(tcb* hilo, int* motivo, instruccion
 		
 		memcpy(motivo, buffer + desplazamiento, sizeof(int));
 		desplazamiento += sizeof(int);
-		printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
+		//printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
 		memcpy(&(instrucc->cant_parametros), buffer + desplazamiento, sizeof(int));
 		desplazamiento += sizeof(int);
 

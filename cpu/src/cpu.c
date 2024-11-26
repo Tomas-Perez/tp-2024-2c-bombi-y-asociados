@@ -98,6 +98,7 @@ int atenderCpuInterrupt()
             int size = 0;
             void *buffer = recibir_buffer(&size, conexion_interrupt);
             pid_interrupt = buffer_read_uint32(buffer);
+            printf("pid interrupt: %d\n",pid_interrupt);
             if (pid_interrupt == pid)
             {
                 log_info(logger_cpu, "Llega interrupción al puerto Interrupt");

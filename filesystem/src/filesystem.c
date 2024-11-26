@@ -21,7 +21,8 @@ int main(int argc, char *argv[])
     bitmap_check();
     
 
-    int pid=1;
+    //int pid=1;7
+    /*
     int tid=2;
     time_t timestamp= time(NULL);
     struct tm *tm = localtime(&timestamp);
@@ -34,7 +35,7 @@ int main(int argc, char *argv[])
     void* data="123456789";
     socket_cliente=1;
     crear_archivo(nombr,tamani,socket_cliente,data); //CODIGO DE PRUEBA PARA AL RECIBIR DATOS
-
+*/
     // HILOS PARA CONEXIONES
     pthread_t t1;
     pthread_create(&t1, NULL, (void *)atenderMemoria, NULL);

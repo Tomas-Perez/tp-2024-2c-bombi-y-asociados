@@ -10,6 +10,7 @@ pthread_mutex_t mutex_espacio_usuario;
 pthread_mutex_t mutex_tids;
 pthread_mutex_t m_instruccion;
 pthread_mutex_t m_proc_mem;
+pthread_mutex_t m_pids_proc_padre;
 
 void inicializar_estructuras()
 {
@@ -20,6 +21,7 @@ void inicializar_estructuras()
 	pthread_mutex_init(&mutex_espacio_usuario, NULL);
 	pthread_mutex_init(&m_instruccion, NULL);
 	pthread_mutex_init(&m_proc_mem, NULL);
+	pthread_mutex_init(&m_pids_proc_padre, NULL);
 }
 
 t_proceso *agregar_proceso_instrucciones(FILE *f, int pid, t_particiones *particion_a_asignar) // habria que mandar por parametro el archivo que nos mandan desde kernel
@@ -33,8 +35,10 @@ t_proceso *agregar_proceso_instrucciones(FILE *f, int pid, t_particiones *partic
 
 	t_hilo *hilo_main = malloc(sizeof(t_hilo));
 	inicializar_hilo(proceso, 0, hilo_main, f); 
+	pthread_mutex_lock(&mutex_tids);
 	list_add(proceso->tids, hilo_main);			// Agrego hilo main a lista de hilos dentro de procesos
-
+	pthread_mutex_unlock(&mutex_tids);
+	
 	pthread_mutex_lock(&mutex_listas);
 	list_add(procesos_memoria, proceso); // Agrega proceso a lista de procesos
 	pthread_mutex_unlock(&mutex_listas);
@@ -80,10 +84,14 @@ t_proceso *buscar_proceso(t_list *lista, int pid_buscado)
 
 t_hilo *buscar_hilo(t_proceso *proceso_padre, int tid_buscado)
 {
+	pthread_mutex_lock(&mutex_tids);
 	int elementos = list_size(proceso_padre->tids);
+	pthread_mutex_unlock(&mutex_tids);
 	for (int i = 0; i < elementos; i++)
 	{
+		pthread_mutex_lock(&mutex_tids);
 		t_hilo *hilo = list_get(proceso_padre->tids, i);
+		pthread_mutex_unlock(&mutex_tids);
 		if (tid_buscado == hilo->tid)
 		{
 			return hilo;

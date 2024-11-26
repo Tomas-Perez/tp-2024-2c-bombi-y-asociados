@@ -41,8 +41,10 @@ void avisar_memoria_liberar_pcb(pcb* proc);
 void avisar_memoria_liberar_tcb(tcb* hilo);
 void liberar_tcb(tcb* hilo);
 void mandar_tcb_dispatch(tcb*);
+int verificar_lista_ready(t_list* lista_de_ready);
 extern t_log* logger_kernel;
 extern int id_counter;
+extern syscall_solicitada;
 extern tcb* hilo_en_ejecucion; 
 extern pthread_mutex_t m_hilo_en_ejecucion;
 extern pthread_mutex_t m_hilo_a_ejecutar;
@@ -58,6 +60,7 @@ extern pthread_mutex_t m_lista_prioridad;
 extern sem_t finalizo_un_proc;
 extern sem_t hilos_en_exit;
 extern sem_t hilos_en_ready;
+extern sem_t binario_corto_plazo;
 
 extern t_list* lista_de_ready;
 extern t_list* lista_procesos_new;

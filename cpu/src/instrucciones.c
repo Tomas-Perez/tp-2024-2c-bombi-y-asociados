@@ -19,6 +19,7 @@ void check_interrupt(instruccion *inst)
 {
     if (interrupcion && ejecutando_un_proceso)
     {
+        printf("entra en check interrupt\n");
         devolver_contexto_de_ejecucion(pid, tid);
         ejecutando_un_proceso = false;
     } // hay interrupcion y un proceso en ejecucion
