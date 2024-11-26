@@ -226,6 +226,7 @@ tcb* crear_tcb(pcb* proc_padre, int prioridad)
     nuevo_tcb->pcb_padre_tcb = proc_padre;
     nuevo_tcb->prioridad = prioridad;
     nuevo_tcb->block_join = list_create();
+    nuevo_tcb->lista_mutex = list_create();
 
     inicializar_registros(nuevo_tcb);
     proc_padre->contador_tid++;
@@ -464,6 +465,7 @@ void* hilo_exit()
         avisar_memoria_liberar_tcb(hilo);
 		
 		liberar_tcb(hilo);
+        sem_post(&binario_corto_plazo);
 		printf("BORRAR: en hilo_exit-> termino todo");
 	}
 	
@@ -684,9 +686,10 @@ void asignar_mutex_hilo(mutex_k* mutex,tcb* hilo)
 void liberar_mutexs_asociados(tcb* hilo)
 {
     mutex_k* aux;
-    for(int i = 0; i< list_size(hilo->lista_mutex); i++)
+    int elementos = list_size(hilo->lista_mutex);
+    for(int i = 0; i < elementos; i++)
     {
-        aux = list_remove(hilo->lista_mutex, 0);
+        aux = list_remove(hilo->lista_mutex, i);
         asignar_mutex_al_primer_bloqueado(aux);
     }
     list_destroy(hilo->lista_mutex);
@@ -752,10 +755,13 @@ void avisar_memoria_liberar_tcb(tcb* hilo)
 {
     int socket = conectarMemoria();
     t_paquete* t_exit = crear_paquete(THREAD_EXIT);
-    agregar_a_paquete(t_exit, &(hilo->pcb_padre_tcb->pid), sizeof(int));
-	agregar_a_paquete(t_exit, &hilo->tid, sizeof(int));
+    agregar_a_paquete_solo(t_exit, &(hilo->pcb_padre_tcb->pid), sizeof(int));
+	agregar_a_paquete_solo(t_exit, &hilo->tid, sizeof(int));
 	enviar_paquete(t_exit, socket);
     eliminar_paquete(t_exit);
+    int confirmacion;
+    recv(socket, &confirmacion, sizeof(int), MSG_WAITALL);
+    close(socket);
 }
 
 void avisar_memoria_liberar_pcb(pcb* proc)

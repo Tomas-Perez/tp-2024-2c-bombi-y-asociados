@@ -281,7 +281,7 @@ void atender_syscall()
 		break;
 		case THREAD_EXIT:
 			finalizar_tcb(hilo_en_ejecucion);
-			hilo_en_ejecucion=NULL;
+			hilo_en_ejecucion=NULL;	
 		break;
 		case MUTEX_CREATE:
 			mutex_k* nuevo_mutex;

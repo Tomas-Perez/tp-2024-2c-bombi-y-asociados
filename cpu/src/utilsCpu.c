@@ -213,8 +213,8 @@ void recibir_tcb(int socket)
     int size = 0;
     void *buffer = recibir_buffer(&size, socket);
 
-    pid = buffer_read_uint32(buffer);
     tid = buffer_read_uint32(buffer);
+    pid = buffer_read_uint32(buffer);
 
     free(buffer);
 }

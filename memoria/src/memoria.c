@@ -114,7 +114,7 @@ int atenderCpu(int *socket_cpu)
 
             log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%s>", pid, tid, instruccion); // VER LOS ARGS
             enviar_mensaje(instruccion, *socket_cpu);
-            free(instruccion); // si tira error comentar
+          
             free(buffer);
 
             break;
@@ -473,6 +473,9 @@ int atenderKernel(int *socket_kernel)
         eliminar_hilo(pid, tid);
 
         log_info(logger_memoria, "Hilo <Destruido> - (PID:TID) - (<%i>:<%i>)", pid, tid);
+
+        confirmacion = 1;
+        send(*socket_kernel, &confirmacion, sizeof(int), 0); 
         // MANDAR OK
         free(buffer);
 
