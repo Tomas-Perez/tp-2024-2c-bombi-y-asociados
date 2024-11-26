@@ -531,7 +531,7 @@ int atenderKernel(int *socket_kernel)
 
 void levantar_config_memoria()
 {
-    config_memoria = config_create("memoria.config");
+    config_memoria = config_create("memoriaPlani.config");
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");
     puerto_filesystem = config_get_string_value(config_memoria, "PUERTO_FILESYSTEM");
