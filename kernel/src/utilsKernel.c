@@ -248,7 +248,7 @@ void crear_cola_nivel(int prioridad, tcb *hilo, nivel_prioridad *nuevo_nivel)
 {
 
     nuevo_nivel->prioridad = prioridad;
-    printf("p %d\n", nuevo_nivel->prioridad);
+    //printf("p %d\n", nuevo_nivel->prioridad);
     nuevo_nivel->hilos_asociados = list_create();
     pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
 
@@ -259,7 +259,7 @@ void crear_cola_nivel(int prioridad, tcb *hilo, nivel_prioridad *nuevo_nivel)
     pthread_mutex_lock(&m_lista_multinivel);
     list_add(lista_multinivel, nuevo_nivel);
     pthread_mutex_unlock(&m_lista_multinivel);
-    printf("Se agrega un nivel de prioridad a la lista multinivel %d\n", nuevo_nivel->prioridad);
+    //printf("Se agrega un nivel de prioridad a la lista multinivel %d\n", nuevo_nivel->prioridad);
     // VER: nos habian dicho q usemos list_add_sorted pero como
     // cuando lo pasamos a running encontramos el mayor nivel de prioridad
     // creo q no hace falta
@@ -301,12 +301,16 @@ void mandar_tcb_dispatch(tcb *tcb_listo)
     agregar_a_paquete_solo(tcb_a_dispatch, &tcb_listo->pcb_padre_tcb->pid, sizeof(int));
     enviar_paquete(tcb_a_dispatch, conexion_dispatch);
     eliminar_paquete(tcb_a_dispatch);
+
+    pthread_mutex_lock(&m_syscall_solicitada);
+	syscall_solicitada = 0;
+	pthread_mutex_unlock(&m_syscall_solicitada);
 }
 
 void desalojar_hilo(int motivo)
 {
     t_paquete *paquete_a_desalojar = crear_paquete(DESALOJAR_PROCESO);
-    // agregar_a_paquete_solo(paquete_a_desalojar,&motivo, sizeof(int));
+    agregar_a_paquete_solo(paquete_a_desalojar,&motivo, sizeof(int));
     agregar_a_paquete_solo(paquete_a_desalojar, &hilo_en_ejecucion->tid, sizeof(int));
     enviar_paquete(paquete_a_desalojar, conexion_interrupt);
     eliminar_paquete(paquete_a_desalojar);
@@ -467,10 +471,12 @@ void *hilo_exit()
         tcb *hilo = list_remove(lista_finalizados, 0);
         pthread_mutex_unlock(&m_lista_finalizados);
 
+        liberar_tcb(hilo);
         avisar_memoria_liberar_tcb(hilo);
 
-        liberar_tcb(hilo);
-        sem_post(&binario_corto_plazo);
+        
+        //sem_post(&binario_corto_plazo);
+        free(hilo);
         printf("BORRAR: en hilo_exit-> termino todo\n");
     }
 }
@@ -479,7 +485,7 @@ void liberar_tcb(tcb *hilo)
 {
     liberar_mutexs_asociados(hilo);
     liberar_bloqueados_x_thread_join(hilo);
-    free(hilo);
+    
 }
 
 void finalizar_estructuras_kernel()
@@ -566,7 +572,7 @@ tcb *buscar_hilo_en_multinivel(int prioridad, int tid)
 
             pthread_mutex_lock(&(cola_aux->m_lista_prioridad));
             int cant_elementos = list_size(cola_aux->hilos_asociados);
-            printf("Cantidad de elementos %d\n", cant_elementos);
+           // printf("Cantidad de elementos %d\n", cant_elementos);
             for (int j = 0; j < cant_elementos; j++)
             {
                 tcb *hilo = list_get(cola_aux->hilos_asociados, j);
@@ -578,7 +584,7 @@ tcb *buscar_hilo_en_multinivel(int prioridad, int tid)
                         free(cola_aux);
                     }
                     pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
-                    printf("Aca lo encontro TID: %d Prioridad: %d \n", hilo->tid, hilo->prioridad);
+                    //printf("Aca lo encontro TID: %d Prioridad: %d \n", hilo->tid, hilo->prioridad);
                     return hilo;
                 }
 
@@ -673,7 +679,7 @@ nivel_prioridad *encontrar_por_nivel(t_list *lista_multi, int prioridad)
 
      nivel_prioridad* resultado = list_find(lista_multi, _existe_nivel);*/
     int cant_elem_multi = list_size(lista_multi);
-    printf("Cantidad de elementos lista multinivel %d \n", cant_elem_multi);
+    //printf("Cantidad de elementos lista multinivel %d \n", cant_elem_multi);
     for (int i = 0; i < cant_elem_multi; i++)
     {
         nivel_prioridad *resultado = list_get(lista_multi, i);

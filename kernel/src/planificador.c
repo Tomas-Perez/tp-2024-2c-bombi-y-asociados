@@ -211,10 +211,11 @@ void atender_syscall()
 	switch (motivo)
 	{
 	case RR:
-		sem_post(&hilos_en_ready);
+		//sem_post(&hilos_en_ready);
+		printf("Entro en syscall RR\n");
 		agregar_a_ready_segun_alg(hilo_en_ejecucion);
 		sem_post(&binario_corto_plazo);
-		hilo_en_ejecucion = NULL;
+		//hilo_en_ejecucion = NULL;
 		break;
 	case PROCESS_CREATE:
 		socket = conectarMemoria();
@@ -224,19 +225,14 @@ void atender_syscall()
 		char *prioridad_PC = list_get(instrucc->parametros, 2);
 		int tam = atoi(tamanio);
 		int priori = atoi(prioridad_PC);
+
 		printf("PRUEBA: %s tamanio: %d prioridad %d\n", archivo, tam, priori);
+
 		agregar_a_ready_segun_alg(hilo_en_ejecucion);
 		sem_post(&binario_corto_plazo);
+
 		pcb *proceso_nuevo = crear_pcb(priori, archivo, tam, socket);
 
-		// pthread_mutex_lock(&m_lista_procesos_new);
-		// list_add(lista_procesos_new, proceso_nuevo);
-		// pthread_mutex_unlock(&m_lista_procesos_new);
-		// pedir_memoria(socket);
-
-		// tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);
-		// iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);
-		//  PREGUNTAR proceso_nuevo = NULL
 		free(archivo);
 		close(socket);
 		break;
@@ -247,6 +243,7 @@ void atender_syscall()
 		{
 			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
 			//sem_post(&binario_corto_plazo);
+			sem_post(&binario_corto_plazo);
 		}
 
 		break;
@@ -257,12 +254,13 @@ void atender_syscall()
 		pcb *proceso = hilo_en_ejecucion->pcb_padre_tcb;
 		tcb *hilo = crear_tcb(proceso, prioridad);
 		socket = conectarMemoria();
+
 		printf("%s priori: %d\n", archivo, prioridad);
 		agregar_a_ready_segun_alg(hilo_en_ejecucion);
 		sem_post(&binario_corto_plazo);
-		// hilo_en_ejecucion==NULL;
+		
 		iniciar_hilo(hilo, socket, archivo);
-		// pasar_a_running_tcb(hilo_en_ejecucion);
+		
 		close(socket);
 		free(archivo);
 		break;
@@ -315,6 +313,7 @@ void atender_syscall()
 		break;
 	case THREAD_EXIT:
 		finalizar_tcb(hilo_en_ejecucion);
+		sem_post(&binario_corto_plazo);
 		// hilo_en_ejecucion=NULL;
 		break;
 	case MUTEX_CREATE:

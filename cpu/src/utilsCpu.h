@@ -27,3 +27,4 @@ extern int pid;
 extern int socket_memoria;
 extern t_registros_cpu registros_cpu;
 extern int conexion_dispatch;
+extern int motivo_interrupt;

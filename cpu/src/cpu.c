@@ -7,6 +7,7 @@ char *puerto_escucha_dispatch;
 char *puerto_escucha_interrupt;
 char *ip_memoria;
 char *log_level;
+int motivo_interrupt;
 
 bool interrupcion;
 int pid_interrupt;
@@ -97,6 +98,7 @@ int atenderCpuInterrupt()
         case DESALOJAR_PROCESO:
             int size = 0;
             void *buffer = recibir_buffer(&size, conexion_interrupt);
+            motivo_interrupt = buffer_read_uint32(buffer);
             pid_interrupt = buffer_read_uint32(buffer);
             printf("pid interrupt: %d\n",pid_interrupt);
             if (pid_interrupt == pid)
