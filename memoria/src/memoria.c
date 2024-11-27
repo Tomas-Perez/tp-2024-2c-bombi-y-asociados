@@ -526,7 +526,11 @@ int atenderKernel(int *socket_kernel)
 
         int confirmado_fs;
         recv(socket_FS, &confirmado_fs, sizeof(int), MSG_WAITALL);
-        recibir_mensaje(socket_FS, logger_memoria);
+        if (confirmado_fs==1){
+            puts("DUMP CREADO EXITOSAMENTE");
+        }else{
+            puts("DUMP LLENO");
+        }
         close(socket_FS);
         int confirm = 0;
         send(*socket_kernel, &confirm, sizeof(int), 0);
@@ -542,11 +546,11 @@ int atenderKernel(int *socket_kernel)
 
 void levantar_config_memoria()
 {
-    // config_memoria = config_create("configs/memoriaPlani.config");
+    //config_memoria = config_create("configs/memoriaPlani.config");
     // config_memoria = config_create("configs/memoriaRC.config");
-    config_memoria = config_create("configs/memoriaParticionesFijas.config");
+    //config_memoria = config_create("configs/memoriaParticionesFijas.config");
     //config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
-    // config_memoria = config_create("configs/memoriaFS.config");
+     config_memoria = config_create("configs/memoriaFS.config");
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");

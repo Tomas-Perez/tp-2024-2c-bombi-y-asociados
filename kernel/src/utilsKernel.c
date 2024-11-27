@@ -53,10 +53,10 @@ char *generar_path_archivo(char *nombre_archivo)
 
 void levantar_config_kernel()
 {
-    // config_kernel = iniciar_config("configs/kernelFS.config");
+    config_kernel = iniciar_config("configs/kernelFS.config");
     // config_kernel = iniciar_config("configs/kernelRC.config");
     // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
-    config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
+    //config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
     // config_kernel = iniciar_config("configs/kernelPlani.config");
 
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");

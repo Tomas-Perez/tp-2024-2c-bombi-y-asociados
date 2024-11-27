@@ -54,7 +54,7 @@ void atenderMemoria()
 void aceptar_peticiones(int socket_servidor)
 {
     //char* valrec=NULL;
-    int confirmemo;
+    void* confirmemo;
     sem_init(&semaforo, 0, 0);
     while (1)
     {
@@ -65,7 +65,8 @@ void aceptar_peticiones(int socket_servidor)
         pthread_create(&thread, NULL, (void *)atender_petiticiones, &socket_cliente);
         sem_wait(&semaforo);
         pthread_join(thread, &confirmemo);
-        send(socket_cliente,&confirmemo,sizeof(int),0);
+        send(socket_cliente,(int*)confirmemo,sizeof(int),0);
+        free((int*)confirmemo);
         //enviar_mensaje(valrec,socket_cliente);
         close(socket_cliente);
         // puts("siguiente hilo");
@@ -76,7 +77,7 @@ void atender_petiticiones(int *socket)
 {
     int socket_cliente = *socket;
     printf("el socket memoria es %d \n",socket_cliente);
-    t_list *lista;
+    //t_list *lista;
     uint32_t handshake;
     uint32_t resultOk = 0;
     uint32_t resultError = -1;
@@ -110,7 +111,7 @@ void atender_petiticiones(int *socket)
     puts("handshake hecho");
     int koso = 0;
     int size =0;
-    int exit_status;
+    int* exit_status=malloc(sizeof(int));
     t_buffer *buffer;
     while (socket_cliente) // cambiar para registrar cada interfaz , importante guardar socket de cada interfaz
     {
@@ -135,12 +136,12 @@ void atender_petiticiones(int *socket)
             strftime(tiempo,24,"%I:%M:%S%p",tm);
             char* nombr=string_from_format("%d-%d-%s",pid,tid,tiempo);
             if(crear_archivo(nombr,tam,socket_cliente,data)==-1){
-                exit_status=0;;
-                pthread_exit((void*)exit_status);
+                *exit_status=0;
+                pthread_exit(exit_status);
             }else{
-                exit_status=1;
+                *exit_status=1;
                 sem_post(&semaforo);
-                pthread_exit((void*)exit_status);
+                pthread_exit(exit_status);
             }
             koso = 1;
             break;
