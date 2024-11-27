@@ -60,6 +60,8 @@ extern pthread_mutex_t m_lista_finalizados;
 extern pthread_mutex_t m_lista_prioridad;
 extern pthread_mutex_t m_syscall_solicitada;
 extern pthread_mutex_t m_lista_io;
+extern pthread_mutex_t m_bloqueados_por_dump;
+
 extern sem_t finalizo_un_proc;
 extern sem_t hilos_en_exit;
 extern sem_t hilos_en_ready;
@@ -70,6 +72,7 @@ extern t_list* lista_procesos_new;
 extern t_list* lista_multinivel;
 extern t_list* lista_finalizados;
 extern t_list* lista_io;
+extern t_list* bloqueados_por_dump;
 extern char *ip_memoria;
 extern char *puerto_memoria; 
 extern char *ip_cpu; 

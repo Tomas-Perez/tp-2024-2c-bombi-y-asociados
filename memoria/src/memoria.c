@@ -532,8 +532,9 @@ int atenderKernel(int *socket_kernel)
             puts("DUMP LLENO");
         }
         close(socket_FS);
-        int confirm = 0;
-        send(*socket_kernel, &confirm, sizeof(int), 0);
+        int confirm;
+      
+        send(*socket_kernel, &confirmado_fs, sizeof(int), 0);
         break;
 
     default:

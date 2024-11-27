@@ -98,6 +98,7 @@ void inicializar_estructuras_kernel()
     pthread_mutex_init(&m_lista_finalizados, NULL);
     pthread_mutex_init(&m_lista_prioridad, NULL);
     pthread_mutex_init(&m_lista_io, NULL);
+    pthread_mutex_init(&m_bloqueados_por_dump, NULL);
     // semaforo
     sem_init(&finalizo_un_proc, 0, 0);
     sem_init(&hilos_en_exit, 0, 0);
@@ -109,6 +110,7 @@ void inicializar_estructuras_kernel()
     lista_multinivel = list_create();
     lista_finalizados = list_create();
     lista_io = list_create();
+    bloqueados_por_dump = list_create();
 }
 
 void inicializar_hilos_planificacion()
@@ -428,7 +430,7 @@ void finalizar_proceso(pcb *proc)
     log_info(logger_kernel, "## Finaliza el proceso <%d>", proc->pid);
 
     list_destroy(proc->lista_tcb);
-    free(proc->path_proc);
+    //free(proc->path_proc);
     free(proc);
     sem_post(&finalizo_un_proc);
 }
@@ -437,7 +439,7 @@ void finalizar_hilos_proceso(pcb *proceso) // PARA PROCESS_EXIT
 {
 
     tcb *hilo_a_finalizar;
-    while (list_is_empty(proceso->lista_tcb) == 0)
+    while (list_is_empty(proceso->lista_tcb) != true)
     {
         hilo_a_finalizar = list_get(proceso->lista_tcb, 0);
         finalizar_tcb(hilo_a_finalizar);
@@ -711,6 +713,12 @@ int bloquear_por_dump(tcb *hilo, int socket)
     agregar_a_paquete_solo(dump, &hilo->tid, sizeof(int));
     enviar_paquete(dump, socket);
     eliminar_paquete(dump);
+
+    tcb* hilo_bloqueado = buscar_hilos_listas(hilo, hilo->tid);
+
+    pthread_mutex_lock(&m_bloqueados_por_dump);
+    list_add(bloqueados_por_dump, hilo_bloqueado);
+    pthread_mutex_unlock(&m_bloqueados_por_dump);
 
     recv(socket, &finalizo_operacion, sizeof(int), MSG_WAITALL);
 

@@ -64,7 +64,7 @@ u_int8_t get_identificador(char *identificador_leido)
         identificador = JNZ;
     if (!strcmp("READ_MEM", identificador_leido))
         identificador = READ_MEM;
-    if (!strcmp("MEM_WRITE", identificador_leido))
+    if (!strcmp("WRITE_MEM", identificador_leido))
         identificador = WRITE_MEM;
     if (!strcmp("LOG", identificador_leido))
         identificador = LOG;

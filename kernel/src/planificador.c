@@ -15,7 +15,9 @@ pthread_mutex_t m_lista_finalizados;
 pthread_mutex_t m_lista_prioridad;
 pthread_mutex_t m_syscall_solicitada;
 pthread_mutex_t m_lista_io;
+pthread_mutex_t m_bloqueados_por_dump;
 
+t_list* bloqueados_por_dump;
 t_list *lista_de_ready;
 t_list *lista_procesos_new;
 t_list *lista_multinivel;
@@ -44,7 +46,7 @@ void agregar_a_ready_multinivel(tcb *hilo)
 	}
 	else
 	{
-		printf("Lista inicializada correctamente\n");
+		//printf("Lista inicializada correctamente\n");
 	}
 	pthread_mutex_lock(&m_lista_multinivel);
 	nivel_prioridad *cola_nivel = encontrar_por_nivel(lista_multinivel, hilo->prioridad);
@@ -244,6 +246,7 @@ void atender_syscall()
 		if (hilo_en_ejecucion->tid == 0)
 		{
 			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
+			sem_post(&binario_corto_plazo);
 		}
 
 		break;
@@ -360,17 +363,22 @@ void atender_syscall()
 	case DUMP_MEMORY:
 		socket = conectarMemoria();
 
-		int rta = bloquear_por_dump(hilo_en_ejecucion, socket);
-
+		tcb* hilo_dump = hilo_en_ejecucion;
+		sem_post(&binario_corto_plazo);
+		
+		int rta = bloquear_por_dump(hilo_dump, socket);
+		pthread_mutex_lock(&m_bloqueados_por_dump);
+		hilo_dump = list_remove(bloqueados_por_dump,0);
+		pthread_mutex_unlock(&m_bloqueados_por_dump);
 		if (rta == 0)
 		{
-			finalizar_tcb(hilo_en_ejecucion);
+			finalizar_tcb(hilo_dump);
 		}
 		else
 		{
-			agregar_a_ready_segun_alg(hilo_en_ejecucion);
+			agregar_a_ready_segun_alg(hilo_dump);
 		}
-		hilo_en_ejecucion = NULL;
+		//hilo_en_ejecucion = NULL;
 		close(socket);
 		break;
 
