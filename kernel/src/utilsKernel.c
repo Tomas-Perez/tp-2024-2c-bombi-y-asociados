@@ -57,12 +57,12 @@ char* generar_path_archivo(char* nombre_archivo)
 
 void levantar_config_kernel()
 { 
-    //config_kernel = iniciar_config("kernelFS.config");
-    //config_kernel = iniciar_config("kernelRC.config");
-    //config_kernel = iniciar_config("kernelParticionesDinamicas.config");
-    //config_kernel = iniciar_config("kernelParticionesFijas.config");
+    //config_kernel = iniciar_config("configs/kernelFS.config");
+    //config_kernel = iniciar_config("configs/kernelRC.config");
+    //config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
+    //config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
 
-    config_kernel = iniciar_config("kernelPlani.config");
+    config_kernel = iniciar_config("configs/kernelPlani.config");
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
     ip_cpu = config_get_string_value(config_kernel, "IP_CPU");    
@@ -784,7 +784,7 @@ void avisar_memoria_liberar_pcb(pcb* proc)
 {
     int socket = conectarMemoria();
     t_paquete* p_exit = crear_paquete(PROCESS_EXIT);
-	agregar_a_paquete(p_exit, &proc->pid, sizeof(int));
+	agregar_a_paquete_solo(p_exit, &proc->pid, sizeof(int));
 	enviar_paquete(p_exit, socket);
     eliminar_paquete(p_exit);
 
