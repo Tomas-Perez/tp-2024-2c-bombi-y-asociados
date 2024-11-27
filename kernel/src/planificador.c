@@ -246,7 +246,7 @@ void atender_syscall()
 		if (hilo_en_ejecucion->tid == 0)
 		{
 			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
-			sem_post(&binario_corto_plazo);
+			//sem_post(&binario_corto_plazo);
 		}
 
 		break;
