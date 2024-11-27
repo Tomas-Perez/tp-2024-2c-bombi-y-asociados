@@ -208,18 +208,25 @@ t_particiones *asignar_best_fit_fijas(t_list *lista, uint32_t tamanio)
 
 t_particiones *asignar_worst_fit_fijas(t_list *lista, uint32_t tamanio)
 {
-	list_sort(lista, particion_mayor); // Ordena la lista de mayor a menor segun tamaño de las particiones
+	uint32_t peor_particion = 0;
+	uint32_t mejor_indice = -1;
 
 	for (int i = 0; i < list_size(lista); i++)
 	{
 		t_particiones *particion = list_get(lista, i);
-		if (particion->limite >= tamanio && particion->ocupado == 0)
+		if (particion->limite >= tamanio && particion->ocupado == 0 && particion->limite > peor_particion)
 		{
-			particion->ocupado = 1;
-			return particion;
+			peor_particion = particion->limite;
+			mejor_indice = i;
 		}
 	}
-	return NULL; // Retorna NULL si no hay hueco disponible
+	if (mejor_indice != -1) // Si se encontró una partición adecuada
+	{
+		t_particiones *particion_a_devolver = list_get(lista, mejor_indice);
+		particion_a_devolver->ocupado = 1;
+		return particion_a_devolver;
+	}
+	return NULL; // Retorna NULL si no hay hueco adecuado
 }
 
 /*----------------------------------------------------FIN PARTICIONES FIJAS----------------------------------------------------*/
@@ -338,7 +345,8 @@ t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio)
 	}
 	return NULL; // Retorna NULL si no hay hueco adecuado
 }
-void ordenar_lista_original(t_list *lista){
+void ordenar_lista_original(t_list *lista)
+{
 	list_sort(lista, base_menor);
 }
 
@@ -367,7 +375,7 @@ void liberar_espacio_memoria(t_proceso *proceso)
 
 void verificar_particiones_vecinas(t_list *lista)
 {
-	//ordenar_lista_original(lista);
+	// ordenar_lista_original(lista);
 	for (int i = list_size(lista) - 1; i >= 0; i--)
 	{
 		t_particiones *particion = list_get(lista, i);

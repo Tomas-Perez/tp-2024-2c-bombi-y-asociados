@@ -36,7 +36,7 @@ void check_interrupt(instruccion *inst)
 
 char *fetch()
 {
-    log_info(logger_cpu, "TID: <%d> - FETCH - Program Counter: <%d>", tid, registros_cpu.PC);
+    log_info(logger_cpu, "PID: <%d> - TID: <%d> - FETCH - Program Counter: <%d>",pid, tid, registros_cpu.PC);
     t_paquete *paquete = crear_paquete(FETCH_INSTRUCCION);
     agregar_a_paquete_solo(paquete, &pid, sizeof(int));
     agregar_a_paquete_solo(paquete, &tid, sizeof(int));
@@ -45,8 +45,7 @@ char *fetch()
     enviar_paquete(paquete, socket_memoria);
 
     char *instruccion_a_ejecutar = recibir_instruccion(socket_memoria);
-    printf("me llego %s \n",instruccion_a_ejecutar);
-    // program_counter++;
+    // printf("me llego %s \n",instruccion_a_ejecutar);
     registros_cpu.PC++;
     log_info(logger_cpu, "Program Counter actualizado: %d", registros_cpu.PC);
     eliminar_paquete(paquete);
@@ -239,7 +238,7 @@ void read_mem(instruccion *inst)
 
     uint32_t dato_a_guardar = buffer_read_uint32(buffer_dato);
 
-    log_info(logger_cpu, "TID: <%i> - Acción: <LEER> - Dirección Física: <%i>", tid, dir_fisica);
+    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Acción: <LEER> - Dirección Física: <%i>",pid, tid, dir_fisica);
 
     *datos = dato_a_guardar;
 
@@ -271,7 +270,7 @@ void write_mem(instruccion *inst)
     int confirmacion;
     recv(socket_memoria,&confirmacion,sizeof(int),MSG_WAITALL);
 
-    log_info(logger_cpu, "TID: <%i> - Acción: <ESCRIBIR> - Dirección Física: <%i>", tid, dir_fisica);
+    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Acción: <ESCRIBIR> - Dirección Física: <%i>", tid, dir_fisica);
 }
 
 // LOG (Registro): Escribe en el archivo de log el valor del registro.

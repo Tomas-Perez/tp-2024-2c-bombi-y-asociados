@@ -21,7 +21,7 @@ void *memoria;
 int main(int argc, char *argv[])
 {
     int socket_cliente;
-  
+
     levantar_config_memoria();
     inicializar_estructuras();
     logger_memoria = iniciar_logger("memoria.log", "MEMORIA");
@@ -90,8 +90,6 @@ int atenderCpu(int *socket_cpu)
     t_buffer *buffer;
     log_info(logger_memoria, "Memoria conectada con CPU");
 
-   
-
     while (*socket_cpu)
     {
         int cod_op = recibir_operacion(*socket_cpu);
@@ -113,7 +111,7 @@ int atenderCpu(int *socket_cpu)
 
             log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%s>", pid, tid, instruccion); // VER LOS ARGS
             enviar_mensaje(instruccion, *socket_cpu);
-          
+
             free(buffer);
 
             break;
@@ -156,8 +154,8 @@ int atenderCpu(int *socket_cpu)
 
             log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid, tid_a_actualizar);
 
-            int ok=1;
-            send(*socket_cpu,&ok,sizeof(int),0);
+            int ok = 1;
+            send(*socket_cpu, &ok, sizeof(int), 0);
 
             free(buffer);
 
@@ -209,9 +207,9 @@ int atenderCpu(int *socket_cpu)
             log_info(logger_memoria, "TID: <%i> - Acción: <ESCRIBIR> - Dirección física: <%i> - Tamaño <4>", tid_mem, dir_fisica);
             usleep(retardo_rta * 1000);
 
-            //enviar_mensaje("OK", *socket_cpu);
+            // enviar_mensaje("OK", *socket_cpu);
             int confirmacion = 1;
-            send(*socket_cpu,&confirmacion,sizeof(int),0);
+            send(*socket_cpu, &confirmacion, sizeof(int), 0);
 
             free(buffer);
             break;
@@ -257,7 +255,7 @@ int atenderKernel(int *socket_kernel)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
-                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
@@ -268,7 +266,7 @@ int atenderKernel(int *socket_kernel)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
-                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
@@ -279,7 +277,7 @@ int atenderKernel(int *socket_kernel)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
-                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
@@ -299,7 +297,7 @@ int atenderKernel(int *socket_kernel)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
-                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
@@ -310,7 +308,7 @@ int atenderKernel(int *socket_kernel)
                 {
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
-                    send(*socket_kernel, &confirmacion, sizeof(bool), 0); // Avisamos a kernel que NO pudimos reservar espacio
+                    send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
                     break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
@@ -354,9 +352,9 @@ int atenderKernel(int *socket_kernel)
         strcpy(path_script_completo, path_instrucciones); // copia path_inst en path_script_completo
         strcat(path_script_completo, path_kernel);        // concatena path_kernel a path_script_completo
 
-        // usleep(retardo_memoria() * 1000);
+        usleep(retardo_rta * 1000);
 
-        //printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
+        // printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
 
         FILE *f;
         if (!(f = fopen(path_script_completo, "r")))
@@ -372,7 +370,7 @@ int atenderKernel(int *socket_kernel)
         free(buffer);
 
         agregar_proceso_instrucciones(f, pid, particion_a_asignar);
-        free(particion_a_asignar);
+        //free(particion_a_asignar);
 
         log_info(logger_memoria, "Proceso <Creado> -  PID: <%i> - Tamaño: <%i>", pid, tamanio_proceso);
 
@@ -387,6 +385,8 @@ int atenderKernel(int *socket_kernel)
             log_info(logger_memoria, "Error al recibir el buffer\n");
             return -1;
         }
+
+        usleep(retardo_rta * 1000);
 
         pid = buffer_read_uint32(buffer);
 
@@ -418,7 +418,7 @@ int atenderKernel(int *socket_kernel)
         }*/
 
         path_hilo = buffer_read_string(buffer);
-         //path_hilo[size_path_hilo] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+        // path_hilo[size_path_hilo] = '\0'; // aseguramos que la cadena termine en un carácter nulo
 
         char *path_hilo_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_hilo) + 1); // VER QUE ONDA PATH INSTRUCCIONES
         if (path_hilo_completo == NULL)
@@ -455,9 +455,9 @@ int atenderKernel(int *socket_kernel)
         log_info(logger_memoria, "Hilo <Creado> - (PID:TID) - (<%i>:<%i>)", proceso_padre->pid, tid);
 
         list_add(proceso_padre->tids, hilo_nuevo);
-        
+
         confirmacion = 1;
-        send(*socket_kernel, &confirmacion, sizeof(int), 0); 
+        send(*socket_kernel, &confirmacion, sizeof(int), 0);
         break;
     case THREAD_EXIT:
         buffer = recibir_buffer(&size, *socket_kernel); // recibimos TID, PID
@@ -468,6 +468,8 @@ int atenderKernel(int *socket_kernel)
             return -1;
         }
 
+        usleep(retardo_rta * 1000);
+
         pid = buffer_read_uint32(buffer);
         tid = buffer_read_uint32(buffer);
 
@@ -476,7 +478,7 @@ int atenderKernel(int *socket_kernel)
         log_info(logger_memoria, "Hilo <Destruido> - (PID:TID) - (<%i>:<%i>)", pid, tid);
 
         confirmacion = 1;
-        send(*socket_kernel, &confirmacion, sizeof(int), 0); 
+        send(*socket_kernel, &confirmacion, sizeof(int), 0);
         // MANDAR OK
         free(buffer);
 
@@ -491,6 +493,8 @@ int atenderKernel(int *socket_kernel)
             log_info(logger_memoria, "Error al recibir el buffer\n");
             return -1;
         }
+
+        usleep(retardo_rta * 1000);
 
         pid = buffer_read_uint32(buffer);
         tid = buffer_read_uint32(buffer);
@@ -521,13 +525,13 @@ int atenderKernel(int *socket_kernel)
         free(contenido_memoria);
 
         int confirmado_fs;
-        recv(socket_FS,&confirmado_fs,sizeof(int),MSG_WAITALL);
+        recv(socket_FS, &confirmado_fs, sizeof(int), MSG_WAITALL);
         recibir_mensaje(socket_FS, logger_memoria);
         close(socket_FS);
-        int confirm= 0;
-        send(*socket_kernel, &confirm, sizeof(int), 0); 
+        int confirm = 0;
+        send(*socket_kernel, &confirm, sizeof(int), 0);
         break;
-        
+
     default:
         log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
         printf("Cod Op: %i", cod_op);
@@ -538,11 +542,11 @@ int atenderKernel(int *socket_kernel)
 
 void levantar_config_memoria()
 {
-    config_memoria = config_create("configs/memoriaPlani.config");
-    //config_memoria = config_create("configs/memoriaRC.config");
-    //config_memoria = config_create("configs/memoriaParticionesFijas.config");
+    // config_memoria = config_create("configs/memoriaPlani.config");
+    // config_memoria = config_create("configs/memoriaRC.config");
+    config_memoria = config_create("configs/memoriaParticionesFijas.config");
     //config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
-    //config_memoria = config_create("configs/memoriaFS.config");
+    // config_memoria = config_create("configs/memoriaFS.config");
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");

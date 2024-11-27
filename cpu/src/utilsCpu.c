@@ -4,25 +4,25 @@ void mostrar_parametros(instruccion *inst, int cant_parametros)
 {
     if (cant_parametros == 0)
     {
-        log_info(logger_cpu, "TID: <%u> - Ejecutando: <%s> - <>", tid, get_motivo(inst->identificador));
+        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <>",pid, tid, get_motivo(inst->identificador));
     }
     if (cant_parametros == 1)
     {
         char *param1 = list_get(inst->parametros, 0);
-        log_info(logger_cpu, "TID: <%u> - Ejecutando: <%s> - <%s>", tid, get_motivo(inst->identificador), param1);
+        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <%s>",pid, tid, get_motivo(inst->identificador), param1);
     }
     if (cant_parametros == 2)
     {
         char *param1 = list_get(inst->parametros, 0);
         char *param2 = list_get(inst->parametros, 1);
-        log_info(logger_cpu, "TID: <%u> - Ejecutando: <%s> - <%s,%s>\n", tid, get_motivo(inst->identificador), param1, param2);
+        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <%s,%s>\n",pid, tid, get_motivo(inst->identificador), param1, param2);
     }
     if (cant_parametros == 3)
     {
         char *param1 = list_get(inst->parametros, 0);
         char *param2 = list_get(inst->parametros, 1);
         char *param3 = list_get(inst->parametros, 2);
-        log_info(logger_cpu, "TID: <%u> - Ejecutando: <%s> - <%s,%s,%s>\n", tid, get_motivo(inst->identificador), param1, param2, param3);
+        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <%s,%s,%s>\n",pid, tid, get_motivo(inst->identificador), param1, param2, param3);
     }
 }
 
@@ -64,7 +64,7 @@ u_int8_t get_identificador(char *identificador_leido)
         identificador = JNZ;
     if (!strcmp("READ_MEM", identificador_leido))
         identificador = READ_MEM;
-    if (!strcmp("MEM_WRITE", identificador_leido))
+    if (!strcmp("WRITE_MEM", identificador_leido))
         identificador = WRITE_MEM;
     if (!strcmp("LOG", identificador_leido))
         identificador = LOG;
@@ -227,7 +227,7 @@ void pedir_contexto_cpu(int pid, int tid)
     enviar_paquete(contexto, socket_memoria);
     eliminar_paquete(contexto);
 
-    log_info(logger_cpu, "TID: <%i> - Solicito Contexto Ejecución", tid);
+    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Solicito Contexto Ejecución",pid, tid);
 
     int size = 0;
 
@@ -261,7 +261,7 @@ void devolver_contexto_de_ejecucion(int pid, int tid)
     int conf;
     recv(socket_memoria,&conf,sizeof(int),MSG_WAITALL);
     if (conf==1){
-    log_info(logger_cpu, "TID: <%i> - Actualizo Contexto Ejecución", tid);
+    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Actualizo Contexto Ejecución",pid, tid);
     }
 }
 
