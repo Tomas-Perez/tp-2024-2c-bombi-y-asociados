@@ -253,16 +253,18 @@ void crear_cola_nivel(int prioridad, tcb* hilo, nivel_prioridad* nuevo_nivel)
 {
 
     nuevo_nivel->prioridad = prioridad;
+      printf("p %d\n",nuevo_nivel->prioridad);
     nuevo_nivel->hilos_asociados = list_create();
     pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
 
-    pthread_mutex_lock(&nuevo_nivel->m_lista_prioridad);
+    pthread_mutex_lock(&(nuevo_nivel->m_lista_prioridad));
     list_add(nuevo_nivel->hilos_asociados, hilo);
-    pthread_mutex_unlock(&nuevo_nivel->m_lista_prioridad);
+    pthread_mutex_unlock(&(nuevo_nivel->m_lista_prioridad));
 
     pthread_mutex_lock(&m_lista_multinivel);
     list_add(lista_multinivel, nuevo_nivel);
     pthread_mutex_unlock(&m_lista_multinivel);
+    printf("Se agrega un nivel de prioridad a la lista multinivel %d\n",nuevo_nivel->prioridad);
     // VER: nos habian dicho q usemos list_add_sorted pero como
     // cuando lo pasamos a running encontramos el mayor nivel de prioridad
     // creo q no hace falta
@@ -319,12 +321,15 @@ void desalojar_hilo(int motivo)
 void* desalojar_por_RR(tcb* hilo)
 {
     usleep(quantum*1000);
+    pthread_mutex_lock(&m_syscall_solicitada);
     if((hilo_en_ejecucion->tid == hilo->tid) && syscall_solicitada == 0)
 	{		
+        pthread_mutex_unlock(&m_syscall_solicitada);
 		desalojar_hilo(RR);
 		log_info(logger_kernel,"## (PID <%d>:TID <%d>) - Desalojado por fin de Quantum”",hilo->pcb_padre_tcb->pid,hilo->tid);
 		//return;
 	}
+    pthread_mutex_unlock(&m_syscall_solicitada);
 }
 
 void agregar_a_ready_segun_alg(tcb* hilo)
@@ -540,6 +545,18 @@ tcb* buscar_hilos_listas(tcb* main, int tid){
 	}
 
 
+tcb* buscar_tid(t_list* lista_tcb,int tid) {
+
+        for(int i = 0; i < list_size(lista_tcb); i++) 
+        {
+            tcb* aux = list_get(lista_tcb, i);
+            if(aux->tid == tid) {
+                return aux;
+            }
+        }
+    return NULL;
+}
+
 tcb* buscar_hilo_en_multinivel(int prioridad, int tid) {
     printf("Tid %d Prioridad %d\n", tid, prioridad);
     for (int i = 0; i < list_size(lista_multinivel); i++) {
@@ -632,22 +649,44 @@ t_list* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
     }
     return list_find(lista_multinivel, _existe_nivel);
 }*/
-nivel_prioridad* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
+nivel_prioridad* encontrar_por_nivel(t_list* lista_multi, int prioridad)
 {
     //nivel_prioridad* aux;
-    bool _existe_nivel(void* ptr)
+   /* bool _existe_nivel(void* ptr)
     {
         nivel_prioridad* aux = (nivel_prioridad*) ptr;
+         printf("Evaluando nivel con prioridad=%d\n", aux->prioridad);
         return aux->prioridad == prioridad;
+       
     }
 
-    nivel_prioridad* resultado = list_find(lista_multinivel, _existe_nivel);
+    
+    for (int i = 0; i < list_size(lista_multi); i++) {
+        nivel_prioridad* aux = (nivel_prioridad*) list_get(lista_multi, i);
+        if (aux != NULL) {
+            printf("Elemento %d: prioridad = %d\n", i, aux->prioridad);
+        } else {
+            printf("Elemento %d: NULL\n", i);
+        }
+    
+}
 
-    if(resultado != NULL)
+    nivel_prioridad* resultado = list_find(lista_multi, _existe_nivel);*/
+    int cant_elem_multi = list_size(lista_multi);
+    printf("Cantidad de elementos lista multinivel %d \n", cant_elem_multi);
+    for (int i = 0; i < cant_elem_multi; i++)
     {
-        return resultado;
+        nivel_prioridad* resultado = list_get(lista_multi, i);
+        if(resultado->prioridad == prioridad) {
+            printf("Existe el nivel de prioridad %d \n", resultado->prioridad);
+            return resultado;
+        }
     }
+
+
     return NULL;
+    
+    
 }
 
 

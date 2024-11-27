@@ -13,6 +13,7 @@ pthread_mutex_t m_indice;
 pthread_mutex_t m_lista_multinivel; 
 pthread_mutex_t m_lista_finalizados;
 pthread_mutex_t m_lista_prioridad;
+pthread_mutex_t m_syscall_solicitada;
 
 t_list* lista_de_ready;
 t_list* lista_procesos_new;
@@ -37,11 +38,19 @@ void agregar_a_ready(tcb* hilo)
 
 void agregar_a_ready_multinivel(tcb* hilo)
 {
+	if (lista_multinivel == NULL) {
+		printf("Error: lista_multinivel es NULL\n");
+		return NULL;
+	} else {
+    	printf("Lista inicializada correctamente\n");
+	}
+	pthread_mutex_lock(&m_lista_multinivel);
 	nivel_prioridad* cola_nivel = encontrar_por_nivel(lista_multinivel, hilo->prioridad);
+	pthread_mutex_unlock(&m_lista_multinivel);
 	if(cola_nivel == NULL)
 	{
 		cola_nivel = malloc(sizeof(nivel_prioridad));
-		crear_cola_nivel(hilo->prioridad, hilo, cola_nivel);
+		crear_cola_nivel((hilo->prioridad), hilo, cola_nivel);
 		
 	}
 	else
@@ -92,15 +101,16 @@ void planificador_corto_plazo()
 		nivel_prioridad* mayor_nivel;
 		
 		mayor_nivel = encontrar_nivel_mas_prioritario(lista_multinivel);
-		pthread_mutex_lock(&m_lista_prioridad);
-		if(list_size(mayor_nivel->hilos_asociados) != 0) {
+		pthread_mutex_lock(&(mayor_nivel->m_lista_prioridad));
+		if(list_size(mayor_nivel->hilos_asociados) > 0) {
 			hilo_a_ejecutar = list_remove(mayor_nivel->hilos_asociados,0);
 			if(list_size(mayor_nivel->hilos_asociados) == 0)
 			{
+				list_remove_element(lista_multinivel,mayor_nivel);
 				free(mayor_nivel);
 			}
 		}
-		pthread_mutex_unlock(&m_lista_prioridad);
+		pthread_mutex_unlock(&(mayor_nivel->m_lista_prioridad));
 		pasar_a_running_tcb(hilo_a_ejecutar);
 
 		pthread_t tround_robin;
@@ -192,7 +202,9 @@ void atender_syscall()
 
 	log_info(logger_kernel, "## (PID <%d> TID: <%d> ) - Solicitó syscall: <%d>",
 	hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid,motivo); 
+	pthread_mutex_lock(&m_syscall_solicitada);
 	syscall_solicitada = 1;
+	pthread_mutex_unlock(&m_syscall_solicitada);
 	switch(motivo)
 	{
 		case RR:			
@@ -253,17 +265,21 @@ void atender_syscall()
 		case THREAD_JOIN:
 		char* tid_j = list_get(instrucc->parametros, 0);
 		tid = atoi(tid_j);
-		tcb* tcb_invocado = buscar_hilos_listas(hilo_en_ejecucion,tid);
+		tcb* tcb_invocado = buscar_tid(hilo_en_ejecucion->pcb_padre_tcb->lista_tcb, tid);
 
 		if(tcb_invocado != NULL){
 			pthread_mutex_lock(&m_hilo_a_ejecutar);	
-			if(strcmp(algoritmo_de_planificacion,"CMN") != 0) {	
+
+		//	if(strcmp(algoritmo_de_planificacion,"CMN") != 0) {	
 				buscar_hilos_listas(hilo_en_ejecucion,hilo_en_ejecucion->tid);
-			}
-			list_add(tcb_invocado->block_join, hilo_en_ejecucion);
+			//}
+
 			log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <PTHREAD_JOIN>",
 			hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
-			hilo_en_ejecucion = tcb_invocado;  
+			  
+			list_add(tcb_invocado->block_join, hilo_en_ejecucion);
+
+			//hilo_en_ejecucion = tcb_invocado;
 			pthread_mutex_unlock(&m_hilo_a_ejecutar);
 			
 		}
@@ -271,9 +287,10 @@ void atender_syscall()
 		{
 			
 			log_info(logger_kernel,"No se encontró el hilo");
+			agregar_a_ready_segun_alg(hilo_en_ejecucion);
 		}
 		//pasar_a_running_tcb(hilo_en_ejecucion);
-		agregar_a_ready_segun_alg(hilo_en_ejecucion);	
+			
 		sem_post(&binario_corto_plazo);
 		break;
 
@@ -293,7 +310,7 @@ void atender_syscall()
 		break;
 		case THREAD_EXIT:
 			finalizar_tcb(hilo_en_ejecucion);
-			hilo_en_ejecucion=NULL;	
+			//hilo_en_ejecucion=NULL;	
 		break;
 		case MUTEX_CREATE:
 			mutex_k* nuevo_mutex;
