@@ -93,7 +93,13 @@ void planificador_corto_plazo()
 		
 		mayor_nivel = encontrar_nivel_mas_prioritario(lista_multinivel);
 		pthread_mutex_lock(&m_lista_prioridad);
-		hilo_a_ejecutar = list_remove(mayor_nivel->hilos_asociados,0);
+		if(list_size(mayor_nivel->hilos_asociados) != 0) {
+			hilo_a_ejecutar = list_remove(mayor_nivel->hilos_asociados,0);
+			if(list_size(mayor_nivel->hilos_asociados) == 0)
+			{
+				free(mayor_nivel);
+			}
+		}
 		pthread_mutex_unlock(&m_lista_prioridad);
 		pasar_a_running_tcb(hilo_a_ejecutar);
 
@@ -250,13 +256,16 @@ void atender_syscall()
 		tcb* tcb_invocado = buscar_hilos_listas(hilo_en_ejecucion,tid);
 
 		if(tcb_invocado != NULL){
-			pthread_mutex_lock(&m_hilo_a_ejecutar);
+			pthread_mutex_lock(&m_hilo_a_ejecutar);	
+			if(strcmp(algoritmo_de_planificacion,"CMN") != 0) {	
+				buscar_hilos_listas(hilo_en_ejecucion,hilo_en_ejecucion->tid);
+			}
 			list_add(tcb_invocado->block_join, hilo_en_ejecucion);
-			buscar_hilos_listas(hilo_en_ejecucion,hilo_en_ejecucion->tid);
-			hilo_en_ejecucion = tcb_invocado;  
-			pthread_mutex_unlock(&m_hilo_a_ejecutar);
 			log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <PTHREAD_JOIN>",
 			hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
+			hilo_en_ejecucion = tcb_invocado;  
+			pthread_mutex_unlock(&m_hilo_a_ejecutar);
+			
 		}
 		else 
 		{

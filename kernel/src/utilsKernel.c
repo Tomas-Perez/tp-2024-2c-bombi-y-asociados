@@ -58,6 +58,10 @@ char* generar_path_archivo(char* nombre_archivo)
 void levantar_config_kernel()
 { 
     //config_kernel = iniciar_config("kernelFS.config");
+    //config_kernel = iniciar_config("kernelRC.config");
+    //config_kernel = iniciar_config("kernelParticionesDinamicas.config");
+    //config_kernel = iniciar_config("kernelParticionesFijas.config");
+
     config_kernel = iniciar_config("kernelPlani.config");
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
@@ -514,7 +518,9 @@ tcb* buscar_hilos_listas(tcb* main, int tid){
 	int confirmacion = 0;
 	if (hilo != NULL) {
         if(strcmp(algoritmo_de_planificacion,"CMN") == 0){
+            printf("tid %d\n", tid);
 			hilo = buscar_hilo_en_multinivel(hilo->prioridad, hilo->tid);
+            
             if (hilo) {
                  return hilo;  
              }
@@ -535,20 +541,22 @@ tcb* buscar_hilos_listas(tcb* main, int tid){
 
 
 tcb* buscar_hilo_en_multinivel(int prioridad, int tid) {
+    printf("Tid %d Prioridad %d\n", tid, prioridad);
     for (int i = 0; i < list_size(lista_multinivel); i++) {
         nivel_prioridad* cola_aux = list_get(lista_multinivel, i);
         
         if (cola_aux->prioridad == prioridad) {
            
             pthread_mutex_lock(&(cola_aux->m_lista_prioridad));
-            
-            for (int j = 0; j < list_size(cola_aux->hilos_asociados); j++) {
+            int cant_elementos = list_size(cola_aux->hilos_asociados);
+            printf("Cantidad de elementos %d\n", cant_elementos);
+            for (int j = 0; j < cant_elementos; j++) {
                 tcb* hilo = list_get(cola_aux->hilos_asociados, j);
                 if (hilo->tid == tid) {
                    	list_remove(cola_aux->hilos_asociados, j);
                     if(list_size(cola_aux->hilos_asociados) == 0) //VER
                     {
-                        list_destroy(cola_aux->hilos_asociados);
+                        free(cola_aux);
                     }
                     pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
                     printf("Aca lo encontro TID: %d Prioridad: %d \n", hilo->tid, hilo->prioridad);
