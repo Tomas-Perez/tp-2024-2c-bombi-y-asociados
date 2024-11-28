@@ -17,7 +17,7 @@ int syscall_solicitada;
 char *log_level;
 
 //----------------------------------------------------------------
-// --------------------------- inidice ---------------------------
+// --------------------------- indice ---------------------------
 //----------------------------------------------------------------
 // 1) Archivo inicial
 // 2) Inicializar
@@ -53,11 +53,11 @@ char *generar_path_archivo(char *nombre_archivo)
 
 void levantar_config_kernel()
 {
-    // config_kernel = iniciar_config("configs/kernelFS.config");
+    config_kernel = iniciar_config("configs/kernelFS.config");
     //  config_kernel = iniciar_config("configs/kernelRC.config");
     //  config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
     //  config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
-    config_kernel = iniciar_config("configs/kernelPlani.config");
+    //config_kernel = iniciar_config("configs/kernelPlani.config");
 
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
@@ -569,6 +569,7 @@ tcb *buscar_hilos_listas(tcb *main, int tid)
                 return hilo;
             }
         }
+         return hilo;
     }
 
     return NULL;
@@ -748,12 +749,13 @@ int bloquear_por_dump(tcb *hilo, int socket)
     enviar_paquete(dump, socket);
     eliminar_paquete(dump);
 
+     if (strcmp(algoritmo_de_planificacion, "FIFO") == 0){
     tcb *hilo_bloqueado = buscar_hilos_listas(hilo, hilo->tid);
-
+     }
     pthread_mutex_lock(&m_bloqueados_por_dump);
-    list_add(bloqueados_por_dump, hilo_bloqueado);
+    list_add(bloqueados_por_dump, hilo);
     pthread_mutex_unlock(&m_bloqueados_por_dump);
-
+    printf("TAmanio bloqueado por dump %d \n", list_size(bloqueados_por_dump));
     recv(socket, &finalizo_operacion, sizeof(int), MSG_WAITALL);
 
     return finalizo_operacion;

@@ -380,22 +380,27 @@ void atender_syscall()
 		socket = conectarMemoria();
 
 		tcb *hilo_dump = hilo_en_ejecucion;
-		sem_post(&binario_corto_plazo);
+		
 
 		int rta = bloquear_por_dump(hilo_dump, socket);
+		close(socket);
 		pthread_mutex_lock(&m_bloqueados_por_dump);
 		hilo_dump = list_remove(bloqueados_por_dump, 0);
 		pthread_mutex_unlock(&m_bloqueados_por_dump);
+		printf("TID HILO_DUMPO %d \n", hilo_dump->tid);
 		if (rta == 0)
 		{
+			printf("RTA DEL BLOQUEAR 0 %d \n", rta);
 			finalizar_tcb(hilo_dump);
 		}
 		else
 		{
+			printf("RTA DEL BLOQUEAR 1 %d \n", rta);
 			agregar_a_ready_segun_alg(hilo_dump);
 		}
+		
 		// hilo_en_ejecucion = NULL;
-		close(socket);
+		sem_post(&binario_corto_plazo);
 		break;
 
 	case IO:
@@ -416,7 +421,7 @@ void atender_syscall()
 		log_info(logger_kernel, "## ((PID <%d> : TID <%d> )) finalizó IO y pasa a READY",
 				 hilo_en_ejecucion->pcb_padre_tcb->contador_tid, hilo_en_ejecucion->tid);
 		hilo = list_remove(lista_io, 0);
-		//pasar_a_running_tcb(hilo);
+		pasar_a_running_tcb_con_syscall(hilo);
 		// agregar_a_ready_segun_alg(hilo);
 		free(hilo);
 		break;
