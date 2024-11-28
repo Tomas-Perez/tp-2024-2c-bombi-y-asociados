@@ -17,7 +17,7 @@ extern char *ip_cpu;
 extern char *puerto_cpu_dispatch; 
 extern char *puerto_cpu_interrupt; 
 //extern char *algoritmo_de_planificacion; 
-extern int quantum; 
+extern double quantum; 
 extern char *log_level; 
 //extern t_log *logger_kernel;
 #endif

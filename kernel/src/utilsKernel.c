@@ -12,7 +12,7 @@ char *ip_cpu;
 char *puerto_cpu_dispatch;
 char *puerto_cpu_interrupt;
 char *algoritmo_de_planificacion;
-int quantum;
+double quantum;
 int syscall_solicitada;
 char *log_level;
 
@@ -53,11 +53,11 @@ char *generar_path_archivo(char *nombre_archivo)
 
 void levantar_config_kernel()
 {
-    config_kernel = iniciar_config("configs/kernelFS.config");
-    // config_kernel = iniciar_config("configs/kernelRC.config");
-    // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
-    //config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
-    // config_kernel = iniciar_config("configs/kernelPlani.config");
+    // config_kernel = iniciar_config("configs/kernelFS.config");
+    //  config_kernel = iniciar_config("configs/kernelRC.config");
+    //  config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
+    //  config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
+    config_kernel = iniciar_config("configs/kernelPlani.config");
 
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
@@ -65,7 +65,7 @@ void levantar_config_kernel()
     puerto_cpu_dispatch = config_get_string_value(config_kernel, "PUERTO_CPU_DISPATCH");
     puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
     algoritmo_de_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
-    quantum = config_get_int_value(config_kernel, "QUANTUM");
+    quantum = config_get_double_value(config_kernel, "QUANTUM");
     log_level = config_get_string_value(config_kernel, "LOG_LEVEL");
 }
 
@@ -248,21 +248,21 @@ void crear_cola_nivel(int prioridad, tcb *hilo, nivel_prioridad *nuevo_nivel)
 {
 
     nuevo_nivel->prioridad = prioridad;
-    //printf("p %d\n", nuevo_nivel->prioridad);
+    // printf("p %d\n", nuevo_nivel->prioridad);
     nuevo_nivel->hilos_asociados = list_create();
     pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
 
     pthread_mutex_lock(&(nuevo_nivel->m_lista_prioridad));
-    list_add(nuevo_nivel->hilos_asociados, hilo);
+    list_add((nuevo_nivel->hilos_asociados), hilo);
     pthread_mutex_unlock(&(nuevo_nivel->m_lista_prioridad));
 
     pthread_mutex_lock(&m_lista_multinivel);
     list_add(lista_multinivel, nuevo_nivel);
     pthread_mutex_unlock(&m_lista_multinivel);
-    //printf("Se agrega un nivel de prioridad a la lista multinivel %d\n", nuevo_nivel->prioridad);
-    // VER: nos habian dicho q usemos list_add_sorted pero como
-    // cuando lo pasamos a running encontramos el mayor nivel de prioridad
-    // creo q no hace falta
+    // printf("Se agrega un nivel de prioridad a la lista multinivel %d\n", nuevo_nivel->prioridad);
+    //  VER: nos habian dicho q usemos list_add_sorted pero como
+    //  cuando lo pasamos a running encontramos el mayor nivel de prioridad
+    //  creo q no hace falta
 }
 
 // -------------------------- Funciones planificador  ---------------------------
@@ -303,26 +303,41 @@ void mandar_tcb_dispatch(tcb *tcb_listo)
     eliminar_paquete(tcb_a_dispatch);
 
     pthread_mutex_lock(&m_syscall_solicitada);
-	syscall_solicitada = 0;
-	pthread_mutex_unlock(&m_syscall_solicitada);
+    syscall_solicitada = 0;
+    pthread_mutex_unlock(&m_syscall_solicitada);
 }
 
 void desalojar_hilo(int motivo)
 {
     t_paquete *paquete_a_desalojar = crear_paquete(DESALOJAR_PROCESO);
-    agregar_a_paquete_solo(paquete_a_desalojar,&motivo, sizeof(int));
+    agregar_a_paquete_solo(paquete_a_desalojar, &motivo, sizeof(int));
     agregar_a_paquete_solo(paquete_a_desalojar, &hilo_en_ejecucion->tid, sizeof(int));
     enviar_paquete(paquete_a_desalojar, conexion_interrupt);
     eliminar_paquete(paquete_a_desalojar);
+    int confirmacion;
+    recv(conexion_dispatch, &confirmacion, sizeof(int), MSG_WAITALL);
+    if (confirmacion == 1)
+    {
+        printf("Entro en syscall RR\n");
+        agregar_a_ready_segun_alg(hilo_en_ejecucion);
+        sem_post(&binario_corto_plazo);
+    }
+}
+
+double quantumf()
+{
+    return atoi(config_get_string_value(config_kernel, "QUANTUM"));
 }
 
 void *desalojar_por_RR(tcb *hilo)
 {
-    usleep(quantum * 1000);
+    usleep(quantumf() * 1000);
+    printf("Buen dia grupo :/\n");
     pthread_mutex_lock(&m_syscall_solicitada);
-    if ((hilo_en_ejecucion->tid == hilo->tid) && syscall_solicitada == 0)
+    if (hilo_en_ejecucion->tid == hilo->tid)
     {
         pthread_mutex_unlock(&m_syscall_solicitada);
+        printf("SOY UNA INTERRUPCIOOOOON\n");
         desalojar_hilo(RR);
         log_info(logger_kernel, "## (PID <%d>:TID <%d>) - Desalojado por fin de Quantum”", hilo->pcb_padre_tcb->pid, hilo->tid);
         // return;
@@ -400,7 +415,7 @@ void desempaquetar_parametros_syscall_de_cpu(tcb *hilo, int *motivo, instruccion
 void iniciar_hilo(tcb *hilo, int conexion_memoria, char *path)
 {
 
-    uint32_t size_path_hilo = sizeof(path);
+    //uint32_t size_path_hilo = sizeof(path);
     t_paquete *paquete = crear_paquete(INICIAR_HILO);
     agregar_a_paquete_solo(paquete, &(hilo->pcb_padre_tcb->pid), sizeof(uint32_t));
     agregar_a_paquete_solo(paquete, &(hilo->tid), sizeof(uint32_t));
@@ -434,7 +449,7 @@ void finalizar_proceso(pcb *proc)
     log_info(logger_kernel, "## Finaliza el proceso <%d>", proc->pid);
 
     list_destroy(proc->lista_tcb);
-    //free(proc->path_proc);
+    // free(proc->path_proc);
     free(proc);
     sem_post(&finalizo_un_proc);
 }
@@ -474,8 +489,7 @@ void *hilo_exit()
         liberar_tcb(hilo);
         avisar_memoria_liberar_tcb(hilo);
 
-        
-        //sem_post(&binario_corto_plazo);
+        // sem_post(&binario_corto_plazo);
         free(hilo);
         printf("BORRAR: en hilo_exit-> termino todo\n");
     }
@@ -485,7 +499,6 @@ void liberar_tcb(tcb *hilo)
 {
     liberar_mutexs_asociados(hilo);
     liberar_bloqueados_x_thread_join(hilo);
-    
 }
 
 void finalizar_estructuras_kernel()
@@ -572,7 +585,7 @@ tcb *buscar_hilo_en_multinivel(int prioridad, int tid)
 
             pthread_mutex_lock(&(cola_aux->m_lista_prioridad));
             int cant_elementos = list_size(cola_aux->hilos_asociados);
-           // printf("Cantidad de elementos %d\n", cant_elementos);
+            // printf("Cantidad de elementos %d\n", cant_elementos);
             for (int j = 0; j < cant_elementos; j++)
             {
                 tcb *hilo = list_get(cola_aux->hilos_asociados, j);
@@ -584,7 +597,7 @@ tcb *buscar_hilo_en_multinivel(int prioridad, int tid)
                         free(cola_aux);
                     }
                     pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
-                    //printf("Aca lo encontro TID: %d Prioridad: %d \n", hilo->tid, hilo->prioridad);
+                    // printf("Aca lo encontro TID: %d Prioridad: %d \n", hilo->tid, hilo->prioridad);
                     return hilo;
                 }
 
@@ -679,7 +692,7 @@ nivel_prioridad *encontrar_por_nivel(t_list *lista_multi, int prioridad)
 
      nivel_prioridad* resultado = list_find(lista_multi, _existe_nivel);*/
     int cant_elem_multi = list_size(lista_multi);
-    //printf("Cantidad de elementos lista multinivel %d \n", cant_elem_multi);
+    // printf("Cantidad de elementos lista multinivel %d \n", cant_elem_multi);
     for (int i = 0; i < cant_elem_multi; i++)
     {
         nivel_prioridad *resultado = list_get(lista_multi, i);
@@ -720,7 +733,7 @@ int bloquear_por_dump(tcb *hilo, int socket)
     enviar_paquete(dump, socket);
     eliminar_paquete(dump);
 
-    tcb* hilo_bloqueado = buscar_hilos_listas(hilo, hilo->tid);
+    tcb *hilo_bloqueado = buscar_hilos_listas(hilo, hilo->tid);
 
     pthread_mutex_lock(&m_bloqueados_por_dump);
     list_add(bloqueados_por_dump, hilo_bloqueado);
@@ -835,4 +848,7 @@ void avisar_memoria_liberar_pcb(pcb *proc)
     agregar_a_paquete_solo(p_exit, &proc->pid, sizeof(int));
     enviar_paquete(p_exit, socket);
     eliminar_paquete(p_exit);
+    int confirmacion;
+    recv(socket, &confirmacion, sizeof(int), MSG_WAITALL);
+    close(socket);
 }

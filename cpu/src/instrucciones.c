@@ -22,12 +22,10 @@ void check_interrupt(instruccion *inst)
         printf("entra en check interrupt\n");
         devolver_contexto_de_ejecucion(pid, tid);
 
-        /*t_paquete *paquete_syscall = crear_paquete(SYSCALL);
-        agregar_a_paquete_solo(paquete_syscall, &motivo_interrupt, sizeof(int));  // SI NO USAMOS ESTO BORRAR MOTIVO INTERRUPT
-        enviar_paquete(paquete_syscall, conexion_dispatch);
-        eliminar_paquete(paquete_syscall);*/
-
         ejecutando_un_proceso = false;
+        
+        int confirmacion = 1;
+        send(conexion_dispatch, &confirmacion, sizeof(int), 0);
     } // hay interrupcion y un proceso en ejecucion
     interrupcion = false;
     for (int i = 0; i < list_size(inst->parametros); i++)
