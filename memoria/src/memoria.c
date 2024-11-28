@@ -391,7 +391,8 @@ int atenderKernel(int *socket_kernel)
         pid = buffer_read_uint32(buffer);
 
         eliminar_proceso(pid); // elimina las estructuras administrativas y libera memoria en estructuras
-        // enviar OK
+        confirmacion = 1;
+        send(*socket_kernel, &confirmacion, sizeof(int), 0);
         free(buffer);
         break;
     case INICIAR_HILO:
@@ -548,10 +549,10 @@ int atenderKernel(int *socket_kernel)
 void levantar_config_memoria()
 {
    // config_memoria = config_create("configs/memoriaPlani.config");
-    // config_memoria = config_create("configs/memoriaRC.config");
+     config_memoria = config_create("configs/memoriaRC.config");
     //config_memoria = config_create("configs/memoriaParticionesFijas.config");
     //config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
-     config_memoria = config_create("configs/memoriaFS.config");
+    // config_memoria = config_create("configs/memoriaFS.config");
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");

@@ -293,7 +293,7 @@ void write_mem(instruccion *inst)
     int confirmacion;
     recv(socket_memoria,&confirmacion,sizeof(int),MSG_WAITALL);
 
-    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Acción: <ESCRIBIR> - Dirección Física: <%i>", tid, dir_fisica);
+    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Acción: <ESCRIBIR> - Dirección Física: <%i>",pid, tid, dir_fisica);
 }
 
 // LOG (Registro): Escribe en el archivo de log el valor del registro.

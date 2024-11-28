@@ -59,7 +59,7 @@ void agregar_a_ready_multinivel(tcb *hilo)
 	else
 	{
 		pthread_mutex_lock(&(cola_nivel->m_lista_prioridad));
-		list_add((cola_nivel->hilos_asociados), hilo);
+		list_add(cola_nivel->hilos_asociados, hilo);
 		pthread_mutex_unlock(&(cola_nivel->m_lista_prioridad));
 	}
 	sem_post(&hilos_en_ready);
@@ -259,10 +259,8 @@ void atender_syscall()
 		if (hilo_en_ejecucion->tid == 0)
 		{
 			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
-			// sem_post(&binario_corto_plazo);
-			sem_post(&binario_corto_plazo);
+			
 		}
-
 		break;
 
 	case THREAD_CREATE:
@@ -326,7 +324,7 @@ void atender_syscall()
 		{
 			log_info(logger_kernel, "No se encontró el hilo");
 		}
-
+		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
 		break;
 	case THREAD_EXIT:
 		finalizar_tcb(hilo_en_ejecucion);
@@ -338,43 +336,58 @@ void atender_syscall()
 		char *nombre_mutex = list_get(instrucc->parametros, 0);
 		nuevo_mutex = crear_mutex(nombre_mutex);
 		list_add(hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc, nuevo_mutex);
-
+		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
 		break;
 	case MUTEX_LOCK:
 		lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
-		mutex_solic = list_get(instrucc->parametros, 0);
-		if (existe_mutex(mutex_solic, lista_mutex_proceso) != false)
-		{
-			if (mutex_solic->disponibilidad = true)
+		char* nombre_mutex_solic;
+		nombre_mutex_solic = list_get(instrucc->parametros, 0);
+		printf("tamanio lista mutex del proc: %d ", list_size(lista_mutex_proceso));
+		if(list_size(lista_mutex_proceso) > 0){
+			 mutex_k *aux = existe_mutex_por_nombre(nombre_mutex_solic, lista_mutex_proceso);
+			if ( aux != NULL)
 			{
-				asignar_mutex_hilo(mutex_solic, hilo_en_ejecucion);
+				if (aux->disponibilidad == true)
+				{
+					asignar_mutex_hilo(aux, hilo_en_ejecucion);
+					pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
+				}
+				else
+				{
+					buscar_hilos_listas(hilo_en_ejecucion, hilo_en_ejecucion->tid);
+					list_add(aux->bloqueados_por_mutex, hilo_en_ejecucion);
+					log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <MUTEX>",
+							hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
+					sem_post(&binario_corto_plazo);
+				}
 			}
 			else
 			{
-				buscar_hilos_listas(hilo_en_ejecucion, hilo_en_ejecucion->tid);
-				list_add(mutex_solic->bloqueados_por_mutex, hilo_en_ejecucion);
-				log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <MUTEX>",
-						 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
+				finalizar_tcb(hilo_en_ejecucion);
+				sem_post(&binario_corto_plazo);
 			}
-		}
-		else
-		{
-			finalizar_tcb(hilo_en_ejecucion);
-		}
+			}
+			else
+			{
+				finalizar_tcb(hilo_en_ejecucion);
+				sem_post(&binario_corto_plazo);
+			}
 		break;
 	case MUTEX_UNLOCK:
-
-		mutex_k *mutex_solic = list_get(instrucc->parametros, 0);
+		char* nombre_mutex_solici;
+		nombre_mutex_solici = list_get(instrucc->parametros, 0);
+		//mutex_k *mutex_solic = list_get(instrucc->parametros, 0);
 		lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
-
-		if (existe_mutex(mutex_solic, lista_mutex_proceso) != false)
+		 mutex_k *aux_m = existe_mutex_por_nombre(nombre_mutex_solici, lista_mutex_proceso);
+		if (aux_m != NULL)
 		{
-			if (mutex_tomado_por_hilo(mutex_solic, hilo_en_ejecucion) != false)
+			bool esTomado = mutex_por_nombre_tomado_por_hilo(nombre_mutex_solici, hilo_en_ejecucion);
+			if (esTomado != false)
 			{
-				asignar_mutex_al_primer_bloqueado(mutex_solic);
+				asignar_mutex_al_primer_bloqueado(aux_m);
 			}
 		}
-
+		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
 		break;
 	case DUMP_MEMORY:
 		socket = conectarMemoria();
@@ -390,17 +403,19 @@ void atender_syscall()
 		printf("TID HILO_DUMPO %d \n", hilo_dump->tid);
 		if (rta == 0)
 		{
+			sem_post(&binario_corto_plazo);
 			printf("RTA DEL BLOQUEAR 0 %d \n", rta);
 			finalizar_tcb(hilo_dump);
 		}
 		else
 		{
+			sem_post(&binario_corto_plazo);
 			printf("RTA DEL BLOQUEAR 1 %d \n", rta);
 			agregar_a_ready_segun_alg(hilo_dump);
 		}
 		
 		// hilo_en_ejecucion = NULL;
-		sem_post(&binario_corto_plazo);
+		
 		break;
 
 	case IO:

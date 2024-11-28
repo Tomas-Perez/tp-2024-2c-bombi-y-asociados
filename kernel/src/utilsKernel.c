@@ -53,8 +53,8 @@ char *generar_path_archivo(char *nombre_archivo)
 
 void levantar_config_kernel()
 {
-    config_kernel = iniciar_config("configs/kernelFS.config");
-    //  config_kernel = iniciar_config("configs/kernelRC.config");
+    //config_kernel = iniciar_config("configs/kernelFS.config");
+      config_kernel = iniciar_config("configs/kernelRC.config");
     //  config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
     //  config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
     //config_kernel = iniciar_config("configs/kernelPlani.config");
@@ -467,6 +467,7 @@ void finalizar_proceso(pcb *proc)
     // free(proc->path_proc);
     free(proc);
     sem_post(&finalizo_un_proc);
+    sem_post(&binario_corto_plazo);
 }
 
 void finalizar_hilos_proceso(pcb *proceso) // PARA PROCESS_EXIT
@@ -638,20 +639,39 @@ pcb *buscar_proc_lista(t_list *lista, int pid_buscado)
     return NULL;
 }
 
-bool existe_mutex(mutex_k *mutex_solic, t_list *lista_mutex_proceso)
+bool existe_mutex(mutex_k *mutex_solic, t_list *lista_mutexs_proceso)
 {
     bool existe = false;
     mutex_k *aux;
-    for (int i = 0; i < list_size(lista_mutex_proceso); i++)
+    for (int i = 0; i < list_size(lista_mutexs_proceso); i++)
     {
-        aux = list_get(lista_mutex_proceso, i);
+        aux = list_get(lista_mutexs_proceso, i);
         if (strcmp(aux->nombre, mutex_solic->nombre) == 0)
         {
             existe = true;
+            return existe;
         }
     }
     return existe;
 }
+
+
+mutex_k* existe_mutex_por_nombre(char*mutex_solic, t_list *lista_mutexs_proceso)
+{
+   // bool existe = false;
+    mutex_k *aux;
+    for (int i = 0; i < list_size(lista_mutexs_proceso); i++)
+    {
+        aux = list_get(lista_mutexs_proceso, i);
+        if (strcmp(aux->nombre, mutex_solic) == 0)
+        {
+            return aux;
+        }
+    }
+    return NULL;
+}
+
+
 bool mutex_tomado_por_hilo(mutex_k *mutex, tcb *hilo)
 {
     bool tomado = false;
@@ -661,7 +681,25 @@ bool mutex_tomado_por_hilo(mutex_k *mutex, tcb *hilo)
         aux = list_get(hilo->lista_mutex, i);
         if (strcmp(mutex->nombre, aux->nombre) == 0)
         {
-            tomado = true;
+             tomado = true;
+            return tomado ;
+        }
+    }
+
+    return tomado;
+}
+
+bool mutex_por_nombre_tomado_por_hilo(char *mutex, tcb *hilo)
+{
+    bool tomado = false;
+    mutex_k *aux;
+    for (int i = 0; i < list_size(hilo->lista_mutex); i++)
+    {
+        aux = list_get(hilo->lista_mutex, i);
+        if (strcmp(mutex, aux->nombre) == 0)
+        {
+             tomado = true;
+            return tomado ;
         }
     }
 
@@ -788,18 +826,21 @@ void liberar_mutexs_asociados(tcb *hilo)
     list_destroy(hilo->lista_mutex);
 }
 
-void asignar_mutex_al_primer_bloqueado(mutex_k *mutex_solic)
+void asignar_mutex_al_primer_bloqueado(mutex_k *mutex_solicitado)
 {
     tcb *bloq_por_mutex;
-    if (list_size(mutex_solic->bloqueados_por_mutex) > 0)
+    if (list_size(mutex_solicitado->bloqueados_por_mutex) > 1)
     {
-        bloq_por_mutex = list_remove(mutex_solic->bloqueados_por_mutex, 0);
-        asignar_mutex_hilo(mutex_solic, bloq_por_mutex);
+        bloq_por_mutex = list_remove(mutex_solicitado->bloqueados_por_mutex, 0);
+        asignar_mutex_hilo(mutex_solicitado, bloq_por_mutex);
     }
-    else
+    else if(list_size(mutex_solicitado->bloqueados_por_mutex) == 1)
     {
-        mutex_solic->disponibilidad = true;
-        mutex_solic->hilo_poseedor = NULL;
+        bloq_por_mutex = list_remove(mutex_solicitado->bloqueados_por_mutex, 0);
+        asignar_mutex_hilo(mutex_solicitado, bloq_por_mutex);
+
+        mutex_solicitado->disponibilidad = true;
+        mutex_solicitado->hilo_poseedor = NULL;
     }
 }
 
@@ -867,5 +908,6 @@ void avisar_memoria_liberar_pcb(pcb *proc)
     eliminar_paquete(p_exit);
     int confirmacion;
     recv(socket, &confirmacion, sizeof(int), MSG_WAITALL);
+    printf("CONFIRMO FINALIZO PROC EN MEM: %d \n", confirmacion);
     close(socket);
 }
