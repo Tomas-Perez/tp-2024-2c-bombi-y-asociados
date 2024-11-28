@@ -20,13 +20,32 @@ void check_interrupt(instruccion *inst)
     if (interrupcion && ejecutando_un_proceso)
     {
         printf("entra en check interrupt\n");
-        devolver_contexto_de_ejecucion(pid, tid);
+        //devolver_contexto_de_ejecucion(pid, tid);
 
         ejecutando_un_proceso = false;
         
-        int confirmacion = 1;
-        send(conexion_dispatch, &confirmacion, sizeof(int), 0);
-    } // hay interrupcion y un proceso en ejecucion
+        /*int confirmacion = 1;
+        send(conexion_dispatch, &confirmacion, sizeof(int), 0);*/
+
+
+        t_paquete *paquete_instrucciones = crear_paquete(SYSCALL);
+        
+        uint32_t cant_parametros = 0;
+        printf("Motivo interrupt (tiene que ser 30): %d\n", motivo_interrupt);
+        agregar_a_paquete_solo(paquete_instrucciones, &motivo_interrupt, sizeof(uint32_t));
+        agregar_a_paquete_solo(paquete_instrucciones, &cant_parametros, sizeof(uint32_t));
+        /*for (int i = 0; i < cant_parametros; i++)
+        {
+           // char *aux = list_get(info->parametros, i);
+            // printf("parametro %d: %s\n",i,aux);
+            //agregar_a_paquete(paquete_instrucciones, aux, strlen(aux) + 1);
+        }*/
+        devolver_contexto_de_ejecucion(pid, tid);
+        enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
+        eliminar_paquete(paquete_instrucciones);
+     } 
+
+     // hay interrupcion y un proceso en ejecucion
     interrupcion = false;
     for (int i = 0; i < list_size(inst->parametros); i++)
     {

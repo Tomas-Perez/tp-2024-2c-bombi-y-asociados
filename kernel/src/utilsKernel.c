@@ -313,15 +313,17 @@ void desalojar_hilo(int motivo)
     agregar_a_paquete_solo(paquete_a_desalojar, &motivo, sizeof(int));
     agregar_a_paquete_solo(paquete_a_desalojar, &hilo_en_ejecucion->tid, sizeof(int));
     enviar_paquete(paquete_a_desalojar, conexion_interrupt);
-    eliminar_paquete(paquete_a_desalojar);
-    int confirmacion;
+
+    /*int confirmacion;
+
     recv(conexion_dispatch, &confirmacion, sizeof(int), MSG_WAITALL);
     if (confirmacion == 1)
     {
         printf("Entro en syscall RR\n");
         agregar_a_ready_segun_alg(hilo_en_ejecucion);
         sem_post(&binario_corto_plazo);
-    }
+    }*/
+    eliminar_paquete(paquete_a_desalojar);
 }
 
 double quantumf()
@@ -332,17 +334,30 @@ double quantumf()
 void *desalojar_por_RR(tcb *hilo)
 {
     usleep(quantumf() * 1000);
-    printf("Buen dia grupo :/\n");
-    pthread_mutex_lock(&m_syscall_solicitada);
+   
+    //pthread_mutex_lock(&m_syscall_solicitada);
+
     if (hilo_en_ejecucion->tid == hilo->tid)
     {
         pthread_mutex_unlock(&m_syscall_solicitada);
-        printf("SOY UNA INTERRUPCIOOOOON\n");
+        
         desalojar_hilo(RR);
-        log_info(logger_kernel, "## (PID <%d>:TID <%d>) - Desalojado por fin de Quantum”", hilo->pcb_padre_tcb->pid, hilo->tid);
+        printf("Desalojado\n");
+        int confirmacion;
+
+       /*recv(conexion_dispatch, &confirmacion, sizeof(int), MSG_WAITALL);
+        if (confirmacion == 1)
+        {
+            printf("Entro en syscall RR\n");
+            log_info(logger_kernel, "## (PID <%d>:TID <%d>) - Desalojado por fin de Quantum”", 
+            hilo->pcb_padre_tcb->pid, hilo->tid);
+            /*sem_post(&binario_corto_plazo);
+            agregar_a_ready_multinivel(hilo);*/
+        /*}*/
+
         // return;
     }
-    pthread_mutex_unlock(&m_syscall_solicitada);
+    //pthread_mutex_unlock(&m_syscall_solicitada);
 }
 
 void agregar_a_ready_segun_alg(tcb *hilo)
@@ -380,7 +395,7 @@ void desempaquetar_parametros_syscall_de_cpu(tcb *hilo, int *motivo, instruccion
 
     memcpy(motivo, buffer + desplazamiento, sizeof(int));
     desplazamiento += sizeof(int);
-    // printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
+    printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
     memcpy(&(instrucc->cant_parametros), buffer + desplazamiento, sizeof(int));
     desplazamiento += sizeof(int);
 
@@ -472,6 +487,7 @@ void finalizar_tcb(tcb *hilo_a_finalizar)
     list_add(lista_finalizados, hilo_a_finalizar);
     pthread_mutex_unlock(&m_lista_finalizados);
 
+    avisar_memoria_liberar_tcb(hilo_a_finalizar);
     sem_post(&hilos_en_exit);
     log_info(logger_kernel, "## (PID <%d>:TID <%d>) Finaliza el hilo", hilo_a_finalizar->pcb_padre_tcb->pid, hilo_a_finalizar->tid);
 }
@@ -487,7 +503,6 @@ void *hilo_exit()
         pthread_mutex_unlock(&m_lista_finalizados);
 
         liberar_tcb(hilo);
-        avisar_memoria_liberar_tcb(hilo);
 
         // sem_post(&binario_corto_plazo);
         free(hilo);
