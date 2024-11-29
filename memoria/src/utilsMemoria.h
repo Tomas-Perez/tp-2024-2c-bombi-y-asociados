@@ -37,6 +37,7 @@ void ordenar_lista_original(t_list *lista);
 
 
 extern pthread_mutex_t mutex_instrucciones;
+extern pthread_mutex_t m_lista_particiones;
 extern t_list *lista_particiones;
 // extern t_list *particiones_dinamicas;
 extern uint32_t tamanio_memoria;

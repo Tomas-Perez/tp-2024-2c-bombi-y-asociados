@@ -375,7 +375,7 @@ void liberar_espacio_memoria(t_proceso *proceso)
 
 void verificar_particiones_vecinas(t_list *lista)
 {
-	// ordenar_lista_original(lista);
+	ordenar_lista_original(lista);
 	for (int i = list_size(lista) - 1; i >= 0; i--)
 	{
 		t_particiones *particion = list_get(lista, i);
@@ -386,7 +386,9 @@ void verificar_particiones_vecinas(t_list *lista)
 			if (particion->ocupado == 0 && particion_siguiente->ocupado == 0)
 			{
 				particion->limite += particion_siguiente->limite;
+				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_siguiente);
+				pthread_mutex_unlock(&m_lista_particiones);
 			}
 		}
 		else if (i == list_size(lista) - 1 && list_size(lista) > 1)
@@ -397,7 +399,9 @@ void verificar_particiones_vecinas(t_list *lista)
 			{
 				particion->base = particion_anterior->base;
 				particion->limite += particion_anterior->limite;
+				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_anterior);
+				pthread_mutex_unlock(&m_lista_particiones);
 			}
 		}
 		else if (list_size(lista) > 2)
@@ -410,24 +414,31 @@ void verificar_particiones_vecinas(t_list *lista)
 			{
 				particion->base = particion_anterior->base;
 				particion->limite += particion_anterior->limite + particion_siguiente->limite;
+				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_siguiente);
+				pthread_mutex_unlock(&m_lista_particiones);
+				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_anterior);
+				pthread_mutex_unlock(&m_lista_particiones);
 			}
 			else if (particion->ocupado == 0 && particion_siguiente->ocupado == 0)
 			{
 				particion->limite += particion_siguiente->limite;
+				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_siguiente);
+				pthread_mutex_unlock(&m_lista_particiones);
 			}
 			else if (particion->ocupado == 0 && particion_anterior->ocupado == 0)
 			{
 				particion->base = particion_anterior->base;
 				particion->limite += particion_anterior->limite;
+				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_anterior);
+				pthread_mutex_unlock(&m_lista_particiones);
 			}
 		}
 	}
 }
-
 t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite)
 {
 

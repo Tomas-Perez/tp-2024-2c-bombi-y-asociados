@@ -11,6 +11,7 @@ pthread_mutex_t mutex_tids;
 pthread_mutex_t m_instruccion;
 pthread_mutex_t m_proc_mem;
 pthread_mutex_t m_pids_proc_padre;
+pthread_mutex_t m_lista_particiones;
 
 void inicializar_estructuras()
 {
@@ -22,6 +23,7 @@ void inicializar_estructuras()
 	pthread_mutex_init(&m_instruccion, NULL);
 	pthread_mutex_init(&m_proc_mem, NULL);
 	pthread_mutex_init(&m_pids_proc_padre, NULL);
+	pthread_mutex_init(&m_lista_particiones, NULL);
 }
 
 t_proceso *agregar_proceso_instrucciones(FILE *f, int pid, t_particiones *particion_a_asignar) // habria que mandar por parametro el archivo que nos mandan desde kernel
@@ -108,10 +110,12 @@ void eliminar_proceso(int pid)
 	t_proceso *proceso_a_eliminar = buscar_proceso(procesos_memoria, pid);
 	log_info(logger_memoria, "Proceso <Destruido> -  PID: <%i> - Tamaño: <%i>", pid, proceso_a_eliminar->limite);
 	liberar_espacio_memoria(proceso_a_eliminar);
+	printf("Salio de liberar espacio");
 	pthread_mutex_lock(&m_proc_mem);
 	list_remove_element(procesos_memoria, proceso_a_eliminar);
 	pthread_mutex_unlock(&m_proc_mem);
 	liberar_proceso(proceso_a_eliminar);
+	printf("Salio de liberar proceso");
 }
 
 void liberar_proceso(t_proceso *proceso)
