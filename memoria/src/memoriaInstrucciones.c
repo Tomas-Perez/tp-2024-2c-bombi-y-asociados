@@ -126,8 +126,10 @@ void liberar_proceso(t_proceso *proceso)
 		free(list_get(proceso->tids, i));
 		pthread_mutex_unlock(&mutex_tids);
 	}
-	//free(proceso);
+	list_destroy(proceso->tids);
+	free(proceso);
 }
+
 
 void eliminar_hilo(int pid, int tid)
 {

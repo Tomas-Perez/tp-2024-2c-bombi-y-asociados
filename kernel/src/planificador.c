@@ -129,8 +129,8 @@ void planificador_corto_plazo()
 			printf("despues de la syscall \n");
 
 			pthread_detach(tround_robin);
+			pthread_cancel(tround_robin);
 			}
-			//pthread_cancel(tround_robin);
 		}
 		} else {
 			pthread_mutex_unlock(&m_lista_multinivel);
