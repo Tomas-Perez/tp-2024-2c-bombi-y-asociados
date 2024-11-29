@@ -375,7 +375,7 @@ void liberar_espacio_memoria(t_proceso *proceso)
 
 void verificar_particiones_vecinas(t_list *lista)
 {
-	ordenar_lista_original(lista);
+	// ordenar_lista_original(lista);
 	for (int i = list_size(lista) - 1; i >= 0; i--)
 	{
 		t_particiones *particion = list_get(lista, i);

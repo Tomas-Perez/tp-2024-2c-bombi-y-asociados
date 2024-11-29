@@ -1,7 +1,7 @@
 #include "memoriaInstrucciones.h"
 
 t_list *procesos_memoria;
-//t_list *particiones_fijas;
+// t_list *particiones_fijas;
 t_list *lista_particiones;
 
 pthread_mutex_t mutex_listas;
@@ -29,18 +29,18 @@ void inicializar_estructuras()
 t_proceso *agregar_proceso_instrucciones(FILE *f, int pid, t_particiones *particion_a_asignar) // habria que mandar por parametro el archivo que nos mandan desde kernel
 {
 	t_proceso *proceso = malloc(sizeof(t_proceso)); // reservamos espacio en memoria para el proceso
-	
+
 	proceso->pid = pid;
 	proceso->tids = list_create();
 	proceso->base = particion_a_asignar->base;
 	proceso->limite = particion_a_asignar->limite;
 
 	t_hilo *hilo_main = malloc(sizeof(t_hilo));
-	inicializar_hilo(proceso, 0, hilo_main, f); 
+	inicializar_hilo(proceso, 0, hilo_main, f);
 	pthread_mutex_lock(&mutex_tids);
-	list_add(proceso->tids, hilo_main);			// Agrego hilo main a lista de hilos dentro de procesos
+	list_add(proceso->tids, hilo_main); // Agrego hilo main a lista de hilos dentro de procesos
 	pthread_mutex_unlock(&mutex_tids);
-	
+
 	pthread_mutex_lock(&mutex_listas);
 	list_add(procesos_memoria, proceso); // Agrega proceso a lista de procesos
 	pthread_mutex_unlock(&mutex_listas);
@@ -80,7 +80,7 @@ t_proceso *buscar_proceso(t_list *lista, int pid_buscado)
 		}
 	}
 	printf("Proceso no encontrado\n");
-	// list_destroy(lista);
+	list_destroy(lista);
 	return NULL;
 }
 
@@ -130,7 +130,6 @@ void liberar_proceso(t_proceso *proceso)
 	free(proceso);
 }
 
-
 void eliminar_hilo(int pid, int tid)
 {
 	t_proceso *proceso_padre = buscar_proceso(procesos_memoria, pid);
@@ -138,9 +137,9 @@ void eliminar_hilo(int pid, int tid)
 	liberar_hilo(hilo_a_eliminar);
 }
 
-
 void liberar_hilo(t_hilo *hilo)
-{	pthread_mutex_lock(&mutex_instrucciones);
+{
+	pthread_mutex_lock(&mutex_instrucciones);
 	for (int i = 0; i < list_size(hilo->instrucciones); i++)
 	{
 		free(list_get(hilo->instrucciones, i));

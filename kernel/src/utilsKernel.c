@@ -115,16 +115,32 @@ void inicializar_estructuras_kernel()
 
 void inicializar_hilos_planificacion()
 {
-    pthread_t hilo_plani_corto, hilo_exitt;
+    /*pthread_t hilo_plani_corto, hilo_exitt;
 
     pthread_create(&hilo_plani_corto, NULL, (void *)planificador_corto_plazo, NULL);
     pthread_create(&hilo_exitt, NULL, (void *)hilo_exit, NULL);
 
-    /*pthread_create(&hilo_plani_largo,NULL,(void*) planificador_largo_plazo,NULL);
+    /pthread_create(&hilo_plani_largo,NULL,(void) planificador_largo_plazo,NULL);
+
+    pthread_detach(hilo_plani_largo);
+    pthread_join(hilo_exitt, NULL);
+    pthread_join(hilo_plani_corto, NULL);*/
+
+    pthread_t hilo_plani_corto, hilo_exitt;
+
+    pthread_create(&hilo_plani_corto, NULL, (void *)planificador_corto_plazo, NULL);
+    pthread_create(&hilo_exitt, NULL, (void *)hilo_exit, NULL);
+    
+    pthread_join(hilo_plani_corto, NULL);
+    pthread_join(hilo_exitt, NULL);
+
+    /*pthread_create(&hilo_plani_largo,NULL,(void) planificador_largo_plazo,NULL);
 
     pthread_detach(hilo_plani_largo);*/
-    pthread_join(hilo_exitt, NULL);
-    pthread_join(hilo_plani_corto, NULL);
+    
+
+    //pthread_t hilo_exitt;
+
 }
 // --------------------------- Pedidos memoria ---------------------------
 int pedir_memoria(int socket)
@@ -465,10 +481,10 @@ void iniciar_hilo(tcb *hilo, int conexion_memoria, char *path)
 // --------------------- Finalizar ---------------------
 void finalizar_proceso(pcb *proc)
 {
-    if (!list_is_empty(proc->lista_tcb)) // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
+    /*if (!list_is_empty(proc->lista_tcb)) // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
     {
         finalizar_hilos_proceso(proc);
-    }
+    }*/
     avisar_memoria_liberar_pcb(proc);
     log_info(logger_kernel, "## Finaliza el proceso <%d>", proc->pid);
 
@@ -500,6 +516,10 @@ void finalizar_tcb(tcb *hilo_a_finalizar)
     avisar_memoria_liberar_tcb(hilo_a_finalizar);
     sem_post(&hilos_en_exit);
     log_info(logger_kernel, "## (PID <%d>:TID <%d>) Finaliza el hilo", hilo_a_finalizar->pcb_padre_tcb->pid, hilo_a_finalizar->tid);
+    
+    /*pthread_t hilo_exitt;
+    pthread_create(&hilo_exitt, NULL, (void *)hilo_exit, NULL);
+    pthread_join(hilo_exitt, NULL);*/
 }
 
 void *hilo_exit()
