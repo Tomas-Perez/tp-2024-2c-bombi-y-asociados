@@ -804,6 +804,7 @@ mutex_k *crear_mutex(char *nombre)
     mutex_k *mtx = (mutex_k *)malloc(sizeof(mutex_k));
     mtx->nombre = nombre;
     mtx->disponibilidad = true;
+    mtx->bloqueados_por_mutex = list_create();
 
     return mtx;
 }
