@@ -96,14 +96,14 @@ void inicializar_estructuras_kernel()
     pthread_mutex_init(&m_lista_procesos_new, NULL);
     pthread_mutex_init(&m_lista_multinivel, NULL);
     pthread_mutex_init(&m_lista_finalizados, NULL);
-    pthread_mutex_init(&m_lista_prioridad, NULL);
+   // pthread_mutex_init(&m_lista_prioridad, NULL);
     pthread_mutex_init(&m_lista_io, NULL);
     pthread_mutex_init(&m_bloqueados_por_dump, NULL);
     // semaforo
     sem_init(&finalizo_un_proc, 0, 0);
     sem_init(&hilos_en_exit, 0, 0);
     sem_init(&hilos_en_ready, 0, 0);
-    sem_init(&binario_corto_plazo, 0, 1);
+    sem_init(&binario_corto_plazo, 0, 0);
     // cola de procesos
     lista_de_ready = list_create();
     lista_procesos_new = list_create();
@@ -244,22 +244,23 @@ tcb *crear_tcb(pcb *proc_padre, int prioridad)
     return nuevo_tcb;
 }
 
-void crear_cola_nivel(int prioridad, tcb *hilo, nivel_prioridad *nuevo_nivel)
+void crear_cola_nivel(int prioridad, tcb *hilo_c)
 {
-
-    nuevo_nivel->prioridad = prioridad;
-    // printf("p %d\n", nuevo_nivel->prioridad);
+    printf("Prioridad en crear nivel del hilo %d e hilo->prioridad %d\n ", prioridad, hilo_c->prioridad);
+    nivel_prioridad *nuevo_nivel = (nivel_prioridad*) malloc(sizeof(nivel_prioridad));
+    nuevo_nivel->prioridad = hilo_c->prioridad;
     nuevo_nivel->hilos_asociados = list_create();
-    pthread_mutex_init(&nuevo_nivel->m_lista_prioridad, NULL);
+    pthread_mutex_init(&(nuevo_nivel->m_lista_prioridad), NULL);
 
     pthread_mutex_lock(&(nuevo_nivel->m_lista_prioridad));
-    list_add((nuevo_nivel->hilos_asociados), hilo);
+    list_add((nuevo_nivel->hilos_asociados), hilo_c);
+    printf("Tamanio lista de prioridad %d es %d\n", prioridad, list_size(nuevo_nivel->hilos_asociados));
     pthread_mutex_unlock(&(nuevo_nivel->m_lista_prioridad));
 
     pthread_mutex_lock(&m_lista_multinivel);
     list_add(lista_multinivel, nuevo_nivel);
     pthread_mutex_unlock(&m_lista_multinivel);
-    // printf("Se agrega un nivel de prioridad a la lista multinivel %d\n", nuevo_nivel->prioridad);
+    printf("Se agrega un nivel de prioridad a la lista multinivel %d\n", nuevo_nivel->prioridad);
     //  VER: nos habian dicho q usemos list_add_sorted pero como
     //  cuando lo pasamos a running encontramos el mayor nivel de prioridad
     //  creo q no hace falta
@@ -335,29 +336,23 @@ void *desalojar_por_RR(tcb *hilo)
 {
     usleep(quantumf() * 1000);
    
-    //pthread_mutex_lock(&m_syscall_solicitada);
-
-    if (hilo_en_ejecucion->tid == hilo->tid)
+    pthread_mutex_lock(&m_hilo_en_ejecucion);
+    if(hilo_en_ejecucion != NULL)
     {
-        pthread_mutex_unlock(&m_syscall_solicitada);
-        
-        desalojar_hilo(RR);
-        printf("Desalojado\n");
-        int confirmacion;
-
-       /*recv(conexion_dispatch, &confirmacion, sizeof(int), MSG_WAITALL);
-        if (confirmacion == 1)
+        if (hilo_en_ejecucion->tid == hilo->tid)
         {
-            printf("Entro en syscall RR\n");
-            log_info(logger_kernel, "## (PID <%d>:TID <%d>) - Desalojado por fin de Quantum”", 
-            hilo->pcb_padre_tcb->pid, hilo->tid);
-            /*sem_post(&binario_corto_plazo);
-            agregar_a_ready_multinivel(hilo);*/
-        /*}*/
-
-        // return;
+            pthread_mutex_unlock(&m_hilo_en_ejecucion);
+        // pthread_mutex_unlock(&m_syscall_solicitada);
+            
+            desalojar_hilo(RR);
+            printf("Desalojado\n");
+        // int confirmacion;
+        
+        }
+        pthread_mutex_unlock(&m_hilo_en_ejecucion);
     }
-    //pthread_mutex_unlock(&m_syscall_solicitada);
+        pthread_mutex_unlock(&m_hilo_en_ejecucion);
+
 }
 
 void agregar_a_ready_segun_alg(tcb *hilo)
@@ -611,6 +606,7 @@ tcb *buscar_hilo_en_multinivel(int prioridad, int tid)
                     list_remove(cola_aux->hilos_asociados, j);
                     if (list_size(cola_aux->hilos_asociados) == 0) // VER
                     {
+                        list_remove_element(lista_multinivel, cola_aux);
                         free(cola_aux);
                     }
                     pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
@@ -771,9 +767,12 @@ nivel_prioridad *encontrar_nivel_mas_prioritario(t_list *multinivel)
 
         return nivel_a->prioridad <= nivel_b->prioridad ? nivel_a : nivel_b;
     }
-
-    mayor_prioridad = list_get_maximum(multinivel, _max_prioridad);
-    return mayor_prioridad;
+    if(list_size(multinivel) > 0)
+    {
+        mayor_prioridad = list_get_maximum(multinivel, _max_prioridad);
+        return mayor_prioridad;
+    }
+    return NULL;
 }
 
 // --------------------- Dump ---------------------

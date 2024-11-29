@@ -230,5 +230,6 @@ void agregar_a_paquete(t_paquete *paquete, void *valor, int tamanio);
 void agregar_a_paquete_solo(t_paquete *paquete, void *valor, int bytes);
 void enviar_paquete(t_paquete *paquete, int socket_cliente);
 t_buffer *crear_buffer();
+const char* op_code_to_string(op_code code) ;
 
 #endif

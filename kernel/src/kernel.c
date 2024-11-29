@@ -45,6 +45,7 @@ int main(int argc, char* argv[]) {
     int tam_proc = atoi(argv[2]);
     printf("tam proc %d archivo: %s\n", tam_proc, argv[1]);
 
+    sem_post(&binario_corto_plazo);
     pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc, socket);
     inicializar_hilos_planificacion();
     /*pthread_mutex_lock(&m_lista_procesos_new);
@@ -127,4 +128,5 @@ int conectarCpuInterrupt()
     handshake_cliente(conexion_interrupt, logger_kernel);
 
 }
+
 

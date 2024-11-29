@@ -478,3 +478,42 @@ t_list* recibir_paquete(int socket_cliente)
 
 	return valores;
 }
+//---------------------------------------------------------------------------------------------
+const char* op_code_to_string(op_code code) {
+    switch (code) {
+        case MENSAJE: return "MENSAJE";
+        case PAQUETE: return "PAQUETE";
+        case SET: return "SET";
+        case READ_MEM: return "READ_MEM";
+        case WRITE_MEM: return "WRITE_MEM";
+        case SUM: return "SUM";
+        case SUB: return "SUB";
+        case JNZ: return "JNZ";
+        case LOG: return "LOG";
+        case DUMP_MEMORY: return "DUMP_MEMORY";
+        case IO: return "IO";
+        case PROCESS_CREATE: return "PROCESS_CREATE";
+        case THREAD_CREATE: return "THREAD_CREATE";
+        case THREAD_JOIN: return "THREAD_JOIN";
+        case THREAD_CANCEL: return "THREAD_CANCEL";
+        case MUTEX_CREATE: return "MUTEX_CREATE";
+        case MUTEX_LOCK: return "MUTEX_LOCK";
+        case MUTEX_UNLOCK: return "MUTEX_UNLOCK";
+        case THREAD_EXIT: return "THREAD_EXIT";
+        case PROCESS_EXIT: return "PROCESS_EXIT";
+        case NO_RECONOCIDO: return "NO_RECONOCIDO";
+        case FETCH_INSTRUCCION: return "FETCH_INSTRUCCION";
+        case SYSCALL: return "SYSCALL";
+        case SUCCESS: return "SUCCESS";
+        case INICIAR_HILO: return "INICIAR_HILO";
+        case DESALOJAR_PROCESO: return "DESALOJAR_PROCESO";
+        case OP_ENVIO_PCB: return "OP_ENVIO_PCB";
+        case PEDIR_CONTEXTO: return "PEDIR_CONTEXTO";
+        case ACTUALIZAR_CONTEXTO: return "ACTUALIZAR_CONTEXTO";
+        case OP_ENVIO_TCB: return "OP_ENVIO_TCB";
+        case RR: return "RR";
+        case SEGMENTATION_FAULT: return "SEGMENTATION_FAULT";
+        case VALOR_REGISTRO: return "VALOR_REGISTRO";
+        default: return "UNKNOWN";
+    }
+}
