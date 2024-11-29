@@ -275,7 +275,9 @@ void atender_syscall()
 			
 			pthread_mutex_unlock(&m_hilo_en_ejecucion);
 			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
-			hilo_en_ejecucion=NULL;		
+			pthread_mutex_lock(&m_hilo_en_ejecucion);
+			hilo_en_ejecucion=NULL;	
+			pthread_mutex_unlock(&m_hilo_en_ejecucion);	
 			
 		}  pthread_mutex_unlock(&m_hilo_en_ejecucion);
 		break;
@@ -468,7 +470,7 @@ void atender_syscall()
 		hilo = list_remove(lista_io, 0);
 		pasar_a_running_tcb_con_syscall(hilo);
 		// agregar_a_ready_segun_alg(hilo);
-		free(hilo);
+		//free(hilo);
 		break;
 	}
 

@@ -25,8 +25,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }*/
    
-    argv[1] = "MEM_FIJA_BASE";
-    argv[2] = "12";
+    argv[1] = "PRUEBA_FS";
+    argv[2] = "0";
 
     pthread_t t1, t2;
     
