@@ -20,7 +20,7 @@ void check_interrupt(instruccion *inst)
     if (interrupcion && ejecutando_un_proceso)
     {
         printf("entra en check interrupt\n");
-        //devolver_contexto_de_ejecucion(pid, tid);
+        devolver_contexto_de_ejecucion(pid, tid);
 
         ejecutando_un_proceso = false;
         
@@ -40,7 +40,7 @@ void check_interrupt(instruccion *inst)
             // printf("parametro %d: %s\n",i,aux);
             //agregar_a_paquete(paquete_instrucciones, aux, strlen(aux) + 1);
         }*/
-        devolver_contexto_de_ejecucion(pid, tid);
+        //devolver_contexto_de_ejecucion(pid, tid);
         enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
         eliminar_paquete(paquete_instrucciones);
      } 

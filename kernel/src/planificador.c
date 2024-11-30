@@ -16,6 +16,7 @@ pthread_mutex_t m_lista_finalizados;
 pthread_mutex_t m_syscall_solicitada;
 pthread_mutex_t m_lista_io;
 pthread_mutex_t m_bloqueados_por_dump;
+//pthread_mutex_t m_atender_syscall;
 
 t_list *bloqueados_por_dump;
 t_list *lista_de_ready;
@@ -28,6 +29,7 @@ sem_t finalizo_un_proc;
 sem_t hilos_en_exit;
 sem_t hilos_en_ready;
 sem_t binario_corto_plazo;
+//sem_t binario_atender_syscall;
 
 void agregar_a_ready(tcb *hilo)
 {
@@ -89,13 +91,16 @@ void planificador_corto_plazo()
 			}
 			pthread_mutex_unlock(&m_hilo_a_ejecutar);
 			pasar_a_running_tcb_con_syscall(hilo_a_ejecutar);
-			//atender_syscall();
+			atender_syscall();
+			//sem_post(&binario_atender_syscall);
+			
 		}
 		if (strcmp(algoritmo_de_planificacion, "PRIORIDADES") == 0)
 		{
 			verificar_lista_ready(lista_de_ready);
 			pasar_a_running_tcb_prioridades();
-			//atender_syscall();
+			atender_syscall();
+			//sem_post(&binario_atender_syscall);
 		}
 		if (strcmp(algoritmo_de_planificacion, "CMN") == 0)
 		{
@@ -125,10 +130,11 @@ void planificador_corto_plazo()
 			pasar_a_running_tcb(hilo_a_ejecutar);
 			pthread_create(&tround_robin, NULL, (void *)desalojar_por_RR, (void *)hilo_a_ejecutar);
 			printf("antes de la syscall \n");
-			atender_syscall();
-			printf("despues de la syscall \n");
-
 			pthread_detach(tround_robin);
+			atender_syscall();
+			//sem_post(&binario_atender_syscall);
+			//printf("despues de la syscall \n");
+
 			pthread_cancel(tround_robin);
 			}
 		}
@@ -147,7 +153,8 @@ void pasar_a_running_tcb(tcb *tcb_listo)
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
 	log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Anterior: READY - Estado Actual: EXEC",
 			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
-	//atender_syscall();
+	atender_syscall();
+	//sem_post(&binario_atender_syscall);
 }
 
 void pasar_a_running_tcb_con_syscall(tcb *tcb_listo)
@@ -159,6 +166,7 @@ void pasar_a_running_tcb_con_syscall(tcb *tcb_listo)
 	log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Actual: EXEC",
 			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 	atender_syscall();
+	//sem_post(&binario_atender_syscall);
 }
 
 void pasar_a_running_tcb_prioridades()
@@ -172,6 +180,7 @@ void pasar_a_running_tcb_prioridades()
 	log_info(logger_kernel, "PID <%d> TID: <%d>  - Estado Anterior: READY - Estado Actual: EXEC",
 			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 	atender_syscall();
+	//sem_post(&binario_atender_syscall);
 }
 
 tcb *hilo_prioritario_en_ready()
@@ -219,6 +228,7 @@ tcb *elegir_segun_prioridades()
 
 void atender_syscall()
 {
+	//sem_wait(&binario_atender_syscall);
 	int motivo;
 	int socket;
 	int prioridad;

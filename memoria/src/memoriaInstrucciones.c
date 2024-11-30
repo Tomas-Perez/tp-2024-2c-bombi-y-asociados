@@ -59,7 +59,7 @@ char *buscar_instruccion(int pid, int tid, uint32_t program_counter)
 			pthread_mutex_lock(&mutex_instrucciones);
 			char *instruccion = list_get(hilo->instrucciones, program_counter); // devuelve instruccion de la lista segun PC
 			pthread_mutex_unlock(&mutex_instrucciones);
-			printf(" %s\n", instruccion);
+			//printf(" %s\n", instruccion);
 			return instruccion;
 		}
 		printf("NO ENCONTRE EL HILO");

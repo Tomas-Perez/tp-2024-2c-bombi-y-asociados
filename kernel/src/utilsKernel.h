@@ -39,6 +39,7 @@ void agregar_a_ready_segun_alg(tcb* hilo);
 mutex_k* crear_mutex(char* nombre);
 void crear_cola_nivel(int prioridad,tcb* hilo);
 void* hilo_exit();
+void atender_syscall();
 void avisar_memoria_liberar_pcb(pcb* proc);
 void avisar_memoria_liberar_tcb(tcb* hilo);
 void liberar_tcb(tcb* hilo);
@@ -70,6 +71,7 @@ extern sem_t finalizo_un_proc;
 extern sem_t hilos_en_exit;
 extern sem_t hilos_en_ready;
 extern sem_t binario_corto_plazo;
+//extern sem_t binario_atender_syscall;
 
 extern t_list* lista_de_ready;
 extern t_list* lista_procesos_new;

@@ -128,7 +128,8 @@ void atender_petiticiones(int *socket)
             int pid=buffer_read_uint32(buffer);
             int tid=buffer_read_uint32(buffer);
             int tam=buffer_read_uint32(buffer);
-            void* data=buffer_read_string(buffer);
+            void* data=malloc(tam);
+            recv(socket_cliente,data,tam,MSG_WAITALL);
 
             time_t timestamp= time(NULL);
             struct tm *tm = localtime(&timestamp);

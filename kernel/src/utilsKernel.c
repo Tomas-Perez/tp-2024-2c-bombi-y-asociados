@@ -53,11 +53,11 @@ char *generar_path_archivo(char *nombre_archivo)
 
 void levantar_config_kernel()
 {
-    config_kernel = iniciar_config("configs/kernelFS.config");
+   // config_kernel = iniciar_config("configs/kernelFS.config");
     //  config_kernel = iniciar_config("configs/kernelRC.config");
      // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
    // config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
-    // config_kernel = iniciar_config("configs/kernelPlani.config");
+     config_kernel = iniciar_config("configs/kernelPlani.config");
 
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
@@ -104,6 +104,7 @@ void inicializar_estructuras_kernel()
     sem_init(&hilos_en_exit, 0, 0);
     sem_init(&hilos_en_ready, 0, 0);
     sem_init(&binario_corto_plazo, 0, 0);
+   // sem_init(&binario_atender_syscall, 0, 0);
     // cola de procesos
     lista_de_ready = list_create();
     lista_procesos_new = list_create();
@@ -130,9 +131,11 @@ void inicializar_hilos_planificacion()
 
     pthread_create(&hilo_plani_corto, NULL, (void *)planificador_corto_plazo, NULL);
     pthread_create(&hilo_exitt, NULL, (void *)hilo_exit, NULL);
+   // pthread_create(&hilo_syscall, NULL, (void*) atender_syscall, NULL);
     
     pthread_join(hilo_plani_corto, NULL);
     pthread_join(hilo_exitt, NULL);
+   // pthread_detach(hilo_syscall);
 
     /*pthread_create(&hilo_plani_largo,NULL,(void) planificador_largo_plazo,NULL);
 
@@ -374,8 +377,7 @@ void *desalojar_por_RR(tcb *hilo)
         if (hilo_en_ejecucion->tid == hilo->tid)
         {
             pthread_mutex_unlock(&m_hilo_en_ejecucion);
-            // pthread_mutex_unlock(&m_syscall_solicitada);
-
+ 
             desalojar_hilo(RR);
             printf("Desalojado\n");
             // int confirmacion;
