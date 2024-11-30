@@ -19,23 +19,7 @@ int main(int argc, char *argv[])
     inicializarBitmap();
     archivocheq();
     bitmap_check();
-    
 
-    //int pid=1;7
-    /*
-    int tid=2;
-    time_t timestamp= time(NULL);
-    struct tm *tm = localtime(&timestamp);
-    char* tiempo=malloc(sizeof(char)*50);
-    strftime(tiempo,24,"%I:%M:%S%p",tm);
-    char* nombr=string_from_format("%d-%d-%s",pid,tid,tiempo);
-
-    int tamani=10;
-    //void* data="I'm so glad you made time to see meHow's life? Tell me how's your familyI haven't seen them in a whileYou've been good, busier than everWe small talk, work and the weatherYour guard is up and I know whyBecause the last time you saw meIs still burning in the back of your mindYou gave me roses and I left them there to die";
-    void* data="123456789";
-    socket_cliente=1;
-    crear_archivo(nombr,tamani,socket_cliente,data); //CODIGO DE PRUEBA PARA AL RECIBIR DATOS
-*/
     // HILOS PARA CONEXIONES
     pthread_t t1;
     pthread_create(&t1, NULL, (void *)atenderMemoria, NULL);
@@ -53,7 +37,6 @@ void atenderMemoria()
 
 void aceptar_peticiones(int socket_servidor)
 {
-    //char* valrec=NULL;
     void* confirmemo;
     sem_init(&semaforo, 0, 0);
     while (1)
@@ -67,7 +50,6 @@ void aceptar_peticiones(int socket_servidor)
         pthread_join(thread, &confirmemo);
         send(socket_cliente,(int*)confirmemo,sizeof(int),0);
         free((int*)confirmemo);
-        //enviar_mensaje(valrec,socket_cliente);
         close(socket_cliente);
         // puts("siguiente hilo");
     }
@@ -138,9 +120,12 @@ void atender_petiticiones(int *socket)
             char* nombr=string_from_format("%d-%d-%s",pid,tid,tiempo);
             if(crear_archivo(nombr,tam,socket_cliente,data)==-1){
                 *exit_status=0;
+                free(data);
+                sem_post(&semaforo);
                 pthread_exit(exit_status);
             }else{
                 *exit_status=1;
+                free(data);
                 sem_post(&semaforo);
                 pthread_exit(exit_status);
             }
@@ -158,43 +143,6 @@ void atender_petiticiones(int *socket)
 }
 
 void archivocheq(){
-//    sem_wait(&sem2);
-//     t_config* aux;
-//     char* directorio=string_from_format("%s/files",mount_dir);
-//    DIR *d;
-//  struct dirent *dir;
-//  d = opendir(directorio);
-//  if (d) {
-//    while ((dir = readdir(d)) != NULL) {
-//      //printf("%s\n", dir->d_name);
-//      char* auxiliar=malloc(sizeof(char)*20);
-//      strcpy(auxiliar,dir->d_name);
-//      if (strstr(auxiliar, ".dmp") != NULL) {
-//        aux=iniciar_config(string_from_format("%s/%s",directorio,auxiliar));
-//        t_archivo *nuevo=malloc(sizeof(t_archivo));
-//        char* archivo=config_get_string_value(aux, "NOMBRE");
-//        nuevo->nombre=malloc(strlen(archivo)+1);
-//        strcpy(nuevo->nombre,archivo);
-//        nuevo->index_block=config_get_int_value(aux,"INDEX_BLOCK");
-//        nuevo->block_size=config_get_int_value(aux,"SIZE");
-//        nuevo->cant_bloque=redondeo_bloques(nuevo->block_size);
-//        list_add(list_archivos,nuevo);
-//        for (int i=nuevo->index_block;i<nuevo->index_block+nuevo->cant_bloque;i++){     //ESTA FUNCION SOLO SIRVE PARA BLOQUES CONTINUOS, HAY QUE CAMBIARLO PARA QUE FUNCIONE EN INDEXADO
-//        bitarray_set_bit(bitarray_bitmap,i);
-//        }
-//        int tamanioBitmap = block_count / 8;
-//        if (msync(ptr_bitarray, tamanioBitmap, MS_SYNC) == -1)
-//        {
-//        log_error(logger_fs, "Error al sincronizar el archivo bitmap.");
-//        }
-//    }
-//    free(auxiliar);
-//    }
-//    }
-//    if (aux->path!=NULL){
-//    config_destroy(aux);
-//    }
-//    closedir(d);
 }
 
 void bitmap_check(){
@@ -228,32 +176,6 @@ void inicializarBloques()
         exit(EXIT_FAILURE);
     }
 
-    //memset(blocmap, 0, tamanio);                                //retorna todo bloques.dat en 0
-    //----------------------------------------------------------CODIGO DE PRUEBA DE ESCRITURA DE BLOQUES
-    //char A='a';                                       
-    //for (int i=(16*3);i<block_size;i++ ){//16 bytes 
-    //    blocmap[i]=A;
-    //}
-    //int bloque_disp=0;
-    //int cant_bits=3;
-    //int j=1;
-    //for(int i=bloque_disp*tamanio_bloq_puntero;i<cant_bits;i++){           
-    //    blocmap[i]=bloque_disp+j;
-    //    j++;
-    //}
-    //blocmap[tamanio_bloq_puntero]=1;
-    //blocmap[tamanio_bloq_puntero+1]=2;
-
-    //int* source=malloc(sizeof(int));
-    //*source=1;
-    //int* source2=malloc(sizeof(int));
-    //*source2=2;
-    //memcpy(blocmap,source,sizeof(int));
-    //memcpy((void*)blocmap+14,source,10);
-    //memcpy(blocmap+1,source2,sizeof(int));
-    //free(source);
-    //free(source2);
-    //----------------------------------------------------------
     sem_post(&sem2);
 }
 
@@ -299,14 +221,12 @@ void inicializarBitmap()
         close(fpbitmap);
         exit(EXIT_FAILURE);
     }
-    tamanio_bloq_puntero=block_size/sizeof(uint32_t);
+    tamanio_bloq_puntero=block_size/sizeof(uint32_t);   //bloques para guardar el contenido del mismo, ya que cada archivo tiene un único bloque de punteros.
     sem_post(&sem2);
 }
 
 int crear_archivo(char* nombre, int size,int socket_cli,void* data){
-    //int index_block;
     int cant_bloques=redondeo_bloques(size);
-    //block_size / sizeof(uint32_t); bloques para guardar el contenido del mismo, ya que cada archivo tiene un único bloque de punteros.
     int bloque_disp=verificar_espacio_disp(bitarray_bitmap,cant_bloques);
     if (bloque_disp==-1){
         //mandar_error(socket_cli);

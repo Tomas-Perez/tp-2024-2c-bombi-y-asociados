@@ -15,6 +15,7 @@ char *algoritmo_de_planificacion;
 double quantum;
 int syscall_solicitada;
 char *log_level;
+int syscall_replanificadora;
 
 //----------------------------------------------------------------
 // --------------------------- indice ---------------------------
@@ -66,6 +67,7 @@ void levantar_config_kernel()
     puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
     algoritmo_de_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
     quantum = config_get_double_value(config_kernel, "QUANTUM");
+    printf("quantum %d  ", quantum );
     log_level = config_get_string_value(config_kernel, "LOG_LEVEL");
 }
 
@@ -85,6 +87,7 @@ void inicializar_registros(tcb *hilo)
 void inicializar_estructuras_kernel()
 {
     int id_counter = 1;
+    syscall_replanificadora = 0;
 
     syscall_solicitada = 0;
     // mutex
@@ -127,14 +130,16 @@ void inicializar_hilos_planificacion()
     pthread_join(hilo_exitt, NULL);
     pthread_join(hilo_plani_corto, NULL);*/
 
+    //pthread_t hilo_plani_corto, hilo_exitt, hilo_syscall;
     pthread_t hilo_plani_corto, hilo_exitt;
+
 
     pthread_create(&hilo_plani_corto, NULL, (void *)planificador_corto_plazo, NULL);
     pthread_create(&hilo_exitt, NULL, (void *)hilo_exit, NULL);
-   // pthread_create(&hilo_syscall, NULL, (void*) atender_syscall, NULL);
+    //pthread_create(&hilo_syscall, NULL, (void*) atender_syscall, NULL);
     
     pthread_join(hilo_plani_corto, NULL);
-    pthread_join(hilo_exitt, NULL);
+    pthread_detach(hilo_exitt);
    // pthread_detach(hilo_syscall);
 
     /*pthread_create(&hilo_plani_largo,NULL,(void) planificador_largo_plazo,NULL);
@@ -364,27 +369,36 @@ void desalojar_hilo(int motivo)
 
 double quantumf()
 {
-    return atoi(config_get_string_value(config_kernel, "QUANTUM"));
+    double cuanto = atoi(config_get_string_value(config_kernel, "QUANTUM"));
+    printf("El quantum es: %f\n", cuanto);
+    return cuanto;
 }
 
 void *desalojar_por_RR(tcb *hilo)
 {
+    int sigue = 1;
+    while(1) {
+    printf("Te dormiste Con tid: %f \n", hilo->tid);
     usleep(quantumf() * 1000);
-
+     printf("Te despertaste Con tid: %f con quantum %d \n", hilo->tid, quantumf());
     pthread_mutex_lock(&m_hilo_en_ejecucion);
     if (hilo_en_ejecucion != NULL)
     {
-        if (hilo_en_ejecucion->tid == hilo->tid)
+        if (hilo_en_ejecucion->tid == hilo->tid && syscall_replanificadora == 0)
         {
             pthread_mutex_unlock(&m_hilo_en_ejecucion);
- 
+            printf("Desalojate\n");
             desalojar_hilo(RR);
             printf("Desalojado\n");
+            sigue = 0;
             // int confirmacion;
+            pthread_exit(NULL);
+            
         }
         pthread_mutex_unlock(&m_hilo_en_ejecucion);
     }
     pthread_mutex_unlock(&m_hilo_en_ejecucion);
+    }
 }
 
 void agregar_a_ready_segun_alg(tcb *hilo)
@@ -880,14 +894,12 @@ void asignar_mutex_al_primer_bloqueado(mutex_k *mutex_solicitado)
 }
 
 // --------------------- funciones auxiliares ---------------------
-void liberar_param_instruccion(instruccion *instrucc)
-{
-    for (int i = 0; i < list_size(instrucc->parametros); i++)
-    {
-        free(list_get(instrucc->parametros, i));
-    }
-    list_destroy(instrucc->parametros);
-    free(instrucc);
+void liberar_param_instruccion(instruccion* instrucc){
+		for(int i = 0; i<list_size(instrucc->parametros); i++){
+			free(list_get(instrucc->parametros,i));
+		}
+		list_destroy(instrucc->parametros);
+		free(instrucc);
 }
 /*
 void sacar_de_lista_pcb(tcb* hilo_a_sacar)

@@ -130,12 +130,12 @@ void planificador_corto_plazo()
 			pasar_a_running_tcb(hilo_a_ejecutar);
 			pthread_create(&tround_robin, NULL, (void *)desalojar_por_RR, (void *)hilo_a_ejecutar);
 			printf("antes de la syscall \n");
-			pthread_detach(tround_robin);
 			atender_syscall();
+			pthread_detach(tround_robin);
 			//sem_post(&binario_atender_syscall);
 			//printf("despues de la syscall \n");
 
-			pthread_cancel(tround_robin);
+			//pthread_cancel(tround_robin);
 			}
 		}
 		} else {
@@ -153,7 +153,7 @@ void pasar_a_running_tcb(tcb *tcb_listo)
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
 	log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Anterior: READY - Estado Actual: EXEC",
 			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
-	atender_syscall();
+	//atender_syscall();
 	//sem_post(&binario_atender_syscall);
 }
 
@@ -228,6 +228,7 @@ tcb *elegir_segun_prioridades()
 
 void atender_syscall()
 {
+
 	//sem_wait(&binario_atender_syscall);
 	int motivo;
 	int socket;
@@ -238,7 +239,7 @@ void atender_syscall()
 	instrucc->parametros = list_create();
 	recibir_syscall_de_cpu(hilo_en_ejecucion, &motivo, instrucc);
 	t_list *lista_mutex_proceso;
-	mutex_k *mutex_solic;
+	//mutex_k *mutex_solic;
 
 	log_info(logger_kernel, "## (PID <%d> TID: <%d> ) - Solicitó syscall: <%s>",
 			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid, op_code_to_string(motivo));
@@ -247,19 +248,16 @@ void atender_syscall()
 	pthread_mutex_unlock(&m_syscall_solicitada);*/
 	switch (motivo)
 	{
-	case RR: 
-		//printf("entro en syscall");
+		case RR: 
+		syscall_replanificadora = 0;
 		sem_post(&binario_corto_plazo);
 		pthread_mutex_lock(&m_hilo_en_ejecucion);
-		if(hilo_en_ejecucion != NULL)
-		{
-			pthread_mutex_unlock(&m_hilo_en_ejecucion);
-       		 agregar_a_ready_multinivel(hilo_en_ejecucion);
-		}
+       	agregar_a_ready_multinivel(hilo_en_ejecucion);
 		pthread_mutex_unlock(&m_hilo_en_ejecucion);
 	break;
 	case PROCESS_CREATE:
-		socket = conectarMemoria();
+		syscall_replanificadora = 0;
+		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
 
 		archivo = list_get(instrucc->parametros, 0);
 		char *tamanio = list_get(instrucc->parametros, 1);
@@ -267,73 +265,70 @@ void atender_syscall()
 		int tam = atoi(tamanio);
 		int priori = atoi(prioridad_PC);
 
+		socket = conectarMemoria();
 		printf("PRUEBA: %s tamanio: %d prioridad %d\n", archivo, tam, priori);
-
-
 		pcb *proceso_nuevo = crear_pcb(priori, archivo, tam, socket);
 
-		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
-
+		liberar_param_instruccion(instrucc);
 		free(archivo);
 		close(socket);
-		break;
-
+	break;
+	case SEGMENTATION_FAULT:
 	case PROCESS_EXIT:
-		 pthread_mutex_lock(&m_hilo_en_ejecucion);
+		syscall_replanificadora = 0;
+		pthread_mutex_lock(&m_hilo_en_ejecucion);
 		if (hilo_en_ejecucion->tid == 0)
 		{
-			
+			syscall_replanificadora = 1;
 			pthread_mutex_unlock(&m_hilo_en_ejecucion);
 			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
-			pthread_mutex_lock(&m_hilo_en_ejecucion);
-			hilo_en_ejecucion=NULL;	
-			pthread_mutex_unlock(&m_hilo_en_ejecucion);	
-			
-		}  pthread_mutex_unlock(&m_hilo_en_ejecucion);
-		break;
+
+		}  
+		pthread_mutex_unlock(&m_hilo_en_ejecucion);
+		//liberar_param_instruccion(instrucc);
+	break;
 
 	case THREAD_CREATE:
+		syscall_replanificadora = 0;
+
 		archivo = list_get(instrucc->parametros, 0);
 		prioridad = atoi(list_get(instrucc->parametros, 1));
 		pthread_mutex_lock(&m_hilo_en_ejecucion);
 		pcb *proceso = hilo_en_ejecucion->pcb_padre_tcb;
-		 pthread_mutex_unlock(&m_hilo_en_ejecucion);
-		tcb *hilo = crear_tcb(proceso, prioridad);
-		socket = conectarMemoria();
+		pthread_mutex_unlock(&m_hilo_en_ejecucion);
 
 		printf("%s priori: %d\n", archivo, prioridad);
+
 	
+		socket = conectarMemoria();
+		tcb *hilo = crear_tcb(proceso, prioridad);
 		iniciar_hilo(hilo, socket, archivo);
+		close(socket);
 
 		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
-		close(socket);
-		free(archivo);
-		break;
+
+		//free(archivo);
+		//liberar_param_instruccion(instrucc);
+	break;
 	case THREAD_JOIN:
+		syscall_replanificadora = 0;
 		char *tid_j = list_get(instrucc->parametros, 0);
 		tid = atoi(tid_j);
 		tcb *tcb_invocado = buscar_tid(hilo_en_ejecucion->pcb_padre_tcb->lista_tcb, tid);
 
 		if (tcb_invocado != NULL)
 		{
-			
-			pthread_mutex_lock(&m_hilo_a_ejecutar);
-
-			//	if(strcmp(algoritmo_de_planificacion,"CMN") != 0) {
+			syscall_replanificadora = 1;
+			pthread_mutex_lock(&m_hilo_a_ejecutar);			
 			buscar_hilos_listas(hilo_en_ejecucion, hilo_en_ejecucion->tid);
-			//}
 
 			log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <PTHREAD_JOIN>",
 					 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 
 			list_add(tcb_invocado->block_join, hilo_en_ejecucion);
 
-			// hilo_en_ejecucion = tcb_invocado;
 			pthread_mutex_unlock(&m_hilo_a_ejecutar);
-			pthread_mutex_lock(&m_hilo_en_ejecucion);
-			hilo_en_ejecucion=NULL;
-			pthread_mutex_unlock(&m_hilo_en_ejecucion);
-			//agregar_a_ready_segun_alg(tcb_invocado);
+			
 			sem_post(&binario_corto_plazo);
 		}
 		else
@@ -341,14 +336,16 @@ void atender_syscall()
 			log_info(logger_kernel, "No se encontró el hilo");
 			pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
 		}
-
-		break;
+		//liberar_param_instruccion(instrucc);
+	break;
 
 	case THREAD_CANCEL:
+		syscall_replanificadora = 0;
 		char *tid_c = list_get(instrucc->parametros, 0);
 		tid = atoi(tid_c);
 		tcb *hilo_a_finalizar;
 		hilo_a_finalizar = buscar_hilos_listas(hilo_en_ejecucion, tid);
+
 		if (hilo_a_finalizar != NULL)
 		{
 			finalizar_tcb(hilo_a_finalizar);
@@ -358,30 +355,40 @@ void atender_syscall()
 			log_info(logger_kernel, "No se encontró el hilo");
 		}
 		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
-		break;
+		//liberar_param_instruccion(instrucc);
+	break;
 	case THREAD_EXIT:
+		syscall_replanificadora = 1;
 		finalizar_tcb(hilo_en_ejecucion);
-		sem_post(&binario_corto_plazo);
-		pthread_mutex_lock(&m_hilo_en_ejecucion);
-		hilo_en_ejecucion=NULL;
-		pthread_mutex_unlock(&m_hilo_en_ejecucion);
-		break;
+		sem_post(&binario_corto_plazo);		
+		//liberar_param_instruccion(instrucc);
+	break;
 	case MUTEX_CREATE:
+		syscall_replanificadora = 0;
+		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
+
 		mutex_k *nuevo_mutex;
 		char *nombre_mutex = list_get(instrucc->parametros, 0);
 		nuevo_mutex = crear_mutex(nombre_mutex);
+
 		pthread_mutex_lock(&m_hilo_en_ejecucion);
 		list_add(hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc, nuevo_mutex);
-		 pthread_mutex_unlock(&m_hilo_en_ejecucion);
-		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
-		break;
+		pthread_mutex_unlock(&m_hilo_en_ejecucion);
+
+		liberar_param_instruccion(instrucc);
+	break;
 	case MUTEX_LOCK:
-		pthread_mutex_lock(&m_hilo_en_ejecucion);
-		lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
-		 pthread_mutex_unlock(&m_hilo_en_ejecucion);
+		syscall_replanificadora = 0;
+
 		char* nombre_mutex_solic;
 		nombre_mutex_solic = list_get(instrucc->parametros, 0);
+
+		pthread_mutex_lock(&m_hilo_en_ejecucion);
+		lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
+		pthread_mutex_unlock(&m_hilo_en_ejecucion);
+		
 		printf("tamanio lista mutex del proc: %d ", list_size(lista_mutex_proceso));
+
 		if(list_size(lista_mutex_proceso) > 0){
 			 mutex_k *aux = existe_mutex_por_nombre(nombre_mutex_solic, lista_mutex_proceso);
 			if ( aux != NULL)
@@ -393,34 +400,40 @@ void atender_syscall()
 				}
 				else
 				{
+					syscall_replanificadora = 1;
 					buscar_hilos_listas(hilo_en_ejecucion, hilo_en_ejecucion->tid);
 					list_add(aux->bloqueados_por_mutex, hilo_en_ejecucion);
+
 					log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <MUTEX>",
 							hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
-					pthread_mutex_lock(&m_hilo_en_ejecucion);
-					hilo_en_ejecucion = NULL;
-					pthread_mutex_unlock(&m_hilo_en_ejecucion);
+					
 					sem_post(&binario_corto_plazo);
 				}
 			}
 			else
 			{
+				syscall_replanificadora = 1;
 				finalizar_tcb(hilo_en_ejecucion);
 				sem_post(&binario_corto_plazo);
 			}
 			}
 			else
 			{
+				syscall_replanificadora = 1;
 				finalizar_tcb(hilo_en_ejecucion);
 				sem_post(&binario_corto_plazo);
 			}
-		break;
+		//liberar_param_instruccion(instrucc);
+	break;
 	case MUTEX_UNLOCK:
+		syscall_replanificadora = 0;
+
 		char* nombre_mutex_solici;
 		nombre_mutex_solici = list_get(instrucc->parametros, 0);
-		//mutex_k *mutex_solic = list_get(instrucc->parametros, 0);
+		
 		lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
-		 mutex_k *aux_m = existe_mutex_por_nombre(nombre_mutex_solici, lista_mutex_proceso);
+		mutex_k *aux_m = existe_mutex_por_nombre(nombre_mutex_solici, lista_mutex_proceso);
+
 		if (aux_m != NULL)
 		{
 			bool esTomado = mutex_por_nombre_tomado_por_hilo(nombre_mutex_solici, hilo_en_ejecucion);
@@ -430,18 +443,22 @@ void atender_syscall()
 			}
 		}
 		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
-		break;
+		//liberar_param_instruccion(instrucc);
+	break;
 	case DUMP_MEMORY:
-		socket = conectarMemoria();
+		syscall_replanificadora = 1;
 
 		tcb *hilo_dump = hilo_en_ejecucion;
 		
 
+		socket = conectarMemoria();
 		int rta = bloquear_por_dump(hilo_dump, socket);
 		close(socket);
+
 		pthread_mutex_lock(&m_bloqueados_por_dump);
 		hilo_dump = list_remove(bloqueados_por_dump, 0);
 		pthread_mutex_unlock(&m_bloqueados_por_dump);
+
 		printf("TID HILO_DUMPO %d \n", hilo_dump->tid);
 		if (rta == 0)
 		{
@@ -456,11 +473,11 @@ void atender_syscall()
 			agregar_a_ready_segun_alg(hilo_dump);
 		}
 		
-		// hilo_en_ejecucion = NULL;
-		
-		break;
+		//liberar_param_instruccion(instrucc);
+	break;
 
 	case IO:
+
 		char *cant_seg_duerme_ptr = list_get(instrucc->parametros, 0);
 		int cant_seg_duerme = atoi(cant_seg_duerme_ptr);
 		hilo = buscar_hilos_listas(hilo_en_ejecucion, hilo_en_ejecucion->tid);
@@ -472,18 +489,20 @@ void atender_syscall()
 		log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <IO>",
 				 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 
-		//sem_post(&binario_corto_plazo);
+		
 		usleep(cant_seg_duerme);
 
 		log_info(logger_kernel, "## ((PID <%d> : TID <%d> )) finalizó IO y pasa a READY",
 				 hilo_en_ejecucion->pcb_padre_tcb->contador_tid, hilo_en_ejecucion->tid);
 		hilo = list_remove(lista_io, 0);
+		
+		
 		pasar_a_running_tcb_con_syscall(hilo);
-		// agregar_a_ready_segun_alg(hilo);
-		//free(hilo);
-		break;
+
+		
+		//liberar_param_instruccion(instrucc);
+	break;
 	}
 
-	free(instrucc);
+	liberar_param_instruccion(instrucc);
 }
-
