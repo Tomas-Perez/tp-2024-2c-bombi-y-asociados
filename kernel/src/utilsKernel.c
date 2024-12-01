@@ -88,6 +88,7 @@ void inicializar_estructuras_kernel()
 {
     int id_counter = 1;
     syscall_replanificadora = 0;
+    quantum_restante = 1;
 
     syscall_solicitada = 0;
     // mutex
@@ -99,9 +100,12 @@ void inicializar_estructuras_kernel()
     pthread_mutex_init(&m_lista_procesos_new, NULL);
     pthread_mutex_init(&m_lista_multinivel, NULL);
     pthread_mutex_init(&m_lista_finalizados, NULL);
+    pthread_mutex_init(&m_quantum_restante, NULL);
     // pthread_mutex_init(&m_lista_prioridad, NULL);
     pthread_mutex_init(&m_lista_io, NULL);
     pthread_mutex_init(&m_bloqueados_por_dump, NULL);
+    pthread_mutex_init(&m_lista_io, NULL);
+    pthread_mutex_init(&m_syscall_replanificadora, NULL);
     // semaforo
     sem_init(&finalizo_un_proc, 0, 0);
     sem_init(&hilos_en_exit, 0, 0);
@@ -378,16 +382,21 @@ void *desalojar_por_RR(tcb *hilo)
 {
     int sigue = 1;
     while(1) {
-    printf("Te dormiste Con tid: %f \n", hilo->tid);
     usleep(quantumf() * 1000);
-     printf("Te despertaste Con tid: %f con quantum %d \n", hilo->tid, quantumf());
+   
     pthread_mutex_lock(&m_hilo_en_ejecucion);
     if (hilo_en_ejecucion != NULL)
     {
+		pthread_mutex_lock(&m_syscall_replanificadora);
+
         if (hilo_en_ejecucion->tid == hilo->tid && syscall_replanificadora == 0)
-        {
+        { 
+            log_info(logger_kernel, "Entro en la condicion del RR");
+			pthread_mutex_unlock(&m_syscall_replanificadora);    
+            pthread_mutex_lock(&m_quantum_restante);
+            quantum_restante = 0;
+            pthread_mutex_unlock(&m_quantum_restante);
             pthread_mutex_unlock(&m_hilo_en_ejecucion);
-            printf("Desalojate\n");
             desalojar_hilo(RR);
             printf("Desalojado\n");
             sigue = 0;
@@ -395,6 +404,7 @@ void *desalojar_por_RR(tcb *hilo)
             pthread_exit(NULL);
             
         }
+		pthread_mutex_unlock(&m_syscall_replanificadora);    
         pthread_mutex_unlock(&m_hilo_en_ejecucion);
     }
     pthread_mutex_unlock(&m_hilo_en_ejecucion);

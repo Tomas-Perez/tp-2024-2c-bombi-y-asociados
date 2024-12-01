@@ -70,6 +70,7 @@ int atenderCpuDispatch()
             recibir_tcb(conexion_dispatch); // recibe pcb y tcb para solicitar contexto a memoria
             pedir_contexto_cpu(pid, tid);
             ejecutando_un_proceso = true;
+            interrupcion = false;
             ejecutar_proceso();
             break;
         case -1:
