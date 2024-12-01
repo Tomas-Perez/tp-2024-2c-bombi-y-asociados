@@ -55,10 +55,10 @@ char *generar_path_archivo(char *nombre_archivo)
 void levantar_config_kernel()
 {
    // config_kernel = iniciar_config("configs/kernelFS.config");
-    //  config_kernel = iniciar_config("configs/kernelRC.config");
+     config_kernel = iniciar_config("configs/kernelRC.config");
      // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
    // config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
-     config_kernel = iniciar_config("configs/kernelPlani.config");
+    // config_kernel = iniciar_config("configs/kernelPlani.config");
 
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
@@ -371,7 +371,7 @@ void desalojar_hilo(int motivo)
 double quantumf()
 {
     double cuanto = atoi(config_get_string_value(config_kernel, "QUANTUM"));
-    printf("El quantum es: %f\n", cuanto);
+  //  printf("El quantum es: %f\n", cuanto);
     return cuanto;
 }
 
@@ -396,7 +396,7 @@ void *desalojar_por_RR(tcb *hilo)
             pthread_mutex_unlock(&m_hilo_en_ejecucion);
             desalojar_hilo(RR);
            // printf("Desalojado\n");
-            sigue = 0;
+            
             // int confirmacion;
             pthread_exit(NULL);
             

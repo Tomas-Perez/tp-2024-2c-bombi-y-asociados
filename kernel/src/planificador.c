@@ -179,9 +179,9 @@ void pasar_a_running_tcb_con_syscall(tcb *tcb_listo)
 		atender_syscall();
 		//sem_post(&binario_atender_syscall);
 	} else {
-		pthread_mutex_lock(&m_hilo_en_ejecucion);
+		/*pthread_mutex_lock(&m_hilo_en_ejecucion);
 		hilo_en_ejecucion = NULL;
-		pthread_mutex_unlock(&m_hilo_en_ejecucion);
+		pthread_mutex_unlock(&m_hilo_en_ejecucion);*/
 		pthread_mutex_unlock(&m_quantum_restante);
 		sem_post(&binario_corto_plazo);
 		agregar_a_ready_multinivel(tcb_listo);
@@ -292,8 +292,8 @@ void atender_syscall()
 		printf("PRUEBA: %s tamanio: %d prioridad %d\n", archivo, tam, priori);
 		pcb *proceso_nuevo = crear_pcb(priori, archivo, tam, socket);
 
-		liberar_param_instruccion(instrucc);
-		free(archivo);
+		//liberar_param_instruccion(instrucc);
+		//free(archivo);
 		close(socket);
 	break;
 	case SEGMENTATION_FAULT:
@@ -359,9 +359,9 @@ void atender_syscall()
 					 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 
 			list_add(tcb_invocado->block_join, hilo_en_ejecucion);
-			pthread_mutex_lock(&m_hilo_en_ejecucion);
+			/*pthread_mutex_lock(&m_hilo_en_ejecucion);
 			hilo_en_ejecucion = NULL;
-			pthread_mutex_unlock(&m_hilo_en_ejecucion);
+			pthread_mutex_unlock(&m_hilo_en_ejecucion);*/
 			
 			sem_post(&binario_corto_plazo);
 		}
@@ -405,7 +405,6 @@ void atender_syscall()
 		pthread_mutex_lock(&m_syscall_replanificadora);
 		syscall_replanificadora = 0;
 		pthread_mutex_unlock(&m_syscall_replanificadora);
-		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
 
 		mutex_k *nuevo_mutex;
 		char *nombre_mutex = list_get(instrucc->parametros, 0);
@@ -415,7 +414,8 @@ void atender_syscall()
 		list_add(hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc, nuevo_mutex);
 		pthread_mutex_unlock(&m_hilo_en_ejecucion);
 
-		liberar_param_instruccion(instrucc);
+		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
+		//liberar_param_instruccion(instrucc);
 	break;
 	case MUTEX_LOCK:
 		pthread_mutex_lock(&m_syscall_replanificadora);

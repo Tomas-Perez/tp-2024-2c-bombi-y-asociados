@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }*/
    
-    argv[1] = "PLANI_PROC";
+    argv[1] = "RECURSOS_MUTEX_PROC";
     argv[2] = "32";
 
     pthread_t t1, t2;
