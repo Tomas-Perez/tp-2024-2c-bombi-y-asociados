@@ -114,7 +114,6 @@ void planificador_corto_plazo()
 			mayor_nivel = encontrar_nivel_mas_prioritario(lista_multinivel);
 			if(mayor_nivel != NULL)
 			{
-			printf("Prioridad mayor nivel %d\n", mayor_nivel->prioridad);
 			pthread_mutex_lock(&(mayor_nivel->m_lista_prioridad));
 			if (list_is_empty(mayor_nivel->hilos_asociados) == false)
 			{
@@ -133,7 +132,7 @@ void planificador_corto_plazo()
 			pthread_mutex_unlock(&m_syscall_replanificadora);*/
 			pasar_a_running_tcb(hilo_a_ejecutar);
 			pthread_create(&tround_robin, NULL, (void *)desalojar_por_RR, (void *)hilo_a_ejecutar);
-			printf("antes de la syscall \n");
+			//printf("antes de la syscall \n");
 			pthread_detach(tround_robin);
 			atender_syscall();
 			//sem_post(&binario_atender_syscall);

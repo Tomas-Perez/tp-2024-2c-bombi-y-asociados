@@ -19,7 +19,7 @@ void check_interrupt(instruccion *inst)
 {
     if (interrupcion && ejecutando_un_proceso)
     {
-        printf("entra en check interrupt\n");
+        log_info("entra en check interrupt pid: %d tid: %d\n", pid, tid);
         devolver_contexto_de_ejecucion(pid, tid);
 
         ejecutando_un_proceso = false;

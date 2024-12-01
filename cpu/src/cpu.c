@@ -11,6 +11,7 @@ int motivo_interrupt;
 
 bool interrupcion;
 int pid_interrupt;
+int tid_interrupt;
 
 int socket_memoria;
 int conexion_dispatch;
@@ -101,10 +102,14 @@ int atenderCpuInterrupt()
             void *buffer = recibir_buffer(&size, conexion_interrupt);
             motivo_interrupt = buffer_read_uint32(buffer);
             pid_interrupt = buffer_read_uint32(buffer);
-            printf("pid interrupt: %d\n",pid_interrupt);
-            if (pid_interrupt == pid)
+            tid_interrupt = buffer_read_uint32(buffer);
+            //log_info(logger_cpu, "case DESALOJAR_PROCESO: pid interrupt: %d pid %d \n",pid_interrupt, pid);
+            //log_info(logger_cpu, "case DESALOJAR_PROCESO: tid interrupt: %d tid %d \n",tid_interrupt, tid);
+            if ((pid_interrupt == pid) && (tid_interrupt == tid))
             {
-                log_info(logger_cpu, "Llega interrupción al puerto Interrupt");
+                //log_info(logger_cpu, "Llega interrupción al puerto Interrupt pid_interrupt %d pid %d", pid_interrupt, pid);
+                //log_info(logger_cpu, "Llega interrupción al puerto Interrupt tid_interrupt %d tid %d", tid_interrupt, tid);
+                
                 interrupcion = true;
             }
             free(buffer);

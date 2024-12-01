@@ -290,7 +290,6 @@ tcb *crear_tcb(pcb *proc_padre, int prioridad)
 
 void crear_cola_nivel(int prioridad, tcb *hilo_c)
 {
-    printf("Prioridad en crear nivel del hilo %d e hilo->prioridad %d\n ", prioridad, hilo_c->prioridad);
     nivel_prioridad *nuevo_nivel = (nivel_prioridad *)malloc(sizeof(nivel_prioridad));
     nuevo_nivel->prioridad = hilo_c->prioridad;
     nuevo_nivel->hilos_asociados = list_create();
@@ -298,16 +297,13 @@ void crear_cola_nivel(int prioridad, tcb *hilo_c)
 
     pthread_mutex_lock(&(nuevo_nivel->m_lista_prioridad));
     list_add((nuevo_nivel->hilos_asociados), hilo_c);
-    printf("Tamanio lista de prioridad %d es %d\n", prioridad, list_size(nuevo_nivel->hilos_asociados));
+   
     pthread_mutex_unlock(&(nuevo_nivel->m_lista_prioridad));
 
     pthread_mutex_lock(&m_lista_multinivel);
     list_add(lista_multinivel, nuevo_nivel);
     pthread_mutex_unlock(&m_lista_multinivel);
-    printf("Se agrega un nivel de prioridad a la lista multinivel %d\n", nuevo_nivel->prioridad);
-    //  VER: nos habian dicho q usemos list_add_sorted pero como
-    //  cuando lo pasamos a running encontramos el mayor nivel de prioridad
-    //  creo q no hace falta
+    
 }
 
 // -------------------------- Funciones planificador  ---------------------------
@@ -356,6 +352,7 @@ void desalojar_hilo(int motivo)
 {
     t_paquete *paquete_a_desalojar = crear_paquete(DESALOJAR_PROCESO);
     agregar_a_paquete_solo(paquete_a_desalojar, &motivo, sizeof(int));
+    agregar_a_paquete_solo(paquete_a_desalojar, &hilo_en_ejecucion->pcb_padre_tcb->pid,sizeof(int));
     agregar_a_paquete_solo(paquete_a_desalojar, &hilo_en_ejecucion->tid, sizeof(int));
     enviar_paquete(paquete_a_desalojar, conexion_interrupt);
 
@@ -380,7 +377,7 @@ double quantumf()
 
 void *desalojar_por_RR(tcb *hilo)
 {
-    int sigue = 1;
+    
     while(1) {
     usleep(quantumf() * 1000);
    
@@ -391,14 +388,14 @@ void *desalojar_por_RR(tcb *hilo)
 
         if (hilo_en_ejecucion->tid == hilo->tid && syscall_replanificadora == 0)
         { 
-            log_info(logger_kernel, "Entro en la condicion del RR");
+            //log_info(logger_kernel, "Entro en la condicion del RR");
 			pthread_mutex_unlock(&m_syscall_replanificadora);    
             pthread_mutex_lock(&m_quantum_restante);
             quantum_restante = 0;
             pthread_mutex_unlock(&m_quantum_restante);
             pthread_mutex_unlock(&m_hilo_en_ejecucion);
             desalojar_hilo(RR);
-            printf("Desalojado\n");
+           // printf("Desalojado\n");
             sigue = 0;
             // int confirmacion;
             pthread_exit(NULL);
