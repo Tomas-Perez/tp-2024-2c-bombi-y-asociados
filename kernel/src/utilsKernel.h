@@ -69,6 +69,7 @@ extern pthread_mutex_t m_syscall_solicitada;
 extern pthread_mutex_t m_lista_io;
 extern pthread_mutex_t m_bloqueados_por_dump;
 extern pthread_mutex_t m_syscall_replanificadora;
+extern pthread_mutex_t m_contador;
 
 extern sem_t finalizo_un_proc;
 extern sem_t hilos_en_exit;
@@ -94,6 +95,7 @@ extern int conexion_dispatch;
 extern int conexion_interrupt;
 extern int conexion_memoria;
 extern int syscall_replanificadora;
+extern int contador;
 extern t_config* config_kernel;
 extern int conectarMemoria();
 extern void planificador_corto_plazo();

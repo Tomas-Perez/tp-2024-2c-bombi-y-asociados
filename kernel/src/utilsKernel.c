@@ -16,6 +16,7 @@ double quantum;
 int syscall_solicitada;
 char *log_level;
 int syscall_replanificadora;
+int contador;
 
 //----------------------------------------------------------------
 // --------------------------- indice ---------------------------
@@ -55,10 +56,10 @@ char *generar_path_archivo(char *nombre_archivo)
 void levantar_config_kernel()
 {
    // config_kernel = iniciar_config("configs/kernelFS.config");
-     config_kernel = iniciar_config("configs/kernelRC.config");
+    // config_kernel = iniciar_config("configs/kernelRC.config");
      // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
    // config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
-    // config_kernel = iniciar_config("configs/kernelPlani.config");
+     config_kernel = iniciar_config("configs/kernelPlani.config");
 
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
@@ -89,7 +90,7 @@ void inicializar_estructuras_kernel()
     int id_counter = 1;
     syscall_replanificadora = 0;
     quantum_restante = 1;
-
+    int contador = 0;
     syscall_solicitada = 0;
     // mutex
     pthread_mutex_init(&m_hilo_en_ejecucion, NULL);
@@ -106,6 +107,7 @@ void inicializar_estructuras_kernel()
     pthread_mutex_init(&m_bloqueados_por_dump, NULL);
     pthread_mutex_init(&m_lista_io, NULL);
     pthread_mutex_init(&m_syscall_replanificadora, NULL);
+    pthread_mutex_init(&m_contador, NULL);
     // semaforo
     sem_init(&finalizo_un_proc, 0, 0);
     sem_init(&hilos_en_exit, 0, 0);
@@ -123,18 +125,7 @@ void inicializar_estructuras_kernel()
 
 void inicializar_hilos_planificacion()
 {
-    /*pthread_t hilo_plani_corto, hilo_exitt;
-
-    pthread_create(&hilo_plani_corto, NULL, (void *)planificador_corto_plazo, NULL);
-    pthread_create(&hilo_exitt, NULL, (void *)hilo_exit, NULL);
-
-    /pthread_create(&hilo_plani_largo,NULL,(void) planificador_largo_plazo,NULL);
-
-    pthread_detach(hilo_plani_largo);
-    pthread_join(hilo_exitt, NULL);
-    pthread_join(hilo_plani_corto, NULL);*/
-
-    //pthread_t hilo_plani_corto, hilo_exitt, hilo_syscall;
+    
     pthread_t hilo_plani_corto, hilo_exitt;
 
 
@@ -144,15 +135,13 @@ void inicializar_hilos_planificacion()
     
     pthread_join(hilo_plani_corto, NULL);
     pthread_detach(hilo_exitt);
-   // pthread_detach(hilo_syscall);
 
-    /*pthread_create(&hilo_plani_largo,NULL,(void) planificador_largo_plazo,NULL);
-
-    pthread_detach(hilo_plani_largo);*/
-    
-
-    //pthread_t hilo_exitt;
-
+    pthread_mutex_lock(&m_contador);
+    while(contador != 0){
+        pthread_mutex_unlock(&m_contador);
+    }
+    pthread_mutex_unlock(&m_contador);
+        return;
 }
 // --------------------------- Pedidos memoria ---------------------------
 int pedir_memoria(int socket)
@@ -232,6 +221,9 @@ pcb *crear_pcb(int prioridad_h_main, char *path, int tamanio, int socket)
     nuevo_pcb->contador_tid = 0;
     id_counter++;
 
+    pthread_mutex_lock(&m_contador);
+    contador++;
+    pthread_mutex_unlock(&m_contador);
     nuevo_pcb->lista_tcb = list_create();
     nuevo_pcb->lista_mutex_proc = list_create();
     if (nuevo_pcb == NULL)
@@ -504,15 +496,26 @@ void iniciar_hilo(tcb *hilo, int conexion_memoria, char *path)
 // --------------------- Finalizar ---------------------
 void finalizar_proceso(pcb *proc)
 {
-    /*if (!list_is_empty(proc->lista_tcb)) // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
+    if (!list_is_empty(proc->lista_tcb)) // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
     {
-        finalizar_hilos_proceso(proc);
-    }*/
+        for(int i = 0; i < list_size(proc->lista_tcb); i++){
+            tcb* hilo_a_finalizar = list_remove(proc->lista_tcb,0);
+            buscar_hilos_listas(hilo_a_finalizar, hilo_a_finalizar->tid);
+            pthread_mutex_lock(&m_lista_finalizados);
+            list_add(lista_finalizados, hilo_a_finalizar);
+            pthread_mutex_unlock(&m_lista_finalizados);
+            sem_post(&hilos_en_exit);
+        }
+    }
     avisar_memoria_liberar_pcb(proc);
     log_info(logger_kernel, "## Finaliza el proceso <%d>", proc->pid);
 
     list_destroy(proc->lista_tcb);
-    // free(proc->path_proc);
+
+    pthread_mutex_lock(&m_contador);
+    contador--;
+
+    pthread_mutex_unlock(&m_contador);
     free(proc);
     sem_post(&finalizo_un_proc);
     sem_post(&binario_corto_plazo);
@@ -558,7 +561,7 @@ void *hilo_exit()
         liberar_tcb(hilo);
 
         // sem_post(&binario_corto_plazo);
-        free(hilo);
+        //free(hilo);
         printf("BORRAR: en hilo_exit-> termino todo\n");
     }
 }
@@ -577,7 +580,33 @@ void finalizar_estructuras_kernel()
     list_destroy(lista_multinivel);
     list_destroy(lista_de_ready);
     list_destroy(lista_procesos_new);
-    // list_destroy();
+    list_destroy(lista_finalizados);
+    list_destroy(lista_io);
+    list_destroy(bloqueados_por_dump);
+    
+
+    //mutex
+    pthread_mutex_destroy(&m_hilo_en_ejecucion);
+    pthread_mutex_destroy(&m_lista_de_ready);
+    pthread_mutex_destroy(&m_regreso_de_cpu);
+    pthread_mutex_destroy(&m_hilo_a_ejecutar); 
+    pthread_mutex_destroy(&m_lista_procesos_new);
+    pthread_mutex_destroy(&m_lista_multinivel);
+    pthread_mutex_destroy(&m_lista_finalizados);
+    pthread_mutex_destroy(&m_quantum_restante);
+    pthread_mutex_destroy(&m_lista_io);
+    pthread_mutex_destroy(&m_bloqueados_por_dump);
+    pthread_mutex_destroy(&m_lista_io);    
+    pthread_mutex_destroy(&m_contador);    pthread_mutex_destroy(&m_syscall_replanificadora);
+
+    // semaforos
+    sem_destroy(&finalizo_un_proc);
+    sem_destroy(&hilos_en_exit);
+    sem_destroy(&hilos_en_ready);
+    sem_destroy(&binario_corto_plazo);
+
+    
+    
 }
 // --------------------- Buscar ---------------------
 tcb *buscar_TID(tcb *tcb_pedido, int tid_buscado)

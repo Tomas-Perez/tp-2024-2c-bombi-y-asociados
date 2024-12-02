@@ -19,7 +19,7 @@ void check_interrupt(instruccion *inst)
 {
     if (interrupcion && ejecutando_un_proceso)
     {
-        log_info("entra en check interrupt pid: %d tid: %d\n", pid, tid);
+        //log_info("entra en check interrupt pid: %d tid: %d\n", pid, tid);
         devolver_contexto_de_ejecucion(pid, tid);
 
         ejecutando_un_proceso = false;
@@ -31,13 +31,13 @@ void check_interrupt(instruccion *inst)
         t_paquete *paquete_instrucciones = crear_paquete(SYSCALL);
         
         uint32_t cant_parametros = 0;
-        printf("Motivo interrupt (tiene que ser 30): %d\n", motivo_interrupt);
+        //printf("Motivo interrupt (tiene que ser 30): %d\n", motivo_interrupt);
         agregar_a_paquete_solo(paquete_instrucciones, &motivo_interrupt, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_instrucciones, &cant_parametros, sizeof(uint32_t));
         
         //devolver_contexto_de_ejecucion(pid, tid);
         enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
-        printf("Se envio syscall %d a kernel. conexion dispatch %d \n", motivo_interrupt, conexion_dispatch);
+        //printf("Se envio syscall %d a kernel. conexion dispatch %d \n", motivo_interrupt, conexion_dispatch);
         eliminar_paquete(paquete_instrucciones);
      } 
 
@@ -66,7 +66,7 @@ char *fetch()
     char *instruccion_a_ejecutar = recibir_instruccion(socket_memoria);
     // printf("me llego %s \n",instruccion_a_ejecutar);
     registros_cpu.PC++;
-    log_info(logger_cpu, "Program Counter actualizado: %d", registros_cpu.PC);
+    // log_info(logger_cpu, "Program Counter actualizado: %d", registros_cpu.PC);
     eliminar_paquete(paquete);
     return instruccion_a_ejecutar;
 }

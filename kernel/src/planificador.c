@@ -19,6 +19,7 @@ pthread_mutex_t m_syscall_solicitada;
 pthread_mutex_t m_lista_io;
 pthread_mutex_t m_bloqueados_por_dump;
 pthread_mutex_t m_syscall_replanificadora;
+pthread_mutex_t m_contador;
 
 t_list *bloqueados_por_dump;
 t_list *lista_de_ready;
@@ -73,7 +74,9 @@ void planificador_corto_plazo()
 {
 	while (1)
 	{
-
+		pthread_mutex_lock(&m_contador);
+		while(contador != 0) {
+		pthread_mutex_unlock(&m_contador);
 		sem_wait(&binario_corto_plazo);
 		sem_wait(&hilos_en_ready);
 		tcb *hilo_a_ejecutar;
@@ -92,7 +95,7 @@ void planificador_corto_plazo()
 				exit(1);
 			}
 			pthread_mutex_unlock(&m_hilo_a_ejecutar);
-			pasar_a_running_tcb_con_syscall(hilo_a_ejecutar);
+			pasar_a_running_tcb(hilo_a_ejecutar);
 			atender_syscall();
 			//sem_post(&binario_atender_syscall);
 			
@@ -145,7 +148,9 @@ void planificador_corto_plazo()
 			pthread_mutex_unlock(&m_lista_multinivel);
 			printf("No hay hilos en ready.\n");
 		}
-	}
+	} } 
+	pthread_mutex_unlock(&m_contador);
+	pthread_exit(NULL);
 }
 
 void pasar_a_running_tcb(tcb *tcb_listo)
@@ -195,10 +200,13 @@ void pasar_a_running_tcb_prioridades()
 	pthread_mutex_lock(&m_hilo_en_ejecucion);
 	hilo_en_ejecucion = tcb_listo;
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
+	pthread_mutex_lock(&m_syscall_replanificadora);
+	syscall_replanificadora = 0;
+	pthread_mutex_unlock(&m_syscall_replanificadora);
 	mandar_tcb_dispatch(tcb_listo);
 	log_info(logger_kernel, "PID <%d> TID: <%d>  - Estado Anterior: READY - Estado Actual: EXEC",
 			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
-	atender_syscall();
+	//atender_syscall();
 	//sem_post(&binario_atender_syscall);
 }
 

@@ -25,7 +25,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }*/
    
-    argv[1] = "RECURSOS_MUTEX_PROC";
+    argv[1] = "PRUEBA_PLANI";
     argv[2] = "32";
 
     pthread_t t1, t2;
@@ -48,15 +48,7 @@ int main(int argc, char* argv[]) {
     sem_post(&binario_corto_plazo);
     pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc, socket);
     inicializar_hilos_planificacion();
-    /*pthread_mutex_lock(&m_lista_procesos_new);
-    list_add(lista_procesos_new, proceso_nuevo);
-    pthread_mutex_unlock(&m_lista_procesos_new);
-    pedir_memoria(socket);
-    
-    tcb* hilo_main = list_get(proceso_nuevo->lista_tcb, 0);       
-	iniciar_hilo(hilo_main, socket, proceso_nuevo->path_proc);*/
-
-    //close(socket);
+   
 
 
     liberar_conexion(conexion_memoria);
