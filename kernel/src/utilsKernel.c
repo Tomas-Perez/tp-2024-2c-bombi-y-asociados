@@ -136,12 +136,12 @@ void inicializar_hilos_planificacion()
     pthread_join(hilo_plani_corto, NULL);
     pthread_detach(hilo_exitt);
 
-    pthread_mutex_lock(&m_contador);
+   /* pthread_mutex_lock(&m_contador);
     while(contador != 0){
         pthread_mutex_unlock(&m_contador);
     }
     pthread_mutex_unlock(&m_contador);
-        return;
+    */ return;
 }
 // --------------------------- Pedidos memoria ---------------------------
 int pedir_memoria(int socket)
@@ -514,7 +514,6 @@ void finalizar_proceso(pcb *proc)
 
     pthread_mutex_lock(&m_contador);
     contador--;
-
     pthread_mutex_unlock(&m_contador);
     free(proc);
     sem_post(&finalizo_un_proc);

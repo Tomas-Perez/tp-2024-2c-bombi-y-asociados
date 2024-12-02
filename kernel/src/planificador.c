@@ -74,10 +74,10 @@ void planificador_corto_plazo()
 {
 	while (1)
 	{
+		sem_wait(&binario_corto_plazo);
 		pthread_mutex_lock(&m_contador);
 		while(contador != 0) {
 		pthread_mutex_unlock(&m_contador);
-		sem_wait(&binario_corto_plazo);
 		sem_wait(&hilos_en_ready);
 		tcb *hilo_a_ejecutar;
 
@@ -110,7 +110,7 @@ void planificador_corto_plazo()
 		if (strcmp(algoritmo_de_planificacion, "CMN") == 0)
 		{
 			pthread_mutex_lock(&m_lista_multinivel);
-			if(list_size(lista_multinivel) > 0){
+			if(list_size(lista_multinivel) > 0) {
 			pthread_mutex_unlock(&m_lista_multinivel);
 
 			nivel_prioridad *mayor_nivel;
@@ -144,13 +144,17 @@ void planificador_corto_plazo()
 			//pthread_cancel(tround_robin);
 			}
 		}
-		} else {
+		else {
 			pthread_mutex_unlock(&m_lista_multinivel);
 			printf("No hay hilos en ready.\n");
 		}
-	} } 
+		} 
+	} 
 	pthread_mutex_unlock(&m_contador);
 	pthread_exit(NULL);
+	
+	} 
+	
 }
 
 void pasar_a_running_tcb(tcb *tcb_listo)
