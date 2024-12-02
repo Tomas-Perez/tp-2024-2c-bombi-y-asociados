@@ -482,7 +482,6 @@ int atenderKernel(int *socket_kernel)
         send(*socket_kernel, &confirmacion, sizeof(int), 0);
         // MANDAR OK
         free(buffer);
-
         break;
     case DUMP_MEMORY:
         buffer = recibir_buffer(&size, *socket_kernel);

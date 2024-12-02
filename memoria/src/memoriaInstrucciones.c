@@ -134,6 +134,7 @@ void eliminar_hilo(int pid, int tid)
 {
 	t_proceso *proceso_padre = buscar_proceso(procesos_memoria, pid);
 	t_hilo *hilo_a_eliminar = buscar_hilo(proceso_padre, tid);
+	list_remove_element(proceso_padre->tids,hilo_a_eliminar);
 	liberar_hilo(hilo_a_eliminar);
 }
 
