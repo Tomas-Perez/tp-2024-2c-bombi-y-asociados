@@ -124,6 +124,7 @@ typedef struct
     int tam_proc;
     char* path_proc;
     t_list* lista_mutex_proc;
+    int prioridad_hilo_main;
 } pcb;
 
 typedef struct
