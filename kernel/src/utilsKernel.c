@@ -136,12 +136,7 @@ void inicializar_hilos_planificacion()
     pthread_join(hilo_plani_corto, NULL);
     pthread_detach(hilo_exitt);
 
-    /* pthread_mutex_lock(&m_contador);
-     while(contador != 0){
-         pthread_mutex_unlock(&m_contador);
-     }
-     pthread_mutex_unlock(&m_contador);
-     */
+  
     return;
 }
 // --------------------------- Pedidos memoria ---------------------------
@@ -153,7 +148,7 @@ int pedir_memoria(int socket)
     pthread_mutex_unlock(&m_lista_procesos_new);
     int pid = proceso_nuevo->pid;
     int tamanio = proceso_nuevo->tam_proc;
-    char *path = proceso_nuevo->path_proc;
+    char *path =  proceso_nuevo->path_proc;
     int motivo = PROCESS_CREATE; // preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
     uint32_t size_path_hilo = strlen(path);
 
@@ -183,13 +178,14 @@ int pedir_memoria(int socket)
         printf("La conexión se cerró inesperadamente\n");
         return;
     }
+    close(socket);
 
     if (!confirmacion_mem_disponible)
     {
         log_info(logger_kernel, "No hay memoria disponible para el proceso PID: %i", pid);
         sem_post(&binario_corto_plazo);
         pthread_t esperar_fin_proc;
-        pthread_create(&esperar_fin_proc, NULL, (void *)pedir_mem_fin, ((void *)proceso_nuevo, socket));
+        pthread_create(&esperar_fin_proc, NULL, (void *)pedir_mem_fin, ((void *)proceso_nuevo));
         pthread_detach(esperar_fin_proc);
         return 0;
     }
@@ -199,14 +195,14 @@ int pedir_memoria(int socket)
         list_remove(lista_procesos_new, 0);
         pthread_mutex_unlock(&m_lista_procesos_new);
     }
-    close(socket);
     return 1;
 }
 
-void *pedir_mem_fin(pcb *nuevo_pcb, int socket)
+void *pedir_mem_fin(pcb *nuevo_pcb)
 {
     sem_wait(&finalizo_un_proc);
-    pedir_memoria(socket);
+    int socketMem = conectarMemoria();
+    pedir_memoria(socketMem);
 }
 
 //  --------------------------- Crear  ---------------------------
@@ -217,6 +213,7 @@ pcb *crear_pcb(int prioridad_h_main, char *path, int tamanio, int socket)
     tcb *hilo_main;
 
     nuevo_pcb->tam_proc = tamanio;
+    //nuevo_pcb->path_proc = malloc(sizeof(char) * length(path));
     nuevo_pcb->path_proc = path;
     nuevo_pcb->pid = id_counter;
     nuevo_pcb->contador_tid = 0;
@@ -245,9 +242,7 @@ pcb *crear_pcb(int prioridad_h_main, char *path, int tamanio, int socket)
     if (confirmacion == 1)
     {
         hilo_main = list_get(nuevo_pcb->lista_tcb, 0);
-        // iniciar_hilo(hilo_main, socket, nuevo_pcb->path_proc);
         agregar_a_ready_segun_alg(hilo_main);
-        // sem_post(&binario_corto_plazo);
         return nuevo_pcb;
     }
     else if (confirmacion == 0)
@@ -496,6 +491,7 @@ void iniciar_hilo(tcb *hilo, int conexion_memoria, char *path)
 // --------------------- Finalizar ---------------------
 void finalizar_proceso(pcb *proc)
 {
+    avisar_memoria_liberar_pcb(proc);
     if (!list_is_empty(proc->lista_tcb)) // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
     {
         for (int i = 0; i < list_size(proc->lista_tcb); i++)
@@ -508,7 +504,6 @@ void finalizar_proceso(pcb *proc)
             sem_post(&hilos_en_exit);
         }
     }
-    avisar_memoria_liberar_pcb(proc);
     log_info(logger_kernel, "## Finaliza el proceso <%d>", proc->pid);
 
     list_destroy(proc->lista_tcb);
@@ -624,18 +619,52 @@ tcb *buscar_TID(tcb *tcb_pedido, int tid_buscado)
 
 tcb *buscar_hilos_listas(tcb *main, int tid)
 {
-    tcb *hilo = buscar_TID(main, tid);
+    tcb *hilo = buscar_TID(main, tid);  // este solo lo saca de la lista del padre
     int confirmacion = 0;
     if (hilo != NULL)
     {
         if (strcmp(algoritmo_de_planificacion, "CMN") == 0)
         {
-            printf("tid %d\n", tid);
-            hilo = buscar_hilo_en_multinivel(hilo->prioridad, hilo->tid);
+            printf("pid %d tid %d\n", hilo->pcb_padre_tcb->pid, tid);
+            hilo = buscar_hilo_en_multinivel(main->prioridad, main->tid, main->pcb_padre_tcb);
 
             if (hilo)
             {
                 return hilo;
+            }
+        }
+        else
+        {
+            pthread_mutex_lock(&m_lista_de_ready);
+            confirmacion = list_remove_element(lista_de_ready, hilo);
+            pthread_mutex_unlock(&m_lista_de_ready);
+            if (confirmacion)
+            {
+                return hilo;
+            }
+        }
+        return hilo;
+    }
+
+    return NULL;
+}
+
+tcb *buscar_hilos_listas_sin_sacar_del_padre(tcb *main, int tid) {
+    tcb *hilo = buscar_tid(main->pcb_padre_tcb->lista_tcb, tid);  // este solo lo saca de la lista del padre
+    int confirmacion = 0;
+    if (hilo != NULL)
+    {
+        if (strcmp(algoritmo_de_planificacion, "CMN") == 0)
+        {
+            printf("pid %d tid %d\n", hilo->pcb_padre_tcb->pid, tid);
+            tcb* hilo_multinivel = buscar_hilo_en_multinivel(main->prioridad, main->tid, main->pcb_padre_tcb);
+
+            if (hilo_multinivel != NULL)
+            {
+                return hilo_multinivel;
+            }
+            else {
+                return NULL;
             }
         }
         else
@@ -668,13 +697,14 @@ tcb *buscar_tid(t_list *lista_tcb, int tid)
     return NULL;
 }
 
-tcb *buscar_hilo_en_multinivel(int prioridad, int tid)
+tcb *buscar_hilo_en_multinivel(int prioridad, int tid, pcb* padre)
 {
-    printf("Tid %d Prioridad %d\n", tid, prioridad);
+    printf("Pid %d Tid %d Prioridad %d\n", padre->pid, tid, prioridad);
     for (int i = 0; i < list_size(lista_multinivel); i++)
     {
+        pthread_mutex_lock(&m_lista_multinivel);
         nivel_prioridad *cola_aux = list_get(lista_multinivel, i);
-
+        pthread_mutex_unlock(&m_lista_multinivel);
         if (cola_aux->prioridad == prioridad)
         {
 
@@ -684,8 +714,10 @@ tcb *buscar_hilo_en_multinivel(int prioridad, int tid)
             for (int j = 0; j < cant_elementos; j++)
             {
                 tcb *hilo = list_get(cola_aux->hilos_asociados, j);
+                if(hilo->pcb_padre_tcb->pid == padre->pid){
                 if (hilo->tid == tid)
                 {
+                    printf("Encuentra el hilo pid: %d tid: %d\n", padre->pid, tid);
                     list_remove(cola_aux->hilos_asociados, j);
                     if (list_size(cola_aux->hilos_asociados) == 0) // VER
                     {
@@ -696,7 +728,7 @@ tcb *buscar_hilo_en_multinivel(int prioridad, int tid)
                     // printf("Aca lo encontro TID: %d Prioridad: %d \n", hilo->tid, hilo->prioridad);
                     return hilo;
                 }
-
+                }
                 pthread_mutex_unlock(&(cola_aux->m_lista_prioridad));
             }
         }

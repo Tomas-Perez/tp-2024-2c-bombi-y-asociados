@@ -62,6 +62,7 @@ void agregar_a_ready_multinivel(tcb *hilo)
 	{
 		pthread_mutex_lock(&(cola_nivel->m_lista_prioridad));
 		list_add(cola_nivel->hilos_asociados, hilo);
+		printf("Se agrego el hilo PID <%d> : TID <%d> a la cola multinivel\n", hilo->pcb_padre_tcb->pid, hilo->tid);
 		pthread_mutex_unlock(&(cola_nivel->m_lista_prioridad));
 	}
 	sem_post(&hilos_en_ready);
@@ -361,7 +362,7 @@ void atender_syscall()
 			pthread_mutex_lock(&m_syscall_replanificadora);
 			syscall_replanificadora = 1;
 			pthread_mutex_unlock(&m_syscall_replanificadora);
-			buscar_hilos_listas(hilo_en_ejecucion, hilo_en_ejecucion->tid);
+			buscar_hilos_listas_sin_sacar_del_padre(hilo_en_ejecucion, hilo_en_ejecucion->tid);
 
 			log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <PTHREAD_JOIN>",
 					 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
@@ -417,7 +418,7 @@ void atender_syscall()
 		mutex_k *nuevo_mutex;
 		char *nombre_mutex = list_get(instrucc->parametros, 0);
 		nuevo_mutex = crear_mutex(nombre_mutex);
-
+		log_info(logger_kernel, "## Se crea el MUTEX: <%s>", nuevo_mutex->nombre);
 		pthread_mutex_lock(&m_hilo_en_ejecucion);
 		list_add(hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc, nuevo_mutex);
 		pthread_mutex_unlock(&m_hilo_en_ejecucion);
@@ -457,8 +458,8 @@ void atender_syscall()
 					buscar_hilos_listas(hilo_en_ejecucion, hilo_en_ejecucion->tid);
 					list_add(aux->bloqueados_por_mutex, hilo_en_ejecucion);
 
-					log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <MUTEX>",
-							 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
+					log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <MUTEX: %s>",
+							 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid, aux->nombre);
 
 					sem_post(&binario_corto_plazo);
 				}
@@ -539,14 +540,20 @@ void atender_syscall()
 
 	case IO:
 
+		pthread_mutex_lock(&m_syscall_replanificadora);
+		syscall_replanificadora = 1;
+		pthread_mutex_unlock(&m_syscall_replanificadora);
+
 		char *cant_seg_duerme_ptr = list_get(instrucc->parametros, 0);
 		int cant_seg_duerme = atoi(cant_seg_duerme_ptr);
-		hilo = buscar_hilos_listas(hilo_en_ejecucion, hilo_en_ejecucion->tid);
+		hilo = buscar_tid(hilo_en_ejecucion->pcb_padre_tcb->lista_tcb, hilo_en_ejecucion->tid);
 		if (hilo != NULL)
 		{
+
 			pthread_mutex_lock(&m_lista_io);
 			list_add(lista_io, hilo);
 			pthread_mutex_unlock(&m_lista_io);
+
 
 			log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <IO>",
 					 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
@@ -564,9 +571,11 @@ void atender_syscall()
 			// pasar_a_running_tcb_con_syscall(hilo);
 			agregar_a_ready_segun_alg(hilo_aux);
 			// liberar_param_instruccion(instrucc);
-			break;
+		} else {
+			printf("No encontre el hilo :(\n");
 		}
-
+			break;
+		
 	}
 
 	liberar_param_instruccion(instrucc);
