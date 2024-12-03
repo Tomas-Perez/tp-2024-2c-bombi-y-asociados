@@ -55,13 +55,12 @@ char *generar_path_archivo(char *nombre_archivo)
 
 void levantar_config_kernel()
 {
-   // config_kernel = iniciar_config("configs/kernelFS.config");
+    // config_kernel = iniciar_config("configs/kernelFS.config");
     // config_kernel = iniciar_config("configs/kernelRC.config");
-     // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
-   // config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
-    //config_kernel = iniciar_config("configs/kernelPlani.config");
-     config_kernel = iniciar_config("configs/kernelTEM.config");
-
+    // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
+    config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
+    // config_kernel = iniciar_config("configs/kernelPlani.config");
+    // config_kernel = iniciar_config("configs/kernelTEM.config");
 
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
@@ -70,7 +69,7 @@ void levantar_config_kernel()
     puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
     algoritmo_de_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
     quantum = config_get_double_value(config_kernel, "QUANTUM");
-    printf("quantum %d  ", quantum );
+    printf("quantum %d  ", quantum);
     log_level = config_get_string_value(config_kernel, "LOG_LEVEL");
 }
 
@@ -115,7 +114,7 @@ void inicializar_estructuras_kernel()
     sem_init(&hilos_en_exit, 0, 0);
     sem_init(&hilos_en_ready, 0, 0);
     sem_init(&binario_corto_plazo, 0, 0);
-   // sem_init(&binario_atender_syscall, 0, 0);
+    // sem_init(&binario_atender_syscall, 0, 0);
     // cola de procesos
     lista_de_ready = list_create();
     lista_procesos_new = list_create();
@@ -127,23 +126,23 @@ void inicializar_estructuras_kernel()
 
 void inicializar_hilos_planificacion()
 {
-    
-    pthread_t hilo_plani_corto, hilo_exitt;
 
+    pthread_t hilo_plani_corto, hilo_exitt;
 
     pthread_create(&hilo_plani_corto, NULL, (void *)planificador_corto_plazo, NULL);
     pthread_create(&hilo_exitt, NULL, (void *)hilo_exit, NULL);
-    //pthread_create(&hilo_syscall, NULL, (void*) atender_syscall, NULL);
-    
+    // pthread_create(&hilo_syscall, NULL, (void*) atender_syscall, NULL);
+
     pthread_join(hilo_plani_corto, NULL);
     pthread_detach(hilo_exitt);
 
-   /* pthread_mutex_lock(&m_contador);
-    while(contador != 0){
-        pthread_mutex_unlock(&m_contador);
-    }
-    pthread_mutex_unlock(&m_contador);
-    */ return;
+    /* pthread_mutex_lock(&m_contador);
+     while(contador != 0){
+         pthread_mutex_unlock(&m_contador);
+     }
+     pthread_mutex_unlock(&m_contador);
+     */
+    return;
 }
 // --------------------------- Pedidos memoria ---------------------------
 int pedir_memoria(int socket)
@@ -291,13 +290,12 @@ void crear_cola_nivel(int prioridad, tcb *hilo_c)
 
     pthread_mutex_lock(&(nuevo_nivel->m_lista_prioridad));
     list_add((nuevo_nivel->hilos_asociados), hilo_c);
-   
+
     pthread_mutex_unlock(&(nuevo_nivel->m_lista_prioridad));
 
     pthread_mutex_lock(&m_lista_multinivel);
     list_add(lista_multinivel, nuevo_nivel);
     pthread_mutex_unlock(&m_lista_multinivel);
-    
 }
 
 // -------------------------- Funciones planificador  ---------------------------
@@ -346,7 +344,7 @@ void desalojar_hilo(int motivo)
 {
     t_paquete *paquete_a_desalojar = crear_paquete(DESALOJAR_PROCESO);
     agregar_a_paquete_solo(paquete_a_desalojar, &motivo, sizeof(int));
-    agregar_a_paquete_solo(paquete_a_desalojar, &hilo_en_ejecucion->pcb_padre_tcb->pid,sizeof(int));
+    agregar_a_paquete_solo(paquete_a_desalojar, &hilo_en_ejecucion->pcb_padre_tcb->pid, sizeof(int));
     agregar_a_paquete_solo(paquete_a_desalojar, &hilo_en_ejecucion->tid, sizeof(int));
     enviar_paquete(paquete_a_desalojar, conexion_interrupt);
 
@@ -365,40 +363,40 @@ void desalojar_hilo(int motivo)
 double quantumf()
 {
     double cuanto = atoi(config_get_string_value(config_kernel, "QUANTUM"));
-  //  printf("El quantum es: %f\n", cuanto);
+    //  printf("El quantum es: %f\n", cuanto);
     return cuanto;
 }
 
 void *desalojar_por_RR(tcb *hilo)
 {
-    
-    while(1) {
-    usleep(quantumf() * 1000);
-   
-    pthread_mutex_lock(&m_hilo_en_ejecucion);
-    if (hilo_en_ejecucion != NULL)
-    {
-		pthread_mutex_lock(&m_syscall_replanificadora);
 
-        if (hilo_en_ejecucion->tid == hilo->tid && syscall_replanificadora == 0)
-        { 
-            //log_info(logger_kernel, "Entro en la condicion del RR");
-			pthread_mutex_unlock(&m_syscall_replanificadora);    
-            pthread_mutex_lock(&m_quantum_restante);
-            quantum_restante = 0;
-            pthread_mutex_unlock(&m_quantum_restante);
+    while (1)
+    {
+        usleep(quantumf() * 1000);
+
+        pthread_mutex_lock(&m_hilo_en_ejecucion);
+        if (hilo_en_ejecucion != NULL)
+        {
+            pthread_mutex_lock(&m_syscall_replanificadora);
+
+            if (hilo_en_ejecucion->tid == hilo->tid && syscall_replanificadora == 0)
+            {
+                // log_info(logger_kernel, "Entro en la condicion del RR");
+                pthread_mutex_unlock(&m_syscall_replanificadora);
+                pthread_mutex_lock(&m_quantum_restante);
+                quantum_restante = 0;
+                pthread_mutex_unlock(&m_quantum_restante);
+                pthread_mutex_unlock(&m_hilo_en_ejecucion);
+                desalojar_hilo(RR);
+                // printf("Desalojado\n");
+
+                // int confirmacion;
+                pthread_exit(NULL);
+            }
+            pthread_mutex_unlock(&m_syscall_replanificadora);
             pthread_mutex_unlock(&m_hilo_en_ejecucion);
-            desalojar_hilo(RR);
-           // printf("Desalojado\n");
-            
-            // int confirmacion;
-            pthread_exit(NULL);
-            
         }
-		pthread_mutex_unlock(&m_syscall_replanificadora);    
         pthread_mutex_unlock(&m_hilo_en_ejecucion);
-    }
-    pthread_mutex_unlock(&m_hilo_en_ejecucion);
     }
 }
 
@@ -500,8 +498,9 @@ void finalizar_proceso(pcb *proc)
 {
     if (!list_is_empty(proc->lista_tcb)) // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
     {
-        for(int i = 0; i < list_size(proc->lista_tcb); i++){
-            tcb* hilo_a_finalizar = list_remove(proc->lista_tcb,0);
+        for (int i = 0; i < list_size(proc->lista_tcb); i++)
+        {
+            tcb *hilo_a_finalizar = list_remove(proc->lista_tcb, 0);
             buscar_hilos_listas(hilo_a_finalizar, hilo_a_finalizar->tid);
             pthread_mutex_lock(&m_lista_finalizados);
             list_add(lista_finalizados, hilo_a_finalizar);
@@ -543,7 +542,7 @@ void finalizar_tcb(tcb *hilo_a_finalizar)
     avisar_memoria_liberar_tcb(hilo_a_finalizar);
     sem_post(&hilos_en_exit);
     log_info(logger_kernel, "## (PID <%d>:TID <%d>) Finaliza el hilo", hilo_a_finalizar->pcb_padre_tcb->pid, hilo_a_finalizar->tid);
-    
+
     /*pthread_t hilo_exitt;
     pthread_create(&hilo_exitt, NULL, (void *)hilo_exit, NULL);
     pthread_join(hilo_exitt, NULL);*/
@@ -562,7 +561,7 @@ void *hilo_exit()
         liberar_tcb(hilo);
 
         // sem_post(&binario_corto_plazo);
-        //free(hilo);
+        // free(hilo);
         printf("BORRAR: en hilo_exit-> termino todo\n");
     }
 }
@@ -584,30 +583,27 @@ void finalizar_estructuras_kernel()
     list_destroy(lista_finalizados);
     list_destroy(lista_io);
     list_destroy(bloqueados_por_dump);
-    
 
-    //mutex
+    // mutex
     pthread_mutex_destroy(&m_hilo_en_ejecucion);
     pthread_mutex_destroy(&m_lista_de_ready);
     pthread_mutex_destroy(&m_regreso_de_cpu);
-    pthread_mutex_destroy(&m_hilo_a_ejecutar); 
+    pthread_mutex_destroy(&m_hilo_a_ejecutar);
     pthread_mutex_destroy(&m_lista_procesos_new);
     pthread_mutex_destroy(&m_lista_multinivel);
     pthread_mutex_destroy(&m_lista_finalizados);
     pthread_mutex_destroy(&m_quantum_restante);
     pthread_mutex_destroy(&m_lista_io);
     pthread_mutex_destroy(&m_bloqueados_por_dump);
-    pthread_mutex_destroy(&m_lista_io);    
-    pthread_mutex_destroy(&m_contador);    pthread_mutex_destroy(&m_syscall_replanificadora);
+    pthread_mutex_destroy(&m_lista_io);
+    pthread_mutex_destroy(&m_contador);
+    pthread_mutex_destroy(&m_syscall_replanificadora);
 
     // semaforos
     sem_destroy(&finalizo_un_proc);
     sem_destroy(&hilos_en_exit);
     sem_destroy(&hilos_en_ready);
     sem_destroy(&binario_corto_plazo);
-
-    
-    
 }
 // --------------------- Buscar ---------------------
 tcb *buscar_TID(tcb *tcb_pedido, int tid_buscado)
@@ -803,29 +799,9 @@ t_list* encontrar_por_nivel(t_list* lista_multinivel, int prioridad)
     }
     return list_find(lista_multinivel, _existe_nivel);
 }*/
+
 nivel_prioridad *encontrar_por_nivel(t_list *lista_multi, int prioridad)
 {
-    // nivel_prioridad* aux;
-    /* bool _existe_nivel(void* ptr)
-     {
-         nivel_prioridad* aux = (nivel_prioridad*) ptr;
-          printf("Evaluando nivel con prioridad=%d\n", aux->prioridad);
-         return aux->prioridad == prioridad;
-
-     }
-
-
-     for (int i = 0; i < list_size(lista_multi); i++) {
-         nivel_prioridad* aux = (nivel_prioridad*) list_get(lista_multi, i);
-         if (aux != NULL) {
-             printf("Elemento %d: prioridad = %d\n", i, aux->prioridad);
-         } else {
-             printf("Elemento %d: NULL\n", i);
-         }
-
- }
-
-     nivel_prioridad* resultado = list_find(lista_multi, _existe_nivel);*/
     int cant_elem_multi = list_size(lista_multi);
     // printf("Cantidad de elementos lista multinivel %d \n", cant_elem_multi);
     for (int i = 0; i < cant_elem_multi; i++)
@@ -837,7 +813,6 @@ nivel_prioridad *encontrar_por_nivel(t_list *lista_multi, int prioridad)
             return resultado;
         }
     }
-
     return NULL;
 }
 
@@ -931,12 +906,14 @@ void asignar_mutex_al_primer_bloqueado(mutex_k *mutex_solicitado)
 }
 
 // --------------------- funciones auxiliares ---------------------
-void liberar_param_instruccion(instruccion* instrucc){
-		for(int i = 0; i<list_size(instrucc->parametros); i++){
-			free(list_get(instrucc->parametros,i));
-		}
-		list_destroy(instrucc->parametros);
-		free(instrucc);
+void liberar_param_instruccion(instruccion *instrucc)
+{
+    for (int i = 0; i < list_size(instrucc->parametros); i++)
+    {
+        free(list_get(instrucc->parametros, i));
+    }
+    list_destroy(instrucc->parametros);
+    free(instrucc);
 }
 /*
 void sacar_de_lista_pcb(tcb* hilo_a_sacar)
