@@ -385,12 +385,12 @@ int atenderKernel(int *socket_kernel)
             log_info(logger_memoria, "Error al recibir el buffer\n");
             return -1;
         }
-
+        eliminar_proceso(pid); // elimina las estructuras administrativas y libera memoria en estructuras
         usleep(retardo_rta * 1000);
 
         pid = buffer_read_uint32(buffer);
 
-        eliminar_proceso(pid); // elimina las estructuras administrativas y libera memoria en estructuras
+        
         confirmacion = 1;
         send(*socket_kernel, &confirmacion, sizeof(int), 0);
         free(buffer);
