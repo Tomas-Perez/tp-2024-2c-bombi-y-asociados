@@ -74,7 +74,7 @@ int main(int argc, char *argv[])
             pthread_create(&t2, NULL, (void *)atenderCpu, &socket_cpu);
             break;
         default:
-            log_warning(logger_memoria, "Modulo no reconocido\n");
+            //log_warning(logger_memoria, "Modulo no reconocido\n");
             break;
         }
     }
@@ -214,7 +214,7 @@ int atenderCpu(int *socket_cpu)
             free(buffer);
             break;
         default:
-            log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
+            //log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
             break;
         }
     }
@@ -245,6 +245,9 @@ int atenderKernel(int *socket_kernel)
         uint32_t tamanio_proceso = buffer_read_uint32(buffer);
 
         t_particiones *particion_a_asignar = malloc(sizeof(t_particiones));
+
+        log_info(logger_memoria, "Proceso PID: %i y tamaño: %i quiere espacio en memoria", pid, tamanio_proceso);
+
         /*-------------------------------------------------- Particiones Fijas --------------------------------------------------*/
         if (strcmp(esquema, "FIJAS") == 0)
         {
@@ -385,10 +388,11 @@ int atenderKernel(int *socket_kernel)
             log_info(logger_memoria, "Error al recibir el buffer\n");
             return -1;
         }
-        eliminar_proceso(pid); // elimina las estructuras administrativas y libera memoria en estructuras
-        usleep(retardo_rta * 1000);
-
         pid = buffer_read_uint32(buffer);
+
+        eliminar_proceso(pid); // elimina las estructuras administrativas y libera memoria en estructuras
+
+        usleep(retardo_rta * 1000);
 
         
         confirmacion = 1;
@@ -539,7 +543,7 @@ int atenderKernel(int *socket_kernel)
         break;
 
     default:
-        log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
+        //log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
         printf("Cod Op: %i", cod_op);
         break;
     }
@@ -548,9 +552,9 @@ int atenderKernel(int *socket_kernel)
 
 void levantar_config_memoria()
 {
-   config_memoria = config_create("configs/memoriaPlani.config");
+    // config_memoria = config_create("configs/memoriaPlani.config");
     // config_memoria = config_create("configs/memoriaRC.config");
-    //config_memoria = config_create("configs/memoriaParticionesFijas.config");
+    config_memoria = config_create("configs/memoriaParticionesFijas.config");
     //config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
     //config_memoria = config_create("configs/memoriaFS.config");
 

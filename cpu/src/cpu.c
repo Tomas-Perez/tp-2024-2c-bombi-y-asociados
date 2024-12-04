@@ -107,7 +107,6 @@ int atenderCpuInterrupt()
             //log_info(logger_cpu, "case DESALOJAR_PROCESO: tid interrupt: %d tid %d \n",tid_interrupt, tid);
             if ((pid_interrupt == pid) && (tid_interrupt == tid))
             {
-                log_info(logger_cpu, "Llega interrupción al puerto Interrupt PID: %d TID: %d", pid_interrupt, tid_interrupt);
                 //log_info(logger_cpu, "Llega interrupción al puerto Interrupt tid_interrupt %d tid %d", tid_interrupt, tid);
                 
                 interrupcion = true;
