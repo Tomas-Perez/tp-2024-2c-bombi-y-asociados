@@ -17,6 +17,7 @@ int syscall_solicitada;
 char *log_level;
 int syscall_replanificadora;
 int contador;
+pthread_mutex_t m_lista_mutex;
 
 //----------------------------------------------------------------
 // --------------------------- indice ---------------------------
@@ -109,6 +110,7 @@ void inicializar_estructuras_kernel()
     pthread_mutex_init(&m_lista_io, NULL);
     pthread_mutex_init(&m_syscall_replanificadora, NULL);
     pthread_mutex_init(&m_contador, NULL);
+    pthread_mutex_init(&m_lista_mutex, NULL);
     // semaforo
     sem_init(&finalizo_un_proc, 0, 0);
     sem_init(&hilos_en_exit, 0, 0);
@@ -532,8 +534,9 @@ void finalizar_proceso(pcb *proc)
         //free(mutex->nombre);
         list_destroy(mutex->bloqueados_por_mutex);
     }
+    //pthread_mutex_lock(&m_lista_mutex);
     list_destroy_and_destroy_elements(proc->lista_mutex_proc, mutex_proc_destroy);
-    
+   // pthread_mutex_unlock(&m_lista_mutex);
     pthread_mutex_lock(&m_contador);
     contador--;
     pthread_mutex_unlock(&m_contador);
@@ -678,7 +681,7 @@ tcb *buscar_hilos_listas(tcb *main, int tid)
 }
 
 tcb *buscar_hilos_listas_sin_sacar_del_padre(tcb *main, int tid) {
-    tcb *hilo = buscar_tid(main->pcb_padre_tcb->lista_tcb, tid);  // este solo lo saca de la lista del padre
+    tcb *hilo = buscar_tid(main->pcb_padre_tcb->lista_tcb, tid);  // este no lo saca de la lista del padre
     int confirmacion = 0;
     if (hilo != NULL)
     {
@@ -784,7 +787,9 @@ bool existe_mutex(mutex_k *mutex_solic, t_list *lista_mutexs_proceso)
     mutex_k *aux;
     for (int i = 0; i < list_size(lista_mutexs_proceso); i++)
     {
+        pthread_mutex_lock(&m_lista_mutex);
         aux = list_get(lista_mutexs_proceso, i);
+        pthread_mutex_lock(&m_lista_mutex);
         if (strcmp(aux->nombre, mutex_solic->nombre) == 0)
         {
             existe = true;
@@ -799,8 +804,10 @@ mutex_k *existe_mutex_por_nombre(char *mutex_solic, t_list *lista_mutexs_proceso
     // bool existe = false;
     mutex_k *aux;
     for (int i = 0; i < list_size(lista_mutexs_proceso); i++)
-    {
+    {   
+        pthread_mutex_lock(&m_lista_mutex);
         aux = list_get(lista_mutexs_proceso, i);
+        pthread_mutex_unlock(&m_lista_mutex);
         if (strcmp(aux->nombre, mutex_solic) == 0)
         {
             return aux;
@@ -815,7 +822,9 @@ bool mutex_tomado_por_hilo(mutex_k *mutex, tcb *hilo)
     mutex_k *aux;
     for (int i = 0; i < list_size(hilo->lista_mutex); i++)
     {
+        pthread_mutex_lock(&m_lista_mutex);
         aux = list_get(hilo->lista_mutex, i);
+        pthread_mutex_unlock(&m_lista_mutex);
         if (strcmp(mutex->nombre, aux->nombre) == 0)
         {
             tomado = true;
@@ -832,7 +841,9 @@ bool mutex_por_nombre_tomado_por_hilo(char *mutex, tcb *hilo)
     mutex_k *aux;
     for (int i = 0; i < list_size(hilo->lista_mutex); i++)
     {
+        pthread_mutex_lock(&m_lista_mutex);
         aux = list_get(hilo->lista_mutex, i);
+        pthread_mutex_unlock(&m_lista_mutex);
         if (strcmp(mutex, aux->nombre) == 0)
         {
             tomado = true;
@@ -922,7 +933,8 @@ int bloquear_por_dump(tcb *hilo, int socket)
 mutex_k *crear_mutex(char *nombre)
 {
     mutex_k *mtx = (mutex_k *)malloc(sizeof(mutex_k));
-    mtx->nombre = nombre;
+    mtx->nombre = (char *)malloc(strlen(nombre));
+    strcpy(mtx->nombre, nombre);
     mtx->disponibilidad = true;
     mtx->bloqueados_por_mutex = list_create();
 
@@ -932,16 +944,24 @@ void asignar_mutex_hilo(mutex_k *mutex, tcb *hilo)
 {
     mutex->disponibilidad = false;
     mutex->hilo_poseedor = hilo;
+    pthread_mutex_lock(&m_lista_mutex);
     list_add(hilo->lista_mutex, mutex);
+    pthread_mutex_unlock(&m_lista_mutex);
+    log_info(logger_kernel, "## Se asigna el MUTEX: <%s> a PID <%d> : TID <%d>", 
+    mutex->nombre, hilo->pcb_padre_tcb->pid, hilo->tid);
 }
 
 void liberar_mutexs_asociados(tcb *hilo)
 {
     mutex_k *aux;
+    pthread_mutex_lock(&m_lista_mutex);
     int elementos = list_size(hilo->lista_mutex);
+    pthread_mutex_unlock(&m_lista_mutex);
     for (int i = 0; i < elementos; i++)
     {
+        pthread_mutex_lock(&m_lista_mutex);
         aux = list_remove(hilo->lista_mutex, i);
+        pthread_mutex_unlock(&m_lista_mutex);
         asignar_mutex_al_primer_bloqueado(aux);
     }
     list_destroy(hilo->lista_mutex);
@@ -954,6 +974,8 @@ void asignar_mutex_al_primer_bloqueado(mutex_k *mutex_solicitado)
     {
         bloq_por_mutex = list_remove(mutex_solicitado->bloqueados_por_mutex, 0);
         asignar_mutex_hilo(mutex_solicitado, bloq_por_mutex);
+        agregar_a_ready_segun_alg(bloq_por_mutex);
+
     }
     else if (list_size(mutex_solicitado->bloqueados_por_mutex) == 1)
     {
@@ -962,6 +984,7 @@ void asignar_mutex_al_primer_bloqueado(mutex_k *mutex_solicitado)
 
         mutex_solicitado->disponibilidad = true;
         mutex_solicitado->hilo_poseedor = NULL;
+        agregar_a_ready_segun_alg(bloq_por_mutex);
     }
 }
 

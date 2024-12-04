@@ -457,7 +457,7 @@ void atender_syscall()
 					pthread_mutex_lock(&m_syscall_replanificadora);
 					syscall_replanificadora = 1;
 					pthread_mutex_unlock(&m_syscall_replanificadora);
-					buscar_hilos_listas(hilo_en_ejecucion, hilo_en_ejecucion->tid);
+					buscar_hilos_listas_sin_sacar_del_padre(hilo_en_ejecucion, hilo_en_ejecucion->tid);
 					list_add(aux->bloqueados_por_mutex, hilo_en_ejecucion);
 
 					log_info(logger_kernel, "## (PID <%d> : TID <%d>) - Bloqueado por: <MUTEX: %s>",
@@ -496,16 +496,23 @@ void atender_syscall()
 
 		lista_mutex_proceso = hilo_en_ejecucion->pcb_padre_tcb->lista_mutex_proc;
 		mutex_k *aux_m = existe_mutex_por_nombre(nombre_mutex_solici, lista_mutex_proceso);
-
+		log_info(logger_kernel, "## Se libera el MUTEX: <%s> ", aux_m->nombre);
 		if (aux_m != NULL)
 		{
 			bool esTomado = mutex_por_nombre_tomado_por_hilo(nombre_mutex_solici, hilo_en_ejecucion);
 			if (esTomado != false)
 			{
+				list_remove_element(hilo_en_ejecucion->lista_mutex, aux_m);
+				pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
+				aux_m->disponibilidad = true;
+				aux_m->hilo_poseedor = NULL;
 				asignar_mutex_al_primer_bloqueado(aux_m);
 			}
 		}
-		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
+		else {
+			pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
+
+		}
 		// liberar_param_instruccion(instrucc);
 		break;
 	case DUMP_MEMORY:

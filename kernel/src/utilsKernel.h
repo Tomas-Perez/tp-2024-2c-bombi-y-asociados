@@ -71,6 +71,7 @@ extern pthread_mutex_t m_lista_io;
 extern pthread_mutex_t m_bloqueados_por_dump;
 extern pthread_mutex_t m_syscall_replanificadora;
 extern pthread_mutex_t m_contador;
+extern pthread_mutex_t m_lista_mutex;
 
 extern sem_t finalizo_un_proc;
 extern sem_t hilos_en_exit;
