@@ -58,7 +58,7 @@ void aceptar_peticiones(int socket_servidor)
 void atender_petiticiones(int *socket)
 {
     int socket_cliente = *socket;
-    printf("el socket memoria es %d \n",socket_cliente);
+    //printf("el socket memoria es %d \n",socket_cliente);
     //t_list *lista;
     uint32_t handshake;
     uint32_t resultOk = 0;
@@ -90,7 +90,7 @@ void atender_petiticiones(int *socket)
             close(socket_cliente);
         }
     }
-    puts("handshake hecho");
+    //puts("handshake hecho");
     int koso = 0;
     int size =0;
     int* exit_status=malloc(sizeof(int));
@@ -148,7 +148,7 @@ void archivocheq(){
 void bitmap_check(){
     sem_wait(&sem2);
     bits_disp= bitarray_get_max_bit(bitarray_bitmap);
-    for(int i=0;i<BIT_CHAR(block_count);i++)
+    for(int i=0;i<block_count;i++)
     if(bitarray_test_bit(bitarray_bitmap,i)==true){
         bits_disp--;
     }
@@ -230,6 +230,7 @@ int crear_archivo(char* nombre, int size,int socket_cli,void* data){
     int bloque_disp=verificar_espacio_disp(bitarray_bitmap,cant_bloques);
     if (bloque_disp==-1){
         //mandar_error(socket_cli);
+        log_error(logger_fs, "## Fin de solicitud - Archivo: %s No creado",nombre);
         return -1;
     }else{
     }
