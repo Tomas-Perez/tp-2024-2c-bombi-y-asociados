@@ -34,6 +34,7 @@ t_proceso *agregar_proceso_instrucciones(FILE *f, int pid, t_particiones *partic
 	proceso->tids = list_create();
 	proceso->base = particion_a_asignar->base;
 	proceso->limite = particion_a_asignar->limite;
+	log_info(logger_memoria, "Particion asignada para PID: %i, base: %i, limite: %i", pid, proceso->base, proceso->limite);
 
 	t_hilo *hilo_main = malloc(sizeof(t_hilo));
 	inicializar_hilo(proceso, 0, hilo_main, f);
@@ -110,12 +111,12 @@ void eliminar_proceso(int pid)
 	t_proceso *proceso_a_eliminar = buscar_proceso(procesos_memoria, pid);
 	log_info(logger_memoria, "Proceso <Destruido> -  PID: <%i> - Tamaño: <%i>", pid, proceso_a_eliminar->limite);
 	liberar_espacio_memoria(proceso_a_eliminar);
-	printf("Salio de liberar espacio");
+	//printf("Salio de liberar espacio");
 	pthread_mutex_lock(&m_proc_mem);
 	list_remove_element(procesos_memoria, proceso_a_eliminar);
 	pthread_mutex_unlock(&m_proc_mem);
 	liberar_proceso(proceso_a_eliminar);
-	printf("Salio de liberar proceso");
+	//printf("Salio de liberar proceso");
 }
 
 void liberar_proceso(t_proceso *proceso)

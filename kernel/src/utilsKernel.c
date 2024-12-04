@@ -140,9 +140,10 @@ void inicializar_hilos_planificacion()
     return;
 }
 // --------------------------- Pedidos memoria ---------------------------
-int pedir_memoria(int socket)
-{
-
+int pedir_memoria(int socket) 
+{ 
+    if(list_size(lista_procesos_new) > 0) {
+        for(int i = 0; i < list_size(lista_procesos_new); i++) {
     pthread_mutex_lock(&m_lista_procesos_new);
     pcb *proceso_nuevo = list_get(lista_procesos_new, 0);
     pthread_mutex_unlock(&m_lista_procesos_new);
@@ -152,7 +153,7 @@ int pedir_memoria(int socket)
     int motivo = PROCESS_CREATE; // preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
     uint32_t size_path_hilo = strlen(path);
 
-    printf("2 Tamanio Path: %i\n", size_path_hilo);
+   // printf("2 Tamanio Path: %i\n", size_path_hilo);
     printf("2 Path: %s\n", path);
 
     t_paquete *pedido_memoria = crear_paquete(motivo);
@@ -180,22 +181,32 @@ int pedir_memoria(int socket)
     }
     close(socket);
 
-    if (!confirmacion_mem_disponible)
+    if (confirmacion_mem_disponible == 0)
     {
-        log_info(logger_kernel, "No hay memoria disponible para el proceso PID: %i", pid);
+        log_info(logger_kernel, "BORRAR: No hay memoria disponible para el proceso PID: %i", pid);
         sem_post(&binario_corto_plazo);
-        pthread_t esperar_fin_proc;
-        pthread_create(&esperar_fin_proc, NULL, (void *)pedir_mem_fin, ((void *)proceso_nuevo));
-        pthread_detach(esperar_fin_proc);
-        return 0;
+
+       return 0;
+
     }
     else
     {
         pthread_mutex_lock(&m_lista_procesos_new);
         list_remove(lista_procesos_new, 0);
         pthread_mutex_unlock(&m_lista_procesos_new);
+
+        tcb* hilo_main = crear_tcb(proceso_nuevo, proceso_nuevo->prioridad_hilo_main);
+        agregar_a_ready_segun_alg(hilo_main);
+        
+        if(list_size(lista_procesos_new) > 0) {
+            int socket_recursivo = conectarMemoria();
+            pedir_memoria(socket_recursivo);
+        }
+        
     }
-    return 1;
+    
+    }
+    }
 }
 
 void *pedir_mem_fin(pcb *nuevo_pcb)
@@ -210,13 +221,14 @@ void *pedir_mem_fin(pcb *nuevo_pcb)
 pcb *crear_pcb(int prioridad_h_main, char *path, int tamanio, int socket)
 {
     pcb *nuevo_pcb = (pcb *)malloc(sizeof(pcb));
-    tcb *hilo_main;
+    
 
     nuevo_pcb->tam_proc = tamanio;
-    //nuevo_pcb->path_proc = malloc(sizeof(char) * length(path));
-    nuevo_pcb->path_proc = path;
+    nuevo_pcb->path_proc = (char *)malloc(strlen(path));
+    strcpy(nuevo_pcb->path_proc, path);
     nuevo_pcb->pid = id_counter;
     nuevo_pcb->contador_tid = 0;
+    nuevo_pcb->prioridad_hilo_main = prioridad_h_main;
     id_counter++;
 
     pthread_mutex_lock(&m_contador);
@@ -232,12 +244,14 @@ pcb *crear_pcb(int prioridad_h_main, char *path, int tamanio, int socket)
         return NULL;
     }
     log_info(logger_kernel, "## (<PID>:%d) Se crea el proceso - Estado: NEW", nuevo_pcb->pid);
-    hilo_main = crear_tcb(nuevo_pcb, prioridad_h_main);
+    
 
     pthread_mutex_lock(&m_lista_procesos_new);
     list_add(lista_procesos_new, nuevo_pcb);
     pthread_mutex_unlock(&m_lista_procesos_new);
-    int confirmacion = pedir_memoria(socket);
+    pedir_memoria(socket);
+
+    /*int confirmacion = pedir_memoria(socket);
 
     if (confirmacion == 1)
     {
@@ -248,7 +262,7 @@ pcb *crear_pcb(int prioridad_h_main, char *path, int tamanio, int socket)
     else if (confirmacion == 0)
     {
         // FIJARSE ACA HILO
-    }
+    }*/
 }
 
 tcb *crear_tcb(pcb *proc_padre, int prioridad)
@@ -492,6 +506,12 @@ void iniciar_hilo(tcb *hilo, int conexion_memoria, char *path)
 void finalizar_proceso(pcb *proc)
 {
     avisar_memoria_liberar_pcb(proc);
+
+    log_info(logger_kernel, "## Finaliza el proceso <%d>", proc->pid);
+    int socketFP = conectarMemoria();
+    pedir_memoria(socketFP);
+    close(socketFP);
+
     if (!list_is_empty(proc->lista_tcb)) // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
     {
         for (int i = 0; i < list_size(proc->lista_tcb); i++)
@@ -504,15 +524,23 @@ void finalizar_proceso(pcb *proc)
             sem_post(&hilos_en_exit);
         }
     }
-    log_info(logger_kernel, "## Finaliza el proceso <%d>", proc->pid);
 
     list_destroy(proc->lista_tcb);
 
+    void mutex_proc_destroy(void* ptr) {
+        mutex_k* mutex = (mutex_k*) ptr;
+        //free(mutex->nombre);
+        list_destroy(mutex->bloqueados_por_mutex);
+    }
+    list_destroy_and_destroy_elements(proc->lista_mutex_proc, mutex_proc_destroy);
+    
     pthread_mutex_lock(&m_contador);
     contador--;
     pthread_mutex_unlock(&m_contador);
     free(proc);
+
     sem_post(&finalizo_un_proc);
+    
     sem_post(&binario_corto_plazo);
 }
 

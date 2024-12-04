@@ -19,8 +19,10 @@ void check_interrupt(instruccion *inst)
 {
     if (interrupcion && ejecutando_un_proceso)
     {
+        log_info(logger_cpu, "Llega interrupción al puerto Interrupt PID: %d TID: %d", pid, tid);
         //log_info("entra en check interrupt pid: %d tid: %d\n", pid, tid);
         devolver_contexto_de_ejecucion(pid, tid);
+
 
         ejecutando_un_proceso = false;
         
