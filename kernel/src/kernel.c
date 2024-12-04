@@ -25,8 +25,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }*/
    
-    argv[1] = "MEM_FIJA_BASE";
-    argv[2] = "12";
+    argv[1] = "RECURSOS_MUTEX_PROC";
+    argv[2] = "32";
 
     pthread_t t1, t2;
     

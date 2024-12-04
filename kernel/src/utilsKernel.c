@@ -56,9 +56,9 @@ char *generar_path_archivo(char *nombre_archivo)
 void levantar_config_kernel()
 {
     // config_kernel = iniciar_config("configs/kernelFS.config");
-    // config_kernel = iniciar_config("configs/kernelRC.config");
+     config_kernel = iniciar_config("configs/kernelRC.config");
     // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
-    config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
+    //config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
     // config_kernel = iniciar_config("configs/kernelPlani.config");
     // config_kernel = iniciar_config("configs/kernelTEM.config");
 
@@ -525,7 +525,7 @@ void finalizar_proceso(pcb *proc)
 
     void mutex_proc_destroy(void* ptr) {
         mutex_k* mutex = (mutex_k*) ptr;
-        free(mutex->nombre);
+        //free(mutex->nombre);
         list_destroy(mutex->bloqueados_por_mutex);
     }
     list_destroy_and_destroy_elements(proc->lista_mutex_proc, mutex_proc_destroy);
@@ -559,6 +559,7 @@ void finalizar_tcb(tcb *hilo_a_finalizar)
     pthread_mutex_unlock(&m_lista_finalizados);
 
     avisar_memoria_liberar_tcb(hilo_a_finalizar);
+    liberar_tcb(hilo_a_finalizar);
     sem_post(&hilos_en_exit);
     log_info(logger_kernel, "## (PID <%d>:TID <%d>) Finaliza el hilo", hilo_a_finalizar->pcb_padre_tcb->pid, hilo_a_finalizar->tid);
 
@@ -577,7 +578,6 @@ void *hilo_exit()
         tcb *hilo = list_remove(lista_finalizados, 0);
         pthread_mutex_unlock(&m_lista_finalizados);
 
-        liberar_tcb(hilo);
 
         // sem_post(&binario_corto_plazo);
         // free(hilo);
