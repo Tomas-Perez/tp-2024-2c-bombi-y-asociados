@@ -21,6 +21,7 @@ void *memoria;
 int main(int argc, char *argv[])
 {
     int socket_cliente;
+    bool esperando_clientes = true;
 
     levantar_config_memoria();
     inicializar_estructuras();
@@ -55,7 +56,7 @@ int main(int argc, char *argv[])
 
     // pthread_create(&t3, NULL, (void *)conectarFS, &socket_fs);
 
-    while (1)
+    while (esperando_clientes)
     {
         socket_cliente = esperar_cliente(socket_memoria);
 
@@ -74,11 +75,17 @@ int main(int argc, char *argv[])
             pthread_create(&t2, NULL, (void *)atenderCpu, &socket_cpu);
             break;
         default:
-            //log_warning(logger_memoria, "Modulo no reconocido\n");
+
+            esperando_clientes = false;
+            close(socket_memoria);
+            close(socket_cliente);
+            log_warning(logger_memoria, "Modulo no reconocido\n");
+
             break;
         }
     }
 
+    // finalizar_estructuras_memoria();
     pthread_join(t3, NULL);
 
     return 0;
@@ -259,7 +266,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "BEST") == 0)
@@ -270,7 +277,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "WORST") == 0)
@@ -281,7 +288,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else
@@ -301,7 +308,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "BEST") == 0)
@@ -312,7 +319,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                                // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
                 }
             }
             else if (strcmp(algoritmo_busqueda, "WORST") == 0)
@@ -373,7 +380,7 @@ int atenderKernel(int *socket_kernel)
         free(buffer);
 
         agregar_proceso_instrucciones(f, pid, particion_a_asignar);
-        //free(particion_a_asignar);
+        // free(particion_a_asignar);
 
         log_info(logger_memoria, "Proceso <Creado> -  PID: <%i> - Tamaño: <%i>", pid, tamanio_proceso);
 
@@ -523,22 +530,25 @@ int atenderKernel(int *socket_kernel)
         agregar_a_paquete_solo(paquete_dump, &pid, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_dump, &tid, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_dump, &proceso_dump->limite, sizeof(uint32_t));
-        //agregar_a_paquete_solo(paquete_dump, contenido_memoria, proceso_dump->limite);
+        // agregar_a_paquete_solo(paquete_dump, contenido_memoria, proceso_dump->limite);
         enviar_paquete(paquete_dump, socket_FS);
         eliminar_paquete(paquete_dump);
-        send(socket_FS,contenido_memoria,proceso_dump->limite,0);
+        send(socket_FS, contenido_memoria, proceso_dump->limite, 0);
         free(contenido_memoria);
 
         int confirmado_fs;
         recv(socket_FS, &confirmado_fs, sizeof(int), MSG_WAITALL);
-        if (confirmado_fs==1){
+        if (confirmado_fs == 1)
+        {
             puts("DUMP CREADO EXITOSAMENTE");
-        }else{
+        }
+        else
+        {
             puts("DUMP LLENO");
         }
         close(socket_FS);
         int confirm;
-      
+
         send(*socket_kernel, &confirmado_fs, sizeof(int), 0);
         break;
 
@@ -553,10 +563,12 @@ int atenderKernel(int *socket_kernel)
 void levantar_config_memoria()
 {
     // config_memoria = config_create("configs/memoriaPlani.config");
-     config_memoria = config_create("configs/memoriaRC.config");
-   // config_memoria = config_create("configs/memoriaParticionesFijas.config");
-    //config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
-    //config_memoria = config_create("configs/memoriaFS.config");
+    // config_memoria = config_create("configs/memoriaRC.config");
+    config_memoria = config_create("configs/memoriaParticionesFijas.config");
+    // config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
+    // config_memoria = config_create("configs/memoriaFS.config");
+    // config_memoria = config_create("configs/memoriaTEM.config");
+
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");

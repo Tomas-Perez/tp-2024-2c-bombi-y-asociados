@@ -306,6 +306,7 @@ void atender_syscall()
 		// free(archivo);
 		close(socket);
 		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
+
 		break;
 	case SEGMENTATION_FAULT:
 	case PROCESS_EXIT:
@@ -566,6 +567,7 @@ void atender_syscall()
 			pthread_mutex_lock(&m_lista_io);
 			tcb *hilo_aux = list_remove(lista_io, 0);
 			pthread_mutex_unlock(&m_lista_io);
+
 
 			log_info(logger_kernel, "## ((PID <%d> : TID <%d> )) finalizó IO y pasa a READY",
 					 hilo_aux->pcb_padre_tcb->contador_tid, hilo_aux->tid);
