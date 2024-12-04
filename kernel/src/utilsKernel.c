@@ -185,7 +185,9 @@ int pedir_memoria(int socket)
     {
         log_info(logger_kernel, "BORRAR: No hay memoria disponible para el proceso PID: %i", pid);
         sem_post(&binario_corto_plazo);
+
        return 0;
+
     }
     else
     {
@@ -504,10 +506,12 @@ void iniciar_hilo(tcb *hilo, int conexion_memoria, char *path)
 void finalizar_proceso(pcb *proc)
 {
     avisar_memoria_liberar_pcb(proc);
+
     log_info(logger_kernel, "## Finaliza el proceso <%d>", proc->pid);
     int socketFP = conectarMemoria();
     pedir_memoria(socketFP);
     close(socketFP);
+
     if (!list_is_empty(proc->lista_tcb)) // hago este if xq tmbn llamo a esta funcion cuando se queda sin hilos
     {
         for (int i = 0; i < list_size(proc->lista_tcb); i++)
@@ -520,12 +524,12 @@ void finalizar_proceso(pcb *proc)
             sem_post(&hilos_en_exit);
         }
     }
-    
+
     list_destroy(proc->lista_tcb);
 
     void mutex_proc_destroy(void* ptr) {
         mutex_k* mutex = (mutex_k*) ptr;
-        free(mutex->nombre);
+        //free(mutex->nombre);
         list_destroy(mutex->bloqueados_por_mutex);
     }
     list_destroy_and_destroy_elements(proc->lista_mutex_proc, mutex_proc_destroy);
