@@ -355,6 +355,7 @@ void atender_syscall()
 		pthread_mutex_unlock(&m_syscall_replanificadora);
 		char *tid_j = list_get(instrucc->parametros, 0);
 		tid = atoi(tid_j);
+		printf("Hilo buscado TID: %d del padre PID: %d", tid, hilo_en_ejecucion->pcb_padre_tcb->pid);
 		tcb *tcb_invocado = buscar_tid(hilo_en_ejecucion->pcb_padre_tcb->lista_tcb, tid);
 
 		if (tcb_invocado != NULL)
