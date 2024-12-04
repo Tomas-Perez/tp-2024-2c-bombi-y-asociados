@@ -1,6 +1,6 @@
 #include "utilsfiles.h"
 t_bitarray *bitarray_bitmap;
-pthread_mutex_t mconteo;
+pthread_mutex_t mconteo,m_setbit,m_busq;
 int block_size,block_count,retardo_acceso_bloque,bits_disp;
 char *puerto_escucha, *mount_dir, *log_level;
 t_config *config_fs;
@@ -10,11 +10,11 @@ t_log *logger_fs;
 void levantar_config_fs()
 {
     //config_fs = config_create("configs/filesystemPlani.config");
-    //config_fs = config_create("configs/filesystemFS.config");
+    config_fs = config_create("configs/filesystemFS.config");
     //config_fs = config_create("configs/filesystemRC.config");
     //config_fs = config_create("configs/filesystemParticionesFIjas.config");
     //config_fs = config_create("configs/filesystemParticionesDInamicas.config");
-    config_fs = config_create("configs/filesystemTEM.config");
+    //config_fs = config_create("configs/filesystemTEM.config");
    
 
     puerto_escucha = config_get_string_value(config_fs, "PUERTO_ESCUCHA");
@@ -23,6 +23,10 @@ void levantar_config_fs()
     block_size = config_get_int_value(config_fs, "BLOCK_SIZE");
     block_count = config_get_int_value(config_fs, "BLOCK_COUNT");
     retardo_acceso_bloque = config_get_int_value(config_fs, "RETARDO_ACCESO_BLOQUE");
+
+    pthread_mutex_init(&m_setbit,NULL);
+    pthread_mutex_init(&m_busq,NULL);
+    pthread_mutex_init(&mconteo,NULL);
 }
 
 int redondeo_bloques(int tamanio){
@@ -70,19 +74,26 @@ int verificar_espacio_disp(t_bitarray* bit,int size){
             break;
         }
     }
+    pthread_mutex_lock(&m_busq);
     bits_disp--;
+    pthread_mutex_unlock(&m_busq);
     return busqueda;
     }
 }
 
 void reservar_bloques_bitmap(t_bitarray* bit,int bloque_disp,int cant_bloques,char* nombre){
+    pthread_mutex_lock(&m_setbit);
     bitarray_set_bit(bit,bloque_disp);
+    pthread_mutex_unlock(&m_setbit);
     log_info(logger_fs,"## Bloque asignado: %d - Archivo: %s - Bloques Libres: %d",bloque_disp,nombre,bits_disp);
     for(int i=1;i<cant_bloques+1;i++){
+        pthread_mutex_lock(&m_setbit);
         bitarray_set_bit(bit,bloque_disp+i);
         bits_disp--;
+        pthread_mutex_unlock(&m_setbit);
         log_info(logger_fs,"## Bloque asignado: %d - Archivo: %s - Bloques Libres: %d",bloque_disp+i,nombre,bits_disp);
     }
+    msync(bit, bitarray_bitmap->size, MS_SYNC);
 }
 
 void mandar_error(int socke){
