@@ -143,6 +143,7 @@ void inicializar_hilos_planificacion()
 int pedir_memoria(int socket) 
 { 
     if(list_size(lista_procesos_new) > 0) {
+        for(int i = 0; i < list_size(lista_procesos_new); i++) {
     pthread_mutex_lock(&m_lista_procesos_new);
     pcb *proceso_nuevo = list_get(lista_procesos_new, 0);
     pthread_mutex_unlock(&m_lista_procesos_new);
@@ -152,7 +153,7 @@ int pedir_memoria(int socket)
     int motivo = PROCESS_CREATE; // preguntar si solo es para PROCESS CREATE entonces mandarle un nombre mas descriptivo
     uint32_t size_path_hilo = strlen(path);
 
-    printf("2 Tamanio Path: %i\n", size_path_hilo);
+   // printf("2 Tamanio Path: %i\n", size_path_hilo);
     printf("2 Path: %s\n", path);
 
     t_paquete *pedido_memoria = crear_paquete(motivo);
@@ -184,7 +185,7 @@ int pedir_memoria(int socket)
     {
         log_info(logger_kernel, "BORRAR: No hay memoria disponible para el proceso PID: %i", pid);
         sem_post(&binario_corto_plazo);
-       
+       return 0;
     }
     else
     {
@@ -195,11 +196,15 @@ int pedir_memoria(int socket)
         tcb* hilo_main = crear_tcb(proceso_nuevo, proceso_nuevo->prioridad_hilo_main);
         agregar_a_ready_segun_alg(hilo_main);
         
-        return 1;
+        if(list_size(lista_procesos_new) > 0) {
+            int socket_recursivo = conectarMemoria();
+            pedir_memoria(socket_recursivo);
+        }
+        
     }
     
     }
-  
+    }
 }
 
 void *pedir_mem_fin(pcb *nuevo_pcb)
