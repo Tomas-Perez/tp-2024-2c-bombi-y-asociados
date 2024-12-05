@@ -26,6 +26,19 @@ void inicializar_estructuras()
 	pthread_mutex_init(&m_lista_particiones, NULL);
 }
 
+void finalizar_estructuras_memoria() {
+
+	list_destroy(procesos_memoria);
+	list_destroy(lista_particiones);
+	pthread_mutex_destroy(&mutex_listas);
+	pthread_mutex_destroy(&mutex_instrucciones);
+	pthread_mutex_destroy(&mutex_espacio_usuario);
+	pthread_mutex_destroy(&m_instruccion);
+	pthread_mutex_destroy(&m_proc_mem);
+	pthread_mutex_destroy(&m_pids_proc_padre);
+	pthread_mutex_destroy(&m_lista_particiones);
+}
+
 t_proceso *agregar_proceso_instrucciones(FILE *f, int pid, t_particiones *particion_a_asignar) // habria que mandar por parametro el archivo que nos mandan desde kernel
 {
 	t_proceso *proceso = malloc(sizeof(t_proceso)); // reservamos espacio en memoria para el proceso

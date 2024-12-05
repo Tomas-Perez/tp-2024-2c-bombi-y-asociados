@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    // finalizar_estructuras_memoria();
+    finalizar_estructuras_memoria();
     pthread_join(t3, NULL);
 
     return 0;

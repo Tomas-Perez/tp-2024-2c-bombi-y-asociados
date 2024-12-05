@@ -300,8 +300,10 @@ t_particiones *asignar_best_fit_dinamicas(t_list *lista, uint32_t tamanio)
 		{ // seria el caso en el que el proceso sea igual al tamaño libre, por lo que no creas una nueva particion
 			particion_a_devolver->ocupado = 1;
 		}
+		log_particiones(lista);
 		return particion_a_devolver;
 	}
+	log_particiones(lista);
 	return NULL; // Retorna NULL si no hay hueco adecuado
 }
 
@@ -370,6 +372,7 @@ void liberar_espacio_memoria(t_proceso *proceso)
 	{
 		particion_a_liberar->ocupado = 0;
 		verificar_particiones_vecinas(lista_particiones);
+		log_particiones(lista_particiones);
 	}
 }
 
@@ -466,4 +469,21 @@ bool base_menor(void *a, void *b)
 	t_particiones *particion_b = (t_particiones *)b;
 
 	return particion_a->base < particion_b->base;
+}
+
+// Función para recorrer y loguear la lista
+void log_particiones(t_list* lista) {
+    if (lista == NULL || list_size(lista) == 0) {
+        log_info(logger_memoria, "La lista está vacía o es inválida.");
+        return;
+    }
+
+    for (size_t i = 0; i < list_size(lista); i++) {
+        t_particiones *particion = list_get(lista, i);
+        log_info(logger_memoria, "Partición %zu: Base = %u, Límite = %u, Ocupado = %s",
+                 i,
+                 particion->base,
+                 particion->limite,
+                 particion->ocupado ? "Sí" : "No");
+    }
 }

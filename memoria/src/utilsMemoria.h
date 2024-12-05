@@ -30,6 +30,8 @@ t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio);
 
 t_particiones *buscar_particion(t_list *lista, uint32_t base, uint32_t limite);
 
+void log_particiones(t_list* lista);
+
 //FUNCIONES PARA FINALIZAR MEMORIA
 void verificar_particiones_vecinas(t_list *lista);
 void liberar_espacio_memoria(t_proceso *proceso);
