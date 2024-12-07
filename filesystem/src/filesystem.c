@@ -121,11 +121,13 @@ void atender_petiticiones(int *socket)
             if(crear_archivo(nombr,tam,socket_cliente,data)==-1){
                 *exit_status=0;
                 free(data);
+                free(nombr);
                 sem_post(&semaforo);
                 pthread_exit(exit_status);
             }else{
                 *exit_status=1;
                 free(data);
+                free(nombr);
                 sem_post(&semaforo);
                 pthread_exit(exit_status);
             }
