@@ -530,12 +530,12 @@ void atender_syscall()
 		hilo_dump = list_remove(bloqueados_por_dump, 0);
 		pthread_mutex_unlock(&m_bloqueados_por_dump);
 
-		printf("TID HILO_DUMPO %d \n", hilo_dump->tid);
+		printf("TID HILO_DUMPO %d  \n", hilo_dump->tid);
 		if (rta == 0)
 		{
-			sem_post(&binario_corto_plazo);
 			printf("RTA DEL BLOQUEAR 0 %d \n", rta);
-			finalizar_tcb(hilo_dump);
+			finalizar_proceso(hilo_dump->pcb_padre_tcb);
+			sem_post(&binario_corto_plazo);
 		}
 		else
 		{

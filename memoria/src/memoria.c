@@ -540,11 +540,11 @@ int atenderKernel(int *socket_kernel)
         recv(socket_FS, &confirmado_fs, sizeof(int), MSG_WAITALL);
         if (confirmado_fs == 1)
         {
-            puts("DUMP CREADO EXITOSAMENTE");
+            log_info(logger_memoria, "DUMP CREADO EXITOSAMENTE");
         }
         else
         {
-            puts("DUMP LLENO");
+            log_info(logger_memoria, "DUMP LLENO");
         }
         close(socket_FS);
         int confirm;
@@ -564,9 +564,9 @@ void levantar_config_memoria()
 {
     // config_memoria = config_create("configs/memoriaPlani.config");
     // config_memoria = config_create("configs/memoriaRC.config");
-   // config_memoria = config_create("configs/memoriaParticionesFijas.config");
-     config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
-    // config_memoria = config_create("configs/memoriaFS.config");
+    // config_memoria = config_create("configs/memoriaParticionesFijas.config");
+    // config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
+    config_memoria = config_create("configs/memoriaFS.config");
     // config_memoria = config_create("configs/memoriaTEM.config");
 
 

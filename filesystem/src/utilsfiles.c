@@ -11,11 +11,11 @@ void levantar_config_fs()
 {
     //config_fs = config_create("configs/filesystemPlani.config");
 
-    //config_fs = config_create("configs/filesystemFS.config");
+    config_fs = config_create("configs/filesystemFS.config");
     //config_fs = config_create("configs/filesystemRC.config");
 
     //config_fs = config_create("configs/filesystemParticionesFIjas.config");
-    config_fs = config_create("configs/filesystemParticionesDInamicas.config");
+    //config_fs = config_create("configs/filesystemParticionesDInamicas.config");
     //config_fs = config_create("configs/filesystemTEM.config");
    
 
