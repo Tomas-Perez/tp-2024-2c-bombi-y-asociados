@@ -408,7 +408,10 @@ void atender_syscall()
 		pthread_mutex_lock(&m_syscall_replanificadora);
 		syscall_replanificadora = 1;
 		pthread_mutex_unlock(&m_syscall_replanificadora);
-		finalizar_tcb(hilo_en_ejecucion);
+		pthread_mutex_lock(&m_hilo_en_ejecucion);
+		tcb *hilo_exit_aux = hilo_en_ejecucion;
+		pthread_mutex_unlock(&m_hilo_en_ejecucion);
+		finalizar_tcb(hilo_exit_aux);
 		sem_post(&binario_corto_plazo);
 		// liberar_param_instruccion(instrucc);
 		break;

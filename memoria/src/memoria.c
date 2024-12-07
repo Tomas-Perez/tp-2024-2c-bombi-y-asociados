@@ -153,11 +153,13 @@ int atenderCpu(int *socket_cpu)
             int pid_AC = buffer_read_uint32(buffer);
             uint32_t tid_a_actualizar = buffer_read_uint32(buffer);
             t_registros_cpu registros_a_actualizar = recibir_contexto(registros_a_actualizar, buffer);
+            free(buffer);
+
+            usleep(retardo_rta * 1000);
 
             t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid_AC); // si tira error ver malloc
             t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid_a_actualizar);
 
-            usleep(retardo_rta * 1000);
 
             actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar); // Falta ver base y limite
 
@@ -166,8 +168,6 @@ int atenderCpu(int *socket_cpu)
             int ok = 1;
             send(*socket_cpu, &ok, sizeof(int), 0);
 
-            free(buffer);
-
             break;
         case READ_MEM:
 
@@ -175,6 +175,7 @@ int atenderCpu(int *socket_cpu)
 
             uint32_t tid_read = buffer_read_uint32(buffer);
             uint32_t dir_fisica_read = buffer_read_uint32(buffer);
+            free(buffer);
 
             void *dato_a_retornar = malloc(sizeof(uint32_t));
 
@@ -198,7 +199,6 @@ int atenderCpu(int *socket_cpu)
 
             // enviar_mensaje("OK", *socket_cpu);
             free(dato_a_retornar);
-            free(buffer);
 
             break;
         case WRITE_MEM:
@@ -208,6 +208,7 @@ int atenderCpu(int *socket_cpu)
             uint32_t tid_mem = buffer_read_uint32(buffer);
             uint32_t dir_fisica = buffer_read_uint32(buffer);
             uint32_t dato = buffer_read_uint32(buffer);
+            free(buffer);
 
             pthread_mutex_lock(&mutex_espacio_usuario);
             memcpy(memoria + dir_fisica, &dato, sizeof(uint32_t));
@@ -220,7 +221,6 @@ int atenderCpu(int *socket_cpu)
             int confirmacion = 1;
             send(*socket_cpu, &confirmacion, sizeof(int), 0);
 
-            free(buffer);
             break;
         default:
             //log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
@@ -254,6 +254,7 @@ int atenderKernel(int *socket_kernel)
         int pid_PC = buffer_read_uint32(buffer);
         uint32_t tamanio_proceso = buffer_read_uint32(buffer);
         path_kernel = buffer_read_string(buffer);
+        free(buffer);
 
         t_particiones *particion_a_asignar = malloc(sizeof(t_particiones));
 
@@ -370,7 +371,6 @@ int atenderKernel(int *socket_kernel)
 
         free(path_script_completo);
         free(path_kernel);
-        free(buffer);
 
         agregar_proceso_instrucciones(f, pid_PC, particion_a_asignar);
         // free(particion_a_asignar);
@@ -390,6 +390,7 @@ int atenderKernel(int *socket_kernel)
             return -1;
         }
         int pid_PE = buffer_read_uint32(buffer);
+        free(buffer);
 
         eliminar_proceso(pid_PE); // elimina las estructuras administrativas y libera memoria en estructuras
 
@@ -398,7 +399,6 @@ int atenderKernel(int *socket_kernel)
         
         confirmacion = 1;
         send(*socket_kernel, &confirmacion, sizeof(int), 0);
-        free(buffer);
         break;
     case INICIAR_HILO:
         int size_hilo = 0;
@@ -415,6 +415,7 @@ int atenderKernel(int *socket_kernel)
         int tid_IH = buffer_read_uint32(buffer);
         path_hilo = buffer_read_string(buffer);
         // path_hilo[size_path_hilo] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+        free(buffer);
 
         char *path_hilo_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_hilo) + 1); // VER QUE ONDA PATH INSTRUCCIONES
         if (path_hilo_completo == NULL)
@@ -441,7 +442,6 @@ int atenderKernel(int *socket_kernel)
 
         free(path_script_completo);
         free(path_hilo);
-        free(buffer);
 
         t_proceso *proceso_padre = buscar_proceso(procesos_memoria, pid_IH); // si tira error ver malloc
         t_hilo *hilo_nuevo = malloc(sizeof(t_hilo));
@@ -469,6 +469,7 @@ int atenderKernel(int *socket_kernel)
 
         int pid_TE = buffer_read_uint32(buffer);
         int tid_TE = buffer_read_uint32(buffer);
+        free(buffer);
 
         eliminar_hilo(pid_TE, tid_TE);
 
@@ -477,15 +478,14 @@ int atenderKernel(int *socket_kernel)
         confirmacion = 1;
         send(*socket_kernel, &confirmacion, sizeof(int), 0);
         // MANDAR OK
-        free(buffer);
         break;
     case DUMP_MEMORY:
         int size_dump;
-        buffer = recibir_buffer(&size_dump, *socket_kernel);
+        t_buffer *buffer_dump = recibir_buffer(&size_dump, *socket_kernel);
         // pthread_t t_fs;
 
         int socket_FS = conectarFS();
-        if (buffer == NULL)
+        if (buffer_dump == NULL)
         {
             log_info(logger_memoria, "Error al recibir el buffer\n");
             return -1;
@@ -493,8 +493,9 @@ int atenderKernel(int *socket_kernel)
 
         usleep(retardo_rta * 1000);
 
-        int pid_DP = buffer_read_uint32(buffer);
-        int tid_DP = buffer_read_uint32(buffer);
+        int pid_DP = buffer_read_uint32(buffer_dump);
+        int tid_DP = buffer_read_uint32(buffer_dump);
+        free(buffer_dump);
 
         log_info(logger_memoria, "Memory Dump solicitado - (PID:TID) - (<%i>:<%i>)", pid_DP, tid_DP);
 
@@ -548,12 +549,12 @@ int atenderKernel(int *socket_kernel)
 
 void levantar_config_memoria()
 {
-    // config_memoria = config_create("configs/memoriaPlani.config");
+    config_memoria = config_create("configs/memoriaPlani.config");
     // config_memoria = config_create("configs/memoriaRC.config");
     // config_memoria = config_create("configs/memoriaParticionesFijas.config");
     // config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
     //config_memoria = config_create("configs/memoriaFS.config");
-     config_memoria = config_create("configs/memoriaTEM.config");
+     //config_memoria = config_create("configs/memoriaTEM.config");
 
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
