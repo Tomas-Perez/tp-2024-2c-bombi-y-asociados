@@ -15,8 +15,8 @@ void levantar_config_fs()
     //config_fs = config_create("configs/filesystemRC.config");
 
     //config_fs = config_create("configs/filesystemParticionesFIjas.config");
-    //config_fs = config_create("configs/filesystemParticionesDInamicas.config");
-    config_fs = config_create("configs/filesystemTEM.config");
+    config_fs = config_create("configs/filesystemParticionesDInamicas.config");
+    //config_fs = config_create("configs/filesystemTEM.config");
    
 
     puerto_escucha = config_get_string_value(config_fs, "PUERTO_ESCUCHA");

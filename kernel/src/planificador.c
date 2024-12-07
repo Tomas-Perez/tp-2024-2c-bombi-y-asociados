@@ -135,8 +135,8 @@ void planificador_corto_plazo()
 						pasar_a_running_tcb(hilo_a_ejecutar);
 						pthread_create(&tround_robin, NULL, (void *)desalojar_por_RR, (void *)hilo_a_ejecutar);
 						// printf("antes de la syscall \n");
-						pthread_detach(tround_robin);
 						atender_syscall();
+						pthread_detach(tround_robin);
 						// sem_post(&binario_atender_syscall);
 						// printf("despues de la syscall \n");
 
@@ -273,6 +273,9 @@ void atender_syscall()
 
 	log_info(logger_kernel, "## (PID <%d> : TID <%d> ) - Solicitó syscall: <%s>",
 			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid, op_code_to_string(motivo));
+	pthread_mutex_lock(&m_syscall_replanificadora);
+	syscall_replanificadora = 1;
+	pthread_mutex_unlock(&m_syscall_replanificadora);
 	/*pthread_mutex_lock(&m_syscall_solicitada);
 	syscall_solicitada = 1;
 	pthread_mutex_unlock(&m_syscall_solicitada);*/
@@ -571,23 +574,33 @@ void atender_syscall()
 					 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 
 			sem_post(&binario_corto_plazo);
-			usleep(cant_seg_duerme);
 
-
-			pthread_mutex_lock(&m_lista_io);
-			tcb *hilo_aux = list_remove(lista_io, 0);
-			pthread_mutex_unlock(&m_lista_io);
-
-
-			log_info(logger_kernel, "## ((PID <%d> : TID <%d> )) finalizó IO y pasa a READY",
-					 hilo_aux->pcb_padre_tcb->contador_tid, hilo_aux->tid);
-			// pasar_a_running_tcb_con_syscall(hilo);
-			agregar_a_ready_segun_alg(hilo_aux);
-			// liberar_param_instruccion(instrucc);
+			pthread_t hilo_io;
+			pthread_create(&hilo_io, NULL, (void *)hacerIO, cant_seg_duerme);
+			pthread_detach(hilo_io);
+			
 		} 
 			break;
 		
 	}
 
 	liberar_param_instruccion(instrucc);
+}
+
+
+void* hacerIO(int cant_seg_duerme) 
+{
+		usleep(cant_seg_duerme * 1000);
+
+
+		pthread_mutex_lock(&m_lista_io);
+		tcb *hilo_aux = list_remove(lista_io, 0);
+		pthread_mutex_unlock(&m_lista_io);
+
+
+		log_info(logger_kernel, "## ((PID <%d> : TID <%d> )) finalizó IO y pasa a READY",
+			 hilo_aux->pcb_padre_tcb->contador_tid, hilo_aux->tid);
+			// pasar_a_running_tcb_con_syscall(hilo);
+		agregar_a_ready_segun_alg(hilo_aux);
+			// liberar_param_instruccion(instrucc);
 }

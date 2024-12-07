@@ -10,6 +10,7 @@ void agregar_a_ready(tcb* hilo);
 void agregar_a_ready_multinivel(tcb* hilo);
 tcb* hilo_prioritario_en_ready();
 tcb* elegir_segun_prioridades();
+void* hacerIO(int cant_seg_duerme);
 //void atender_syscall();
 
 //void inicializar_hilos_planificacion();

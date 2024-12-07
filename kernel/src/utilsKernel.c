@@ -58,9 +58,9 @@ void levantar_config_kernel()
 {
     //config_kernel = iniciar_config("configs/kernelFS.config");
     // config_kernel = iniciar_config("configs/kernelRC.config");
-    // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
+     config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
     //config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
-    config_kernel = iniciar_config("configs/kernelPlani.config");
+   // config_kernel = iniciar_config("configs/kernelPlani.config");
     //config_kernel = iniciar_config("configs/kernelTEM.config");
 
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
@@ -383,20 +383,21 @@ void *desalojar_por_RR(tcb *hilo)
     {
         usleep(quantumf() * 1000);
 
-        pthread_mutex_lock(&m_hilo_en_ejecucion);
-        if (hilo_en_ejecucion != NULL)
-        {
+        //if (hilo_en_ejecucion != NULL)         {
             pthread_mutex_lock(&m_syscall_replanificadora);
 
+        pthread_mutex_lock(&m_hilo_en_ejecucion);
             if ((hilo_en_ejecucion->tid == hilo->tid) && (hilo_en_ejecucion->pcb_padre_tcb->pid == hilo->pcb_padre_tcb->pid)
             && syscall_replanificadora == 0)
             {
+                 pthread_mutex_unlock(&m_hilo_en_ejecucion);
                 // log_info(logger_kernel, "Entro en la condicion del RR");
+                
                 pthread_mutex_unlock(&m_syscall_replanificadora);
                 pthread_mutex_lock(&m_quantum_restante);
                 quantum_restante = 0;
                 pthread_mutex_unlock(&m_quantum_restante);
-                pthread_mutex_unlock(&m_hilo_en_ejecucion);
+                
                  log_info(logger_kernel," ## (PID <%d>:TID <%d>) - Desalojado por fin de Quantum", hilo->pcb_padre_tcb->pid, hilo->tid );
                 desalojar_hilo(RR);
                 // printf("Desalojado\n");
@@ -405,8 +406,7 @@ void *desalojar_por_RR(tcb *hilo)
                 pthread_exit(NULL);
             }
             pthread_mutex_unlock(&m_syscall_replanificadora);
-            pthread_mutex_unlock(&m_hilo_en_ejecucion);
-        }
+       // }
         pthread_mutex_unlock(&m_hilo_en_ejecucion);
     }
 }
