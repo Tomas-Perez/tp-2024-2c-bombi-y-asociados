@@ -53,7 +53,7 @@ void guardar_instrucciones(t_hilo *hilo, FILE *f)
 		pthread_mutex_lock(&mutex_instrucciones);
 		char *aux = list_get(hilo->instrucciones, i);
 		pthread_mutex_unlock(&mutex_instrucciones);
-		printf("%s\n", aux); // muestra las instrucciones linea por linea
+		//printf("%s\n", aux); // muestra las instrucciones linea por linea
 	}
 }
 
@@ -175,9 +175,11 @@ t_particiones *asignar_first_fit_fijas(t_list *lista, uint32_t tamanio) // retor
 		if (particion->limite >= tamanio && particion->ocupado == 0)
 		{
 			particion->ocupado = 1;
+			log_particiones(lista);
 			return particion;
 		}
 	}
+	log_particiones(lista);
 	return NULL; // Retorna NULL si no hay hueco disponible
 }
 
@@ -200,9 +202,11 @@ t_particiones *asignar_best_fit_fijas(t_list *lista, uint32_t tamanio)
 	{
 		t_particiones *particion_a_devolver = list_get(lista, mejor_indice);
 		particion_a_devolver->ocupado = 1;
+		log_particiones(lista);
 		return particion_a_devolver;
 	}
 
+	log_particiones(lista);
 	return NULL; // Retorna NULL si no hay hueco adecuado
 }
 
@@ -224,8 +228,10 @@ t_particiones *asignar_worst_fit_fijas(t_list *lista, uint32_t tamanio)
 	{
 		t_particiones *particion_a_devolver = list_get(lista, mejor_indice);
 		particion_a_devolver->ocupado = 1;
+		log_particiones(lista);
 		return particion_a_devolver;
 	}
+	log_particiones(lista);
 	return NULL; // Retorna NULL si no hay hueco adecuado
 }
 
@@ -257,11 +263,12 @@ t_particiones *asignar_first_fit_dinamicas(t_list *lista, uint32_t tamanio)
 
 				list_add_in_index(lista, i + 1, nueva_particion);
 			}
-
+			log_particiones(lista);
 			return particion; // Retornamos la partición asignada
 		}
 	}
 	// Si no encontramos una partición adecuada, devolvemos NULL
+	log_particiones(lista);
 	return NULL;
 }
 
@@ -343,8 +350,10 @@ t_particiones *asignar_worst_fit_dinamicas(t_list *lista, uint32_t tamanio)
 		{ // seria el caso en el que el proceso sea igual al tamaño libre, por lo que no creas una nueva particion
 			particion_a_devolver->ocupado = 1;
 		}
+		log_particiones(lista);
 		return particion_a_devolver;
 	}
+	log_particiones(lista);
 	return NULL; // Retorna NULL si no hay hueco adecuado
 }
 void ordenar_lista_original(t_list *lista)
@@ -372,8 +381,8 @@ void liberar_espacio_memoria(t_proceso *proceso)
 	{
 		particion_a_liberar->ocupado = 0;
 		verificar_particiones_vecinas(lista_particiones);
-		log_particiones(lista_particiones);
 	}
+	log_particiones(lista_particiones);
 }
 
 void verificar_particiones_vecinas(t_list *lista)

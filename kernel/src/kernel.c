@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
     sem_post(&binario_corto_plazo);
     pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc, socket);
     inicializar_hilos_planificacion();
-    printf("liiiiiiiiiiiiiiiibre sooooooy? o es algo que me quieren hacer creer?\n");
+    //printf("liiiiiiiiiiiiiiiibre sooooooy? o es algo que me quieren hacer creer?\n");
 
 
     liberar_conexion(conexion_memoria);

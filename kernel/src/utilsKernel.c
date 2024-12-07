@@ -70,7 +70,7 @@ void levantar_config_kernel()
     puerto_cpu_interrupt = config_get_string_value(config_kernel, "PUERTO_CPU_INTERRUPT");
     algoritmo_de_planificacion = config_get_string_value(config_kernel, "ALGORITMO_PLANIFICACION");
     quantum = config_get_double_value(config_kernel, "QUANTUM");
-    printf("quantum %d  ", quantum);
+    //printf("quantum %d  ", quantum);
     log_level = config_get_string_value(config_kernel, "LOG_LEVEL");
 }
 
@@ -157,7 +157,7 @@ int pedir_memoria(int socket)
             uint32_t size_path_hilo = strlen(path);
 
             // printf("2 Tamanio Path: %i\n", size_path_hilo);
-            printf("2 Path: %s\n", path);
+            //printf("2 Path: %s\n", path);
 
             t_paquete *pedido_memoria = crear_paquete(motivo);
             agregar_a_paquete_solo(pedido_memoria, &pid, sizeof(int));
@@ -243,7 +243,8 @@ pcb *crear_pcb(int prioridad_h_main, char *path, int tamanio, int socket)
         free(nuevo_pcb);
         return NULL;
     }
-    log_info(logger_kernel, "## (<PID>:%d) Se crea el proceso - Estado: NEW", nuevo_pcb->pid);
+    log_info(logger_kernel, "## (PID <%d> : TID <0>) Se crea el proceso - Estado: NEW", nuevo_pcb->pid);
+
 
     pthread_mutex_lock(&m_lista_procesos_new);
     list_add(lista_procesos_new, nuevo_pcb);
@@ -387,7 +388,8 @@ void *desalojar_por_RR(tcb *hilo)
         {
             pthread_mutex_lock(&m_syscall_replanificadora);
 
-            if (hilo_en_ejecucion->tid == hilo->tid && syscall_replanificadora == 0)
+            if ((hilo_en_ejecucion->tid == hilo->tid) && (hilo_en_ejecucion->pcb_padre_tcb->pid == hilo->pcb_padre_tcb->pid)
+            && syscall_replanificadora == 0)
             {
                 // log_info(logger_kernel, "Entro en la condicion del RR");
                 pthread_mutex_unlock(&m_syscall_replanificadora);
@@ -395,6 +397,7 @@ void *desalojar_por_RR(tcb *hilo)
                 quantum_restante = 0;
                 pthread_mutex_unlock(&m_quantum_restante);
                 pthread_mutex_unlock(&m_hilo_en_ejecucion);
+                 log_info(logger_kernel," ## (PID <%d>:TID <%d>) - Desalojado por fin de Quantum", hilo->pcb_padre_tcb->pid, hilo->tid );
                 desalojar_hilo(RR);
                 // printf("Desalojado\n");
 
@@ -426,7 +429,7 @@ void recibir_syscall_de_cpu(tcb *hilo, int *motivo, instruccion *instrucc)
     if (cod_op == SYSCALL)
     {
         desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
-        printf("TID: %i, motivo: %i\n", hilo->tid, *motivo);
+        //printf("TID: %i, motivo: %i\n", hilo->tid, *motivo);
     }
     else
     {
@@ -443,7 +446,7 @@ void desempaquetar_parametros_syscall_de_cpu(tcb *hilo, int *motivo, instruccion
 
     memcpy(motivo, buffer + desplazamiento, sizeof(int));
     desplazamiento += sizeof(int);
-    printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
+   // printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
     memcpy(&(instrucc->cant_parametros), buffer + desplazamiento, sizeof(int));
     desplazamiento += sizeof(int);
 
@@ -585,7 +588,7 @@ void *hilo_exit()
 
         // sem_post(&binario_corto_plazo);
         // free(hilo);
-        printf("BORRAR: en hilo_exit-> termino todo\n");
+       // printf("BORRAR: en hilo_exit-> termino todo\n");
     }
 }
 
@@ -653,7 +656,7 @@ tcb *buscar_hilos_listas(tcb *main, int tid)
     {
         if (strcmp(algoritmo_de_planificacion, "CMN") == 0)
         {
-            printf("pid %d tid %d\n", hilo->pcb_padre_tcb->pid, tid);
+           // printf("pid %d tid %d\n", hilo->pcb_padre_tcb->pid, tid);
             hilo = buscar_hilo_en_multinivel(main->prioridad, main->tid, main->pcb_padre_tcb);
 
             if (hilo)
@@ -685,7 +688,7 @@ tcb *buscar_hilos_listas_sin_sacar_del_padre(tcb *main, int tid)
     {
         if (strcmp(algoritmo_de_planificacion, "CMN") == 0)
         {
-            printf("pid %d tid %d\n", hilo->pcb_padre_tcb->pid, tid);
+           // printf("pid %d tid %d\n", hilo->pcb_padre_tcb->pid, tid);
             tcb *hilo_multinivel = buscar_hilo_en_multinivel(main->prioridad, main->tid, main->pcb_padre_tcb);
 
             if (hilo_multinivel != NULL)
@@ -729,7 +732,7 @@ tcb *buscar_tid(t_list *lista_tcb, int tid)
 
 tcb *buscar_hilo_en_multinivel(int prioridad, int tid, pcb *padre)
 {
-    printf("Pid %d Tid %d Prioridad %d\n", padre->pid, tid, prioridad);
+   // printf("Pid %d Tid %d Prioridad %d\n", padre->pid, tid, prioridad);
     for (int i = 0; i < list_size(lista_multinivel); i++)
     {
         pthread_mutex_lock(&m_lista_multinivel);
@@ -748,7 +751,7 @@ tcb *buscar_hilo_en_multinivel(int prioridad, int tid, pcb *padre)
                 {
                     if (hilo->tid == tid)
                     {
-                        printf("Encuentra el hilo pid: %d tid: %d\n", padre->pid, tid);
+                     //   printf("Encuentra el hilo pid: %d tid: %d\n", padre->pid, tid);
                         list_remove(cola_aux->hilos_asociados, j);
                         if (list_size(cola_aux->hilos_asociados) == 0) // VER
                         {
@@ -880,7 +883,7 @@ nivel_prioridad *encontrar_por_nivel(t_list *lista_multi, int prioridad)
         nivel_prioridad *resultado = list_get(lista_multi, i);
         if (resultado->prioridad == prioridad)
         {
-            printf("Existe el nivel de prioridad %d \n", resultado->prioridad);
+           // printf("Existe el nivel de prioridad %d \n", resultado->prioridad);
             return resultado;
         }
     }
@@ -917,14 +920,11 @@ int bloquear_por_dump(tcb *hilo, int socket)
     enviar_paquete(dump, socket);
     eliminar_paquete(dump);
 
-    if (strcmp(algoritmo_de_planificacion, "FIFO") == 0)
-    {
-        tcb *hilo_bloqueado = buscar_hilos_listas(hilo, hilo->tid);
-    }
+    
     pthread_mutex_lock(&m_bloqueados_por_dump);
     list_add(bloqueados_por_dump, hilo);
     pthread_mutex_unlock(&m_bloqueados_por_dump);
-    printf("TAmanio bloqueado por dump %d \n", list_size(bloqueados_por_dump));
+    //printf("TAmanio bloqueado por dump %d \n", list_size(bloqueados_por_dump));
     recv(socket, &finalizo_operacion, sizeof(int), MSG_WAITALL);
 
     return finalizo_operacion;
