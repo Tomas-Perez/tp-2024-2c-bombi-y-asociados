@@ -527,21 +527,21 @@ void atender_syscall()
 		close(socket);
 
 		pthread_mutex_lock(&m_bloqueados_por_dump);
-		hilo_dump = list_remove(bloqueados_por_dump, 0);
+		tcb* hilo_dump_nuevo= list_remove(bloqueados_por_dump, 0);
 		pthread_mutex_unlock(&m_bloqueados_por_dump);
 
 		//printf("TID HILO_DUMPO %d  \n", hilo_dump->tid);
 		if (rta == 0)
 		{
 			//printf("RTA DEL BLOQUEAR 0 %d \n", rta);
-			finalizar_proceso(hilo_dump->pcb_padre_tcb);
+			finalizar_proceso(hilo_dump_nuevo->pcb_padre_tcb);
 			sem_post(&binario_corto_plazo);
 		}
 		else
 		{
 			sem_post(&binario_corto_plazo);
 			//printf("RTA DEL BLOQUEAR 1 %d \n", rta);
-			agregar_a_ready_segun_alg(hilo_dump);
+			agregar_a_ready_segun_alg(hilo_dump_nuevo);
 		}
 
 		// liberar_param_instruccion(instrucc);
