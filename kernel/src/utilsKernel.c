@@ -89,7 +89,7 @@ void inicializar_registros(tcb *hilo)
 
 void inicializar_estructuras_kernel()
 {
-    int id_counter = 1;
+    id_counter = 1;
     syscall_replanificadora = 0;
     quantum_restante = 1;
     int contador = 0;
@@ -357,15 +357,6 @@ void desalojar_hilo(int motivo)
     agregar_a_paquete_solo(paquete_a_desalojar, &hilo_en_ejecucion->tid, sizeof(int));
     enviar_paquete(paquete_a_desalojar, conexion_interrupt);
 
-    /*int confirmacion;
-
-    recv(conexion_dispatch, &confirmacion, sizeof(int), MSG_WAITALL);
-    if (confirmacion == 1)
-    {
-        printf("Entro en syscall RR\n");
-        agregar_a_ready_segun_alg(hilo_en_ejecucion);
-        sem_post(&binario_corto_plazo);
-    }*/
     eliminar_paquete(paquete_a_desalojar);
 }
 

@@ -9,8 +9,10 @@ int pid;
 
 void ejecutar_proceso()
 {
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     while (ejecutando_un_proceso)
     {
+        pthread_mutex_unlock(&m_ejecutando_un_proceso);
         check_interrupt(execute(decode(fetch())));
     }
 }
@@ -49,6 +51,7 @@ void check_interrupt(instruccion *inst)
         eliminar_paquete(paquete_instrucciones);
         
      } 
+
     pthread_mutex_unlock(&m_interrupcion);
      // hay interrupcion y un proceso en ejecucion
      pthread_mutex_lock(&m_interrupcion);

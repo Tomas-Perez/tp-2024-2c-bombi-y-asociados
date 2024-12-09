@@ -163,6 +163,9 @@ void pasar_a_running_tcb(tcb *tcb_listo)
 	pthread_mutex_lock(&m_hilo_en_ejecucion);
 	hilo_en_ejecucion = tcb_listo;
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
+	pthread_mutex_lock(&m_quantum_restante);
+	quantum_restante = 1;
+	pthread_mutex_unlock(&m_quantum_restante);
 	log_info(logger_kernel, "(PID <%d> TID: <%d>) - Estado Anterior: READY - Estado Actual: EXEC",
 			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 	
@@ -185,7 +188,7 @@ void pasar_a_running_tcb_con_syscall(tcb *tcb_listo)
 	}
 	else
 	{
-		
+		log_info(logger_kernel, "BORRAR ## (PID <%d> : TID <%d> ) - Solicitó syscall: <RR>",tcb_listo->pcb_padre_tcb->pid, tcb_listo->tid);
 		pthread_mutex_unlock(&m_quantum_restante);
 		sem_post(&binario_corto_plazo);
 		agregar_a_ready_multinivel(tcb_listo);
