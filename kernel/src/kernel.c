@@ -19,14 +19,14 @@ int main(int argc, char* argv[]) {
     levantar_config_kernel();
     logger_kernel = iniciar_logger("kernel.log", "KERNEL");
     
-    if(argc < 3)
+   /* if(argc < 3)
     {
         log_error(logger_kernel, "Cantidad incorrecta de argumentos pasados por parametro");
         return 1;
-    }
+    }*/
    
-    /*argv[1] = "THE_EMPTINESS_MACHINE";
-    argv[2] = "16";*/
+    argv[1] = "RECURSOS_MUTEX_PROC";
+    argv[2] = "32";
 
     pthread_t t1, t2;
     

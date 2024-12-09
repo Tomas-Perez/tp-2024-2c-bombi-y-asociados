@@ -8,6 +8,8 @@ char *puerto_escucha_interrupt;
 char *ip_memoria;
 char *log_level;
 int motivo_interrupt;
+pthread_mutex_t m_interrupcion;
+pthread_mutex_t m_ejecutando_un_proceso;
 
 bool interrupcion;
 int pid_interrupt;
@@ -21,7 +23,8 @@ int main(int argc, char *argv[])
 
     levantar_config_cpu();
     logger_cpu = iniciar_logger("cpu.log", "CPU");
-
+    pthread_mutex_init(&m_interrupcion, NULL);
+    pthread_mutex_init(&m_ejecutando_un_proceso, NULL);
     // HILOS PARA CONEXIONES
 
     pthread_t t1, t2, t3;
@@ -70,8 +73,14 @@ int atenderCpuDispatch()
         case OP_ENVIO_TCB:
             recibir_tcb(conexion_dispatch); // recibe pcb y tcb para solicitar contexto a memoria
             pedir_contexto_cpu(pid, tid);
+            pthread_mutex_lock(&m_ejecutando_un_proceso);
             ejecutando_un_proceso = true;
+            pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
+            
+            pthread_mutex_lock(&m_interrupcion);
             interrupcion = false;
+            pthread_mutex_unlock(&m_interrupcion);
             ejecutar_proceso();
             break;
         case -1:
@@ -108,8 +117,9 @@ int atenderCpuInterrupt()
             if ((pid_interrupt == pid) && (tid_interrupt == tid))
             {
                 //log_info(logger_cpu, "Llega interrupción al puerto Interrupt tid_interrupt %d tid %d", tid_interrupt, tid);
-                
+                pthread_mutex_lock(&m_interrupcion);
                 interrupcion = true;
+                pthread_mutex_unlock(&m_interrupcion);
             }
             free(buffer);
             break;

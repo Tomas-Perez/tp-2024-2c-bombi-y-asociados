@@ -8,7 +8,8 @@ extern t_log* logger_cpu;
 extern int socket_memoria;
 extern int tid;
 extern bool interrupcion;
-
+extern pthread_mutex_t m_interrupcion;
+extern pthread_mutex_t m_ejecutando_un_proceso;
 /*char *fetch();
 instruccion *decode(char *inst);
 instruccion *execute(instruccion *inst);*/

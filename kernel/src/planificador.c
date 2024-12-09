@@ -129,12 +129,10 @@ void planificador_corto_plazo()
 						pthread_mutex_unlock(&(mayor_nivel->m_lista_prioridad));
 
 						pthread_t tround_robin;
-						/*pthread_mutex_lock(&m_syscall_replanificadora);
-						syscall_replanificadora = 0;
-						pthread_mutex_unlock(&m_syscall_replanificadora);*/
+					
 						pasar_a_running_tcb(hilo_a_ejecutar);
 						pthread_create(&tround_robin, NULL, (void *)desalojar_por_RR, (void *)hilo_a_ejecutar);
-						// printf("antes de la syscall \n");
+						
 						atender_syscall();
 						pthread_detach(tround_robin);
 						// sem_post(&binario_atender_syscall);
@@ -165,10 +163,9 @@ void pasar_a_running_tcb(tcb *tcb_listo)
 	pthread_mutex_lock(&m_hilo_en_ejecucion);
 	hilo_en_ejecucion = tcb_listo;
 	pthread_mutex_unlock(&m_hilo_en_ejecucion);
-	log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Anterior: READY - Estado Actual: EXEC",
+	log_info(logger_kernel, "(PID <%d> TID: <%d>) - Estado Anterior: READY - Estado Actual: EXEC",
 			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
-	// atender_syscall();
-	// sem_post(&binario_atender_syscall);
+	
 }
 
 void pasar_a_running_tcb_con_syscall(tcb *tcb_listo)
@@ -184,13 +181,11 @@ void pasar_a_running_tcb_con_syscall(tcb *tcb_listo)
 	//	log_info(logger_kernel, "PID <%d> TID: <%d> - Estado Actual: EXEC",
 	//			 hilo_en_ejecucion->pcb_padre_tcb->pid, hilo_en_ejecucion->tid);
 		atender_syscall();
-		// sem_post(&binario_atender_syscall);
+		
 	}
 	else
 	{
-		/*pthread_mutex_lock(&m_hilo_en_ejecucion);
-		hilo_en_ejecucion = NULL;
-		pthread_mutex_unlock(&m_hilo_en_ejecucion);*/
+		
 		pthread_mutex_unlock(&m_quantum_restante);
 		sem_post(&binario_corto_plazo);
 		agregar_a_ready_multinivel(tcb_listo);

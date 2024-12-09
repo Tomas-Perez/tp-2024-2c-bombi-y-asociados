@@ -17,14 +17,20 @@ void ejecutar_proceso()
 
 void check_interrupt(instruccion *inst)
 {
+    pthread_mutex_lock(&m_interrupcion);
     if (interrupcion && ejecutando_un_proceso)
     {
+        pthread_mutex_unlock(&m_interrupcion);
+
+
         log_info(logger_cpu, "Llega interrupción al puerto Interrupt PID: %d TID: %d", pid, tid);
+        
+        pthread_mutex_lock(&m_ejecutando_un_proceso);
+        ejecutando_un_proceso = false;
+        pthread_mutex_unlock(&m_ejecutando_un_proceso);
         //log_info("entra en check interrupt pid: %d tid: %d\n", pid, tid);
         devolver_contexto_de_ejecucion(pid, tid);
 
-
-        ejecutando_un_proceso = false;
         
         /*int confirmacion = 1;
         send(conexion_dispatch, &confirmacion, sizeof(int), 0);*/
@@ -41,10 +47,13 @@ void check_interrupt(instruccion *inst)
         enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
         //printf("Se envio syscall %d a kernel. conexion dispatch %d \n", motivo_interrupt, conexion_dispatch);
         eliminar_paquete(paquete_instrucciones);
+        
      } 
-
+    pthread_mutex_unlock(&m_interrupcion);
      // hay interrupcion y un proceso en ejecucion
+     pthread_mutex_lock(&m_interrupcion);
     interrupcion = false;
+    pthread_mutex_unlock(&m_interrupcion);
     for (int i = 0; i < list_size(inst->parametros); i++)
     {
         char *parametro = list_remove(inst->parametros, i);
@@ -175,7 +184,10 @@ instruccion *execute(instruccion *inst)
         break;
     case NO_RECONOCIDO:
         log_info(logger_cpu, "se leyo mal el identificador");
+        pthread_mutex_lock(&m_ejecutando_un_proceso);
         ejecutando_un_proceso = false;
+        pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
         break;
     default:
         break;
@@ -310,28 +322,40 @@ void dump_memory(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(DUMP_MEMORY, inst);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 
 void io(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(IO, inst);
+   pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 
 void process_create(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(PROCESS_CREATE, inst);
+   pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 
 void thread_create(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(THREAD_CREATE, inst);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
     //empaquetar_contexto_kl(THREAD_CREATE, inst);
 }
 
@@ -339,49 +363,70 @@ void thread_join(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(THREAD_JOIN, inst);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 
 void thread_cancel(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(THREAD_CANCEL, inst);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 
 void mutex_create(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(MUTEX_CREATE, inst);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 
 void mutex_lock(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(MUTEX_LOCK, inst);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 
 void mutex_unlock(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(MUTEX_UNLOCK, inst);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 
 void thread_exit(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(THREAD_EXIT, inst);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 
 void process_exit(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(PROCESS_EXIT, inst);
+   pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
+    pthread_mutex_unlock(&m_ejecutando_un_proceso);
+
 }
 /* ------------------------------------------- MMU ------------------------------------------- */
 
