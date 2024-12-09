@@ -89,7 +89,7 @@ void inicializar_registros(tcb *hilo)
 
 void inicializar_estructuras_kernel()
 {
-    id_counter = 1;
+    id_counter = 0;
     syscall_replanificadora = 0;
     quantum_restante = 1;
     int contador = 0;
