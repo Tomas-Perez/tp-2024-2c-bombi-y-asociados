@@ -32,6 +32,7 @@ sem_t finalizo_un_proc;
 sem_t hilos_en_exit;
 sem_t hilos_en_ready;
 sem_t binario_corto_plazo;
+sem_t bin_dispatch;
 // sem_t binario_atender_syscall;
 
 void agregar_a_ready(tcb *hilo)

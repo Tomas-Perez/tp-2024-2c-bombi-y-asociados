@@ -550,11 +550,11 @@ int atenderKernel(int *socket_kernel)
 void levantar_config_memoria()
 {
     //config_memoria = config_create("configs/memoriaPlani.config");
-     config_memoria = config_create("configs/memoriaRC.config");
+   //  config_memoria = config_create("configs/memoriaRC.config");
     // config_memoria = config_create("configs/memoriaParticionesFijas.config");
     // config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
    // config_memoria = config_create("configs/memoriaFS.config");
-     //config_memoria = config_create("configs/memoriaTEM.config");
+     config_memoria = config_create("configs/memoriaTEM.config");
 
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");

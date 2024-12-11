@@ -77,7 +77,7 @@ extern sem_t finalizo_un_proc;
 extern sem_t hilos_en_exit;
 extern sem_t hilos_en_ready;
 extern sem_t binario_corto_plazo;
-//extern sem_t binario_atender_syscall;
+extern sem_t bin_dispatch;
 
 extern t_list* lista_de_ready;
 extern t_list* lista_procesos_new;

@@ -57,11 +57,11 @@ char *generar_path_archivo(char *nombre_archivo)
 void levantar_config_kernel()
 {
    // config_kernel = iniciar_config("configs/kernelFS.config");
-     config_kernel = iniciar_config("configs/kernelRC.config");
+    // config_kernel = iniciar_config("configs/kernelRC.config");
     // config_kernel = iniciar_config("configs/kernelParticionesDinamicas.config");
     //config_kernel = iniciar_config("configs/kernelParticionesFijas.config");
    // config_kernel = iniciar_config("configs/kernelPlani.config");
-    //config_kernel = iniciar_config("configs/kernelTEM.config");
+    config_kernel = iniciar_config("configs/kernelTEM.config");
 
     ip_memoria = config_get_string_value(config_kernel, "IP_MEMORIA");
     puerto_memoria = config_get_string_value(config_kernel, "PUERTO_MEMORIA");
@@ -116,7 +116,7 @@ void inicializar_estructuras_kernel()
     sem_init(&hilos_en_exit, 0, 0);
     sem_init(&hilos_en_ready, 0, 0);
     sem_init(&binario_corto_plazo, 0, 0);
-    // sem_init(&binario_atender_syscall, 0, 0);
+    sem_init(&bin_dispatch, 0, 1);
     // cola de procesos
     lista_de_ready = list_create();
     lista_procesos_new = list_create();
@@ -338,12 +338,13 @@ int verificar_lista_ready(t_list *lista_de_ready)
 
 void mandar_tcb_dispatch(tcb *tcb_listo)
 {
+    sem_wait(&bin_dispatch);
     t_paquete *tcb_a_dispatch = crear_paquete(OP_ENVIO_TCB);
     agregar_a_paquete_solo(tcb_a_dispatch, &tcb_listo->tid, sizeof(int));
     agregar_a_paquete_solo(tcb_a_dispatch, &tcb_listo->pcb_padre_tcb->pid, sizeof(int));
     enviar_paquete(tcb_a_dispatch, conexion_dispatch);
+    sem_post(&bin_dispatch);
     eliminar_paquete(tcb_a_dispatch);
-
     pthread_mutex_lock(&m_syscall_solicitada);
     syscall_solicitada = 0;
     pthread_mutex_unlock(&m_syscall_solicitada);
@@ -416,25 +417,28 @@ void agregar_a_ready_segun_alg(tcb *hilo)
 // // -------------------------- Parametros  ---------------------------
 void recibir_syscall_de_cpu(tcb *hilo, int *motivo, instruccion *instrucc)
 {
+    sem_wait(&bin_dispatch);
     int cod_op = recibir_operacion(conexion_dispatch);
     if (cod_op == SYSCALL)
     {
+        sem_post(&bin_dispatch);
         desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
         //printf("TID: %i, motivo: %i\n", hilo->tid, *motivo);
     }
     else
     {
+        sem_post(&bin_dispatch);
         printf("Codigo de Operacion de CPU incorrecto\n");
     }
-    // desempaquetar_parametros_syscall_de_cpu(hilo, motivo, instrucc);
 }
 
 void desempaquetar_parametros_syscall_de_cpu(tcb *hilo, int *motivo, instruccion *instrucc)
 {
+    sem_wait(&bin_dispatch);
     int tam;
     void *buffer = recibir_buffer_vieja(&tam, conexion_dispatch);
     int desplazamiento = 0;
-
+    sem_post(&bin_dispatch);
     memcpy(motivo, buffer + desplazamiento, sizeof(int));
     desplazamiento += sizeof(int);
    // printf("TID 2: %i, motivo 2: %i", hilo->tid, *motivo);
