@@ -24,37 +24,33 @@ void check_interrupt(instruccion *inst)
     {
         pthread_mutex_unlock(&m_interrupcion);
 
-
         log_info(logger_cpu, "Llega interrupción al puerto Interrupt PID: %d TID: %d", pid, tid);
-        
+
         pthread_mutex_lock(&m_ejecutando_un_proceso);
         ejecutando_un_proceso = false;
         pthread_mutex_unlock(&m_ejecutando_un_proceso);
-        //log_info("entra en check interrupt pid: %d tid: %d\n", pid, tid);
+        // log_info("entra en check interrupt pid: %d tid: %d\n", pid, tid);
         devolver_contexto_de_ejecucion(pid, tid);
 
-        
         /*int confirmacion = 1;
         send(conexion_dispatch, &confirmacion, sizeof(int), 0);*/
 
-
         t_paquete *paquete_instrucciones = crear_paquete(SYSCALL);
-        
+
         uint32_t cant_parametros = 0;
-        //printf("Motivo interrupt (tiene que ser 30): %d\n", motivo_interrupt);
+        // printf("Motivo interrupt (tiene que ser 30): %d\n", motivo_interrupt);
         agregar_a_paquete_solo(paquete_instrucciones, &motivo_interrupt, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_instrucciones, &cant_parametros, sizeof(uint32_t));
-        
-        //devolver_contexto_de_ejecucion(pid, tid);
+
+        // devolver_contexto_de_ejecucion(pid, tid);
         enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
-        //printf("Se envio syscall %d a kernel. conexion dispatch %d \n", motivo_interrupt, conexion_dispatch);
+        // printf("Se envio syscall %d a kernel. conexion dispatch %d \n", motivo_interrupt, conexion_dispatch);
         eliminar_paquete(paquete_instrucciones);
-        
-     } 
+    }
 
     pthread_mutex_unlock(&m_interrupcion);
-     // hay interrupcion y un proceso en ejecucion
-     pthread_mutex_lock(&m_interrupcion);
+    // hay interrupcion y un proceso en ejecucion
+    pthread_mutex_lock(&m_interrupcion);
     interrupcion = false;
     pthread_mutex_unlock(&m_interrupcion);
     for (int i = 0; i < list_size(inst->parametros); i++)
@@ -69,7 +65,7 @@ void check_interrupt(instruccion *inst)
 
 char *fetch()
 {
-    log_info(logger_cpu, "PID: <%d> - TID: <%d> - FETCH - Program Counter: <%d>",pid, tid, registros_cpu.PC);
+    log_info(logger_cpu, "PID: <%d> - TID: <%d> - FETCH - Program Counter: <%d>", pid, tid, registros_cpu.PC);
     t_paquete *paquete = crear_paquete(FETCH_INSTRUCCION);
     agregar_a_paquete_solo(paquete, &pid, sizeof(int));
     agregar_a_paquete_solo(paquete, &tid, sizeof(int));
@@ -259,8 +255,21 @@ void read_mem(instruccion *inst)
     uint32_t dir_fisica = traducir_direcciones(registros_cpu, *dir_registro);
     if (dir_fisica == -1)
     {
+        int cant_parametros = 0;
+        int motivo = SEGMENTATION_FAULT;
+        log_info(logger_cpu, "SEGMENTATION FAULT");
+        devolver_contexto_de_ejecucion(pid, tid);
+        t_paquete *paquete_sf = crear_paquete(SYSCALL);
+        agregar_a_paquete_solo(paquete_sf, &motivo, sizeof(uint32_t));
+        agregar_a_paquete_solo(paquete_sf, &cant_parametros, sizeof(uint32_t));
+        enviar_paquete(paquete_sf, conexion_dispatch);
+        eliminar_paquete(paquete_sf);
+        // devolver_lista_instrucciones(SEGMENTATION_FAULT, inst);
+        pthread_mutex_lock(&m_ejecutando_un_proceso);
+        ejecutando_un_proceso = false;
+        pthread_mutex_unlock(&m_ejecutando_un_proceso);
         return;
-    } 
+    }
 
     t_paquete *paquete_read = crear_paquete(READ_MEM);
     agregar_a_paquete_solo(paquete_read, &tid, sizeof(uint32_t));
@@ -274,7 +283,7 @@ void read_mem(instruccion *inst)
 
     uint32_t dato_a_guardar = buffer_read_uint32(buffer_dato);
 
-    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Acción: <LEER> - Dirección Física: <%i>",pid, tid, dir_fisica);
+    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Acción: <LEER> - Dirección Física: <%i>", pid, tid, dir_fisica);
 
     *datos = dato_a_guardar;
 
@@ -291,8 +300,21 @@ void write_mem(instruccion *inst)
     uint32_t dir_fisica = traducir_direcciones(registros_cpu, *dir_registro);
     if (dir_fisica == -1)
     {
+        int motivo = SEGMENTATION_FAULT;
+        int cant_parametros = 0;
+        log_info(logger_cpu, "SEGMENTATION FAULT");
+        devolver_contexto_de_ejecucion(pid, tid);
+        t_paquete *paquete_sf = crear_paquete(SYSCALL);
+        agregar_a_paquete_solo(paquete_sf, &motivo, sizeof(uint32_t));
+        agregar_a_paquete_solo(paquete_sf, &cant_parametros, sizeof(uint32_t));
+        enviar_paquete(paquete_sf, conexion_dispatch);
+        eliminar_paquete(paquete_sf);
+        // devolver_lista_instrucciones(SEGMENTATION_FAULT, inst);
+        pthread_mutex_lock(&m_ejecutando_un_proceso);
+        ejecutando_un_proceso = false;
+        pthread_mutex_unlock(&m_ejecutando_un_proceso);
         return;
-    } 
+    }
 
     t_paquete *paquete_write = crear_paquete(WRITE_MEM);
     agregar_a_paquete_solo(paquete_write, &tid, sizeof(uint32_t));
@@ -301,12 +323,12 @@ void write_mem(instruccion *inst)
     enviar_paquete(paquete_write, socket_memoria);
     eliminar_paquete(paquete_write);
 
-    //recibir_mensaje(socket_memoria, logger_cpu);
+    // recibir_mensaje(socket_memoria, logger_cpu);
 
     int confirmacion;
-    recv(socket_memoria,&confirmacion,sizeof(int),MSG_WAITALL);
+    recv(socket_memoria, &confirmacion, sizeof(int), MSG_WAITALL);
 
-    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Acción: <ESCRIBIR> - Dirección Física: <%i>",pid, tid, dir_fisica);
+    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Acción: <ESCRIBIR> - Dirección Física: <%i>", pid, tid, dir_fisica);
 }
 
 // LOG (Registro): Escribe en el archivo de log el valor del registro.
@@ -328,27 +350,24 @@ void dump_memory(instruccion *inst)
     pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 
 void io(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(IO, inst);
-   pthread_mutex_lock(&m_ejecutando_un_proceso);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 
 void process_create(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(PROCESS_CREATE, inst);
-   pthread_mutex_lock(&m_ejecutando_un_proceso);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 
 void thread_create(instruccion *inst)
@@ -359,7 +378,7 @@ void thread_create(instruccion *inst)
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
 
-    //empaquetar_contexto_kl(THREAD_CREATE, inst);
+    // empaquetar_contexto_kl(THREAD_CREATE, inst);
 }
 
 void thread_join(instruccion *inst)
@@ -369,7 +388,6 @@ void thread_join(instruccion *inst)
     pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 
 void thread_cancel(instruccion *inst)
@@ -379,7 +397,6 @@ void thread_cancel(instruccion *inst)
     pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 
 void mutex_create(instruccion *inst)
@@ -389,7 +406,6 @@ void mutex_create(instruccion *inst)
     pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 
 void mutex_lock(instruccion *inst)
@@ -399,7 +415,6 @@ void mutex_lock(instruccion *inst)
     pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 
 void mutex_unlock(instruccion *inst)
@@ -409,7 +424,6 @@ void mutex_unlock(instruccion *inst)
     pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 
 void thread_exit(instruccion *inst)
@@ -419,17 +433,15 @@ void thread_exit(instruccion *inst)
     pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 
 void process_exit(instruccion *inst)
 {
     devolver_contexto_de_ejecucion(pid, tid);
     devolver_lista_instrucciones(PROCESS_EXIT, inst);
-   pthread_mutex_lock(&m_ejecutando_un_proceso);
+    pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
 }
 /* ------------------------------------------- MMU ------------------------------------------- */
 
@@ -444,11 +456,6 @@ uint32_t traducir_direcciones(t_registros_cpu registros_cpu, uint32_t dir_logica
     }
     else
     {
-        devolver_contexto_de_ejecucion(pid, tid);
-        t_paquete *paquete = crear_paquete(SEGMENTATION_FAULT);
-        agregar_a_paquete(paquete, &tid, sizeof(uint32_t));
-        enviar_paquete(paquete, conexion_dispatch);
-        eliminar_paquete(paquete);
         return -1; // VER ESTO
     }
 }
