@@ -25,8 +25,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     */
-    argv[1] = "THE_EMPTINESS_MACHINE";
-    argv[2] = "16";
+    argv[1] = "PRUEBA_FS";
+    argv[2] = "8";
 
     pthread_t t1, t2;
     
@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
     
 
      //./bin/kernel [archivo_pseudocodigo] [tamanio_proceso] [...args]
-
+    sem_wait(&bin_memoria);
     int socket = conectarMemoria();
     int tam_proc = atoi(argv[2]);
     printf("tam proc %d archivo: %s\n", tam_proc, argv[1]);
@@ -49,7 +49,6 @@ int main(int argc, char* argv[]) {
     pcb* proceso_nuevo = crear_pcb(0, argv[1], tam_proc, socket);
     inicializar_hilos_planificacion();
     //printf("liiiiiiiiiiiiiiiibre sooooooy? o es algo que me quieren hacer creer?\n");
-
 
     liberar_conexion(conexion_memoria);
     liberar_conexion(conexion_dispatch);

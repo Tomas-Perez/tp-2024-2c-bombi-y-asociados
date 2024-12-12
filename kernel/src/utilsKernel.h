@@ -78,6 +78,7 @@ extern sem_t hilos_en_exit;
 extern sem_t hilos_en_ready;
 extern sem_t binario_corto_plazo;
 extern sem_t bin_dispatch;
+extern sem_t bin_memoria;
 
 extern t_list* lista_de_ready;
 extern t_list* lista_procesos_new;

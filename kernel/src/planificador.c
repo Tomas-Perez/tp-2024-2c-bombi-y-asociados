@@ -33,6 +33,7 @@ sem_t hilos_en_exit;
 sem_t hilos_en_ready;
 sem_t binario_corto_plazo;
 sem_t bin_dispatch;
+sem_t bin_memoria;
 // sem_t binario_atender_syscall;
 
 void agregar_a_ready(tcb *hilo)
@@ -284,10 +285,10 @@ void atender_syscall()
 		pthread_mutex_lock(&m_syscall_replanificadora);
 		syscall_replanificadora = 0;
 		pthread_mutex_unlock(&m_syscall_replanificadora);
-		sem_post(&binario_corto_plazo);
 		pthread_mutex_lock(&m_hilo_en_ejecucion);
 		agregar_a_ready_multinivel(hilo_en_ejecucion);
 		pthread_mutex_unlock(&m_hilo_en_ejecucion);
+		sem_post(&binario_corto_plazo);
 		break;
 	case PROCESS_CREATE:
 		pthread_mutex_lock(&m_syscall_replanificadora);
@@ -299,7 +300,7 @@ void atender_syscall()
 		char *prioridad_PC = list_get(instrucc->parametros, 2);
 		int tam = atoi(tamanio);
 		int priori = atoi(prioridad_PC);
-
+		sem_wait(&bin_memoria);
 		socket = conectarMemoria();
 		printf("PRUEBA: %s tamanio: %d prioridad %d\n", archivo, tam, priori);
 		pcb *proceso_nuevo = crear_pcb(priori, archivo, tam, socket);
@@ -307,6 +308,7 @@ void atender_syscall()
 		// liberar_param_instruccion(instrucc);
 		// free(archivo);
 		close(socket);
+		sem_post(&bin_memoria);
 		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
 
 		break;
@@ -340,12 +342,12 @@ void atender_syscall()
 		pthread_mutex_unlock(&m_hilo_en_ejecucion);
 
 		printf("%s priori: %d\n", archivo, prioridad);
-
+		sem_wait(&bin_memoria);
 		socket = conectarMemoria();
 		tcb *hilo = crear_tcb(proceso, prioridad);
 		iniciar_hilo(hilo, socket, archivo);
 		close(socket);
-
+		sem_post(&bin_memoria);
 		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
 
 		// free(archivo);
@@ -524,31 +526,25 @@ void atender_syscall()
 		pthread_mutex_lock(&m_syscall_replanificadora);
 		syscall_replanificadora = 1;
 		pthread_mutex_unlock(&m_syscall_replanificadora);
+
 		pthread_mutex_lock(&m_hilo_en_ejecucion);
-		tcb *hilo_dump = hilo_en_ejecucion;
+		tcb *hilo_dumpo = hilo_en_ejecucion;
 		pthread_mutex_unlock(&m_hilo_en_ejecucion);
+		sem_wait(&bin_memoria);
 		socket = conectarMemoria();
-		int rta = bloquear_por_dump(hilo_dump, socket);
-		close(socket);
+		bloquear_por_dump(hilo_dumpo, socket);
+		
+		paquete_dump *dump_o = malloc(sizeof(paquete_dump));
+		dump_o->hilo = hilo_dumpo;
+		dump_o->socket = socket;
 
-		pthread_mutex_lock(&m_bloqueados_por_dump);
-		tcb* hilo_dump_nuevo= list_remove(bloqueados_por_dump, 0);
-		pthread_mutex_unlock(&m_bloqueados_por_dump);
+		pthread_t hilo_dump;
+		pthread_create(&hilo_dump, NULL, (void *)hacerDump, dump_o);
+		pthread_detach(hilo_dump);
 
-		//printf("TID HILO_DUMPO %d  \n", hilo_dump->tid);
-		if (rta == 0)
-		{
-			//printf("RTA DEL BLOQUEAR 0 %d \n", rta);
-			finalizar_proceso(hilo_dump_nuevo->pcb_padre_tcb);
-			sem_post(&binario_corto_plazo);
-		}
-		else
-		{
-			sem_post(&binario_corto_plazo);
-			//printf("RTA DEL BLOQUEAR 1 %d \n", rta);
-			agregar_a_ready_segun_alg(hilo_dump_nuevo);
-		}
-
+		sem_post(&binario_corto_plazo);
+		
+		
 		// liberar_param_instruccion(instrucc);
 		break;
 
@@ -602,4 +598,47 @@ void* hacerIO(int cant_seg_duerme)
 			// pasar_a_running_tcb_con_syscall(hilo);
 		agregar_a_ready_segun_alg(hilo_aux);
 			// liberar_param_instruccion(instrucc);
+}
+
+void* hacerDump(paquete_dump* info_dump)
+{
+	printf("1 TID HILO_DUMPO %d PID %d \n", info_dump->hilo->tid, info_dump->hilo->pcb_padre_tcb->pid);
+	int finalizo_operacion;
+	recv(info_dump->socket, &finalizo_operacion, sizeof(int), MSG_WAITALL);
+	close(info_dump->socket);
+	sem_post(&bin_memoria);
+
+	pthread_mutex_lock(&m_bloqueados_por_dump);
+	tcb* dump = buscar_hilo_dump(info_dump);
+	pthread_mutex_unlock(&m_bloqueados_por_dump);
+	
+	printf("2 TID HILO_DUMPO %d  PID %d \n", info_dump->hilo->tid, info_dump->hilo->pcb_padre_tcb->pid);
+
+	if (finalizo_operacion == 0)
+	{
+			//printf("RTA DEL BLOQUEAR 0 %d \n", rta);
+		finalizar_proceso(dump->pcb_padre_tcb);
+		
+	}
+	else
+	{
+		
+		//printf("RTA DEL BLOQUEAR 1 %d \n", rta);
+		agregar_a_ready_segun_alg(dump);
+	}
+	free(info_dump);
+}
+
+tcb* buscar_hilo_dump(paquete_dump* info_dump){
+for(int i = 0; i < list_size(bloqueados_por_dump); i++)
+	{
+		tcb* aux = list_get(bloqueados_por_dump, i);
+		if(aux->tid == info_dump->hilo->tid && aux->pcb_padre_tcb->pid == info_dump->hilo->pcb_padre_tcb->pid) 
+		{
+			list_remove(bloqueados_por_dump, i);
+			return aux;
+		}
+		
+	}
+	return NULL;
 }

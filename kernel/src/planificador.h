@@ -12,5 +12,7 @@ tcb* hilo_prioritario_en_ready();
 tcb* elegir_segun_prioridades();
 void* hacerIO(int cant_seg_duerme);
 //void atender_syscall();
+void* hacerDump(paquete_dump* info_dump);
+tcb* buscar_hilo_dump(paquete_dump* info_dump);
 
 //void inicializar_hilos_planificacion();

@@ -152,6 +152,11 @@ typedef struct
     pthread_mutex_t m_lista_prioridad;
 
 } nivel_prioridad; 
+
+typedef struct{
+    tcb* hilo;
+    int socket;
+}paquete_dump;
 void inicializar_estructuras();
 
 // -------------------------------- MEMORIA --------------------------------
