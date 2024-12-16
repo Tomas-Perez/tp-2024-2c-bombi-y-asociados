@@ -53,10 +53,11 @@ void check_interrupt(instruccion *inst)
     pthread_mutex_lock(&m_interrupcion);
     interrupcion = false;
     pthread_mutex_unlock(&m_interrupcion);
+
     for (int i = 0; i < list_size(inst->parametros); i++)
     {
-        char *parametro = list_remove(inst->parametros, i);
-
+        list_remove(inst->parametros, i);
+        //free(list_get(inst->parametros, i));
         // free(parametro);
     } // liberar cada parametro de instruccion
     list_destroy(inst->parametros);

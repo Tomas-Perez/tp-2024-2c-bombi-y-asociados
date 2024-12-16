@@ -53,7 +53,7 @@ void guardar_instrucciones(t_hilo *hilo, FILE *f)
 		pthread_mutex_lock(&mutex_instrucciones);
 		char *aux = list_get(hilo->instrucciones, i);
 		pthread_mutex_unlock(&mutex_instrucciones);
-		//printf("%s\n", aux); // muestra las instrucciones linea por linea
+		// printf("%s\n", aux); // muestra las instrucciones linea por linea
 	}
 }
 
@@ -391,6 +391,7 @@ void verificar_particiones_vecinas(t_list *lista)
 	for (int i = list_size(lista) - 1; i >= 0; i--)
 	{
 		t_particiones *particion = list_get(lista, i);
+
 		if (i == 0 && list_size(lista) > 1)
 		{
 			// Primer elemento: verificar con el siguiente
@@ -398,9 +399,12 @@ void verificar_particiones_vecinas(t_list *lista)
 			if (particion->ocupado == 0 && particion_siguiente->ocupado == 0)
 			{
 				particion->limite += particion_siguiente->limite;
+
 				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_siguiente);
 				pthread_mutex_unlock(&m_lista_particiones);
+
+				free(particion_siguiente);
 			}
 		}
 		else if (i == list_size(lista) - 1 && list_size(lista) > 1)
@@ -411,9 +415,12 @@ void verificar_particiones_vecinas(t_list *lista)
 			{
 				particion->base = particion_anterior->base;
 				particion->limite += particion_anterior->limite;
+
 				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_anterior);
 				pthread_mutex_unlock(&m_lista_particiones);
+
+				free(particion_anterior);
 			}
 		}
 		else if (list_size(lista) > 2)
@@ -426,12 +433,18 @@ void verificar_particiones_vecinas(t_list *lista)
 			{
 				particion->base = particion_anterior->base;
 				particion->limite += particion_anterior->limite + particion_siguiente->limite;
+
 				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_siguiente);
 				pthread_mutex_unlock(&m_lista_particiones);
+
+				free(particion_siguiente);
+
 				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_anterior);
 				pthread_mutex_unlock(&m_lista_particiones);
+
+				free(particion_anterior);
 			}
 			else if (particion->ocupado == 0 && particion_siguiente->ocupado == 0)
 			{
@@ -439,6 +452,8 @@ void verificar_particiones_vecinas(t_list *lista)
 				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_siguiente);
 				pthread_mutex_unlock(&m_lista_particiones);
+
+				free(particion_siguiente);
 			}
 			else if (particion->ocupado == 0 && particion_anterior->ocupado == 0)
 			{
@@ -447,6 +462,8 @@ void verificar_particiones_vecinas(t_list *lista)
 				pthread_mutex_lock(&m_lista_particiones);
 				list_remove_element(lista, particion_anterior);
 				pthread_mutex_unlock(&m_lista_particiones);
+
+				free(particion_anterior);
 			}
 		}
 	}
@@ -481,18 +498,21 @@ bool base_menor(void *a, void *b)
 }
 
 // Función para recorrer y loguear la lista
-void log_particiones(t_list* lista) {
-    if (lista == NULL || list_size(lista) == 0) {
-        log_info(logger_memoria, "La lista está vacía o es inválida.");
-        return;
-    }
+void log_particiones(t_list *lista)
+{
+	if (lista == NULL || list_size(lista) == 0)
+	{
+		log_info(logger_memoria, "La lista está vacía o es inválida.");
+		return;
+	}
 
-    for (size_t i = 0; i < list_size(lista); i++) {
-        t_particiones *particion = list_get(lista, i);
-        log_info(logger_memoria, "Partición %zu: Base = %u, Límite = %u, Ocupado = %s",
-                 i,
-                 particion->base,
-                 particion->limite,
-                 particion->ocupado ? "Sí" : "No");
-    }
+	for (size_t i = 0; i < list_size(lista); i++)
+	{
+		t_particiones *particion = list_get(lista, i);
+		log_info(logger_memoria, "Partición %zu: Base = %u, Límite = %u, Ocupado = %s",
+				 i,
+				 particion->base,
+				 particion->limite,
+				 particion->ocupado ? "Sí" : "No");
+	}
 }

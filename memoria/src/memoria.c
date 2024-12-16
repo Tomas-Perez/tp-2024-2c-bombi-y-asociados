@@ -103,12 +103,10 @@ int atenderCpu(int *socket_cpu)
         switch (cod_op)
         {
         case FETCH_INSTRUCCION:
- 
+
             buffer = recibir_buffer((&size), *socket_cpu);
 
             uint32_t program_counter;
- 
- 
 
             int pid_fetch = buffer_read_uint32(buffer);
             int tid_fetch = buffer_read_uint32(buffer);
@@ -160,8 +158,7 @@ int atenderCpu(int *socket_cpu)
             t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid_AC); // si tira error ver malloc
             t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid_a_actualizar);
 
-
-            actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar); // Falta ver base y limite
+            actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar);
 
             log_info(logger_memoria, "Contexto <Actualizado> - (PID:TID) - (<%i>:<%i>)", pid_AC, tid_a_actualizar);
 
@@ -223,7 +220,7 @@ int atenderCpu(int *socket_cpu)
 
             break;
         default:
-            //log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
+            // log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
             break;
         }
     }
@@ -256,7 +253,7 @@ int atenderKernel(int *socket_kernel)
         path_kernel = buffer_read_string(buffer);
         free(buffer);
 
-        t_particiones *particion_a_asignar = malloc(sizeof(t_particiones));
+        t_particiones *particion_a_asignar;
 
         log_info(logger_memoria, "Proceso PID: %i y Tamaño: %i quiere espacio en memoria", pid_PC, tamanio_proceso);
 
@@ -268,6 +265,7 @@ int atenderKernel(int *socket_kernel)
                 particion_a_asignar = asignar_first_fit_fijas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
+                    free(particion_a_asignar);
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
@@ -279,6 +277,7 @@ int atenderKernel(int *socket_kernel)
                 particion_a_asignar = asignar_best_fit_fijas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
+                    free(particion_a_asignar);
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
@@ -290,6 +289,7 @@ int atenderKernel(int *socket_kernel)
                 particion_a_asignar = asignar_worst_fit_fijas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
+                    free(particion_a_asignar);
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
@@ -310,6 +310,7 @@ int atenderKernel(int *socket_kernel)
                 particion_a_asignar = asignar_first_fit_dinamicas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
+                    free(particion_a_asignar);
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
@@ -321,6 +322,7 @@ int atenderKernel(int *socket_kernel)
                 particion_a_asignar = asignar_best_fit_dinamicas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
+                    free(particion_a_asignar);
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
@@ -332,6 +334,7 @@ int atenderKernel(int *socket_kernel)
                 particion_a_asignar = asignar_worst_fit_dinamicas(lista_particiones, tamanio_proceso);
                 if (particion_a_asignar == NULL)
                 {
+                    free(particion_a_asignar);
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
@@ -344,7 +347,6 @@ int atenderKernel(int *socket_kernel)
                 exit(EXIT_FAILURE);
             }
         }
-
 
         char *path_script_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_kernel) + 1);
         if (path_script_completo == NULL)
@@ -396,7 +398,6 @@ int atenderKernel(int *socket_kernel)
 
         usleep(retardo_rta * 1000);
 
-        
         confirmacion = 1;
         send(*socket_kernel, &confirmacion, sizeof(int), 0);
         break;
@@ -540,7 +541,7 @@ int atenderKernel(int *socket_kernel)
         break;
 
     default:
-        //log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
+        // log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
         printf("Cod Op: %i", cod_op);
         break;
     }
@@ -549,13 +550,12 @@ int atenderKernel(int *socket_kernel)
 
 void levantar_config_memoria()
 {
-    //config_memoria = config_create("configs/memoriaPlani.config");
-   //  config_memoria = config_create("configs/memoriaRC.config");
+    // config_memoria = config_create("configs/memoriaPlani.config");
+    //  config_memoria = config_create("configs/memoriaRC.config");
     // config_memoria = config_create("configs/memoriaParticionesFijas.config");
-    // config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
-    config_memoria = config_create("configs/memoriaFS.config");
-    // config_memoria = config_create("configs/memoriaTEM.config");
-
+    config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
+    // config_memoria = config_create("configs/memoriaFS.config");
+    //config_memoria = config_create("configs/memoriaTEM.config");
 
     puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
     ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");
