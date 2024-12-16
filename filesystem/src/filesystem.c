@@ -112,7 +112,7 @@ void atender_petiticiones(int *socket)
             int tam=buffer_read_uint32(buffer);
             void* data=malloc(tam);
             recv(socket_cliente,data,tam,MSG_WAITALL);
-
+            free(buffer);
             time_t timestamp= time(NULL);
             struct tm *tm = localtime(&timestamp);
             char* tiempo=malloc(sizeof(char)*50);

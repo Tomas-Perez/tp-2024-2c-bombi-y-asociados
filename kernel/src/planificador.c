@@ -125,6 +125,8 @@ void planificador_corto_plazo()
 							if (list_size(mayor_nivel->hilos_asociados) == 0)
 							{
 								bool loBorra = list_remove_element(lista_multinivel, mayor_nivel);
+								list_destroy(mayor_nivel->hilos_asociados);
+								pthread_mutex_destroy(&(mayor_nivel->m_lista_prioridad));
 								free(mayor_nivel);
 							}
 						}
@@ -192,10 +194,12 @@ void pasar_a_running_tcb_con_syscall(tcb *tcb_listo)
 	{
 		log_info(logger_kernel, "BORRAR ## (PID <%d> : TID <%d> ) - Solicitó syscall: <RR>",tcb_listo->pcb_padre_tcb->pid, tcb_listo->tid);
 		pthread_mutex_unlock(&m_quantum_restante);
-		sem_post(&binario_corto_plazo);
 		agregar_a_ready_multinivel(tcb_listo);
+		sem_post(&binario_corto_plazo);
 	}
 }
+
+
 
 void pasar_a_running_tcb_prioridades()
 {
@@ -301,15 +305,18 @@ void atender_syscall()
 		int tam = atoi(tamanio);
 		int priori = atoi(prioridad_PC);
 		sem_wait(&bin_memoria);
-		socket = conectarMemoria();
+		int socket_PC = conectarMemoria();
 		printf("PRUEBA: %s tamanio: %d prioridad %d\n", archivo, tam, priori);
-		pcb *proceso_nuevo = crear_pcb(priori, archivo, tam, socket);
+		pcb *proceso_nuevo = crear_pcb(priori, archivo, tam, socket_PC);
 
+		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
 		// liberar_param_instruccion(instrucc);
 		// free(archivo);
-		close(socket);
-		sem_post(&bin_memoria);
-		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
+		//close(socket);
+		/*if(list_size(lista_procesos_new) == 0)
+		{
+			sem_post(&bin_memoria);
+		}*/
 
 		break;
 	case SEGMENTATION_FAULT:
@@ -324,6 +331,7 @@ void atender_syscall()
 			pthread_mutex_lock(&m_syscall_replanificadora);
 			syscall_replanificadora = 1;
 			pthread_mutex_unlock(&m_syscall_replanificadora);
+			printf("Axa llegas\n");
 			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
 		}
 		pthread_mutex_unlock(&m_hilo_en_ejecucion);
@@ -594,7 +602,7 @@ void* hacerIO(int cant_seg_duerme)
 
 
 		log_info(logger_kernel, "## ((PID <%d> : TID <%d> )) finalizó IO y pasa a READY",
-			 hilo_aux->pcb_padre_tcb->contador_tid, hilo_aux->tid);
+			 hilo_aux->pcb_padre_tcb->pid, hilo_aux->tid);
 			// pasar_a_running_tcb_con_syscall(hilo);
 		agregar_a_ready_segun_alg(hilo_aux);
 			// liberar_param_instruccion(instrucc);
