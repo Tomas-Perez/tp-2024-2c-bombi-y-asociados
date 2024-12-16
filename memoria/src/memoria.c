@@ -18,6 +18,27 @@ int socket_fs;
 int pid, tid;
 void *memoria;
 
+void levantar_config_memoria()
+{
+    // config_memoria = config_create("configs/memoriaPlani.config");
+    //  config_memoria = config_create("configs/memoriaRC.config");
+    // config_memoria = config_create("configs/memoriaParticionesFijas.config");
+    //config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
+    // config_memoria = config_create("configs/memoriaFS.config");
+    config_memoria = config_create("configs/memoriaTEM.config");
+
+    puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
+    ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");
+    puerto_filesystem = config_get_string_value(config_memoria, "PUERTO_FILESYSTEM");
+    path_instrucciones = config_get_string_value(config_memoria, "PATH_INSTRUCCIONES");
+    esquema = config_get_string_value(config_memoria, "ESQUEMA");
+    algoritmo_busqueda = config_get_string_value(config_memoria, "ALGORITMO_BUSQUEDA");
+    particiones = config_get_string_value(config_memoria, "PARTICIONES");
+    log_level = config_get_string_value(config_memoria, "LOG_LEVEL");
+    tamanio_memoria = config_get_int_value(config_memoria, "TAM_MEMORIA");
+    retardo_rta = config_get_int_value(config_memoria, "RETARDO_RESPUESTA");
+}
+
 int main(int argc, char *argv[])
 {
     int socket_cliente;
@@ -546,27 +567,6 @@ int atenderKernel(int *socket_kernel)
         break;
     }
     return 0;
-}
-
-void levantar_config_memoria()
-{
-    // config_memoria = config_create("configs/memoriaPlani.config");
-    //  config_memoria = config_create("configs/memoriaRC.config");
-    // config_memoria = config_create("configs/memoriaParticionesFijas.config");
-    config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
-    // config_memoria = config_create("configs/memoriaFS.config");
-    //config_memoria = config_create("configs/memoriaTEM.config");
-
-    puerto_escucha = config_get_string_value(config_memoria, "PUERTO_ESCUCHA");
-    ip_filesystem = config_get_string_value(config_memoria, "IP_FILESYSTEM");
-    puerto_filesystem = config_get_string_value(config_memoria, "PUERTO_FILESYSTEM");
-    path_instrucciones = config_get_string_value(config_memoria, "PATH_INSTRUCCIONES");
-    esquema = config_get_string_value(config_memoria, "ESQUEMA");
-    algoritmo_busqueda = config_get_string_value(config_memoria, "ALGORITMO_BUSQUEDA");
-    particiones = config_get_string_value(config_memoria, "PARTICIONES");
-    log_level = config_get_string_value(config_memoria, "LOG_LEVEL");
-    tamanio_memoria = config_get_int_value(config_memoria, "TAM_MEMORIA");
-    retardo_rta = config_get_int_value(config_memoria, "RETARDO_RESPUESTA");
 }
 
 int conectarFS()
