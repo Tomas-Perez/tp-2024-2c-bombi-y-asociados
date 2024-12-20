@@ -187,7 +187,7 @@ int pedir_memoria(int socket)
 
             if (confirmacion_mem_disponible == 0)
             {
-                log_info(logger_kernel, "BORRAR: No hay memoria disponible para el proceso PID: %i", pid);
+               // log_info(logger_kernel, "BORRAR: No hay memoria disponible para el proceso PID: %i", pid);
                 //sem_post(&binario_corto_plazo);
 
                 return 0;
@@ -203,7 +203,7 @@ int pedir_memoria(int socket)
                 pthread_mutex_lock(&m_lista_procesos_new);
                 if (list_size(lista_procesos_new) > 0)
                 {   
-                    log_info(logger_kernel, "Alguna vez entras aca???");
+                   // log_info(logger_kernel, "Alguna vez entras aca???");
                     pthread_mutex_unlock(&m_lista_procesos_new);
                     sem_wait(&bin_memoria);
                     int socket_recursivo = conectarMemoria();
@@ -1035,7 +1035,7 @@ void avisar_memoria_liberar_pcb(pcb *proc)
     eliminar_paquete(p_exit);
     int confirmacion;
     recv(socket, &confirmacion, sizeof(int), MSG_WAITALL);
-    printf("CONFIRMO FINALIZO PROC EN MEM: %d \n", confirmacion);
+   // printf("CONFIRMO FINALIZO PROC EN MEM: %d \n", confirmacion);
     close(socket);
     sem_post(&bin_memoria);
 }
