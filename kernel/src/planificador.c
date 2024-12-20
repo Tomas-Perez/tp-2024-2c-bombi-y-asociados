@@ -192,7 +192,7 @@ void pasar_a_running_tcb_con_syscall(tcb *tcb_listo)
 	}
 	else
 	{
-		log_info(logger_kernel, "BORRAR ## (PID <%d> : TID <%d> ) - Solicitó syscall: <RR>",tcb_listo->pcb_padre_tcb->pid, tcb_listo->tid);
+		//log_info(logger_kernel, "BORRAR ## (PID <%d> : TID <%d> ) - Solicitó syscall: <RR>",tcb_listo->pcb_padre_tcb->pid, tcb_listo->tid);
 		pthread_mutex_unlock(&m_quantum_restante);
 		agregar_a_ready_multinivel(tcb_listo);
 		sem_post(&binario_corto_plazo);
@@ -306,7 +306,7 @@ void atender_syscall()
 		int priori = atoi(prioridad_PC);
 		sem_wait(&bin_memoria);
 		int socket_PC = conectarMemoria();
-		printf("PRUEBA: %s tamanio: %d prioridad %d\n", archivo, tam, priori);
+		//printf("PRUEBA: %s tamanio: %d prioridad %d\n", archivo, tam, priori);
 		pcb *proceso_nuevo = crear_pcb(priori, archivo, tam, socket_PC);
 
 		pasar_a_running_tcb_con_syscall(hilo_en_ejecucion);
@@ -331,7 +331,7 @@ void atender_syscall()
 			pthread_mutex_lock(&m_syscall_replanificadora);
 			syscall_replanificadora = 1;
 			pthread_mutex_unlock(&m_syscall_replanificadora);
-			printf("Axa llegas\n");
+			//printf("Axa llegas\n");
 			finalizar_proceso(hilo_en_ejecucion->pcb_padre_tcb);
 		}
 		pthread_mutex_unlock(&m_hilo_en_ejecucion);
@@ -349,7 +349,7 @@ void atender_syscall()
 		pcb *proceso = hilo_en_ejecucion->pcb_padre_tcb;
 		pthread_mutex_unlock(&m_hilo_en_ejecucion);
 
-		printf("%s priori: %d\n", archivo, prioridad);
+		//printf("%s priori: %d\n", archivo, prioridad);
 		sem_wait(&bin_memoria);
 		socket = conectarMemoria();
 		tcb *hilo = crear_tcb(proceso, prioridad);
@@ -610,7 +610,7 @@ void* hacerIO(int cant_seg_duerme)
 
 void* hacerDump(paquete_dump* info_dump)
 {
-	printf("1 TID HILO_DUMPO %d PID %d \n", info_dump->hilo->tid, info_dump->hilo->pcb_padre_tcb->pid);
+	//printf("1 TID HILO_DUMPO %d PID %d \n", info_dump->hilo->tid, info_dump->hilo->pcb_padre_tcb->pid);
 	int finalizo_operacion;
 	recv(info_dump->socket, &finalizo_operacion, sizeof(int), MSG_WAITALL);
 	close(info_dump->socket);
@@ -620,7 +620,7 @@ void* hacerDump(paquete_dump* info_dump)
 	tcb* dump = buscar_hilo_dump(info_dump);
 	pthread_mutex_unlock(&m_bloqueados_por_dump);
 	
-	printf("2 TID HILO_DUMPO %d  PID %d \n", info_dump->hilo->tid, info_dump->hilo->pcb_padre_tcb->pid);
+	//printf("2 TID HILO_DUMPO %d  PID %d \n", info_dump->hilo->tid, info_dump->hilo->pcb_padre_tcb->pid);
 
 	if (finalizo_operacion == 0)
 	{
