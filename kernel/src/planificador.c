@@ -118,7 +118,7 @@ void planificador_corto_plazo()
 					mayor_nivel = encontrar_nivel_mas_prioritario(lista_multinivel);
 					if (mayor_nivel != NULL)
 					{
-						pthread_mutex_lock(&(mayor_nivel->m_lista_prioridad));
+						//pthread_mutex_lock(&(mayor_nivel->m_lista_prioridad));
 						if (list_is_empty(mayor_nivel->hilos_asociados) == false)
 						{
 							hilo_a_ejecutar = list_remove(mayor_nivel->hilos_asociados, 0);
@@ -130,7 +130,7 @@ void planificador_corto_plazo()
 								free(mayor_nivel);
 							}
 						}
-						pthread_mutex_unlock(&(mayor_nivel->m_lista_prioridad));
+						//pthread_mutex_unlock(&(mayor_nivel->m_lista_prioridad));
 
 						pthread_t tround_robin;
 					
