@@ -1,15 +1,5 @@
 #include "kernel.h"
-/*t_config* config_kernel;
 
-char *ip_memoria;
-char *puerto_memoria;
-char *ip_cpu;
-char *puerto_cpu_dispatch;
-char *puerto_cpu_interrupt;
-char *algoritmo_de_planificacion;
-int quantum;
-char *log_level; */
-// t_log *logger_kernel;
 int conexion_dispatch;
 int conexion_interrupt;
 int conexion_memoria;
@@ -31,14 +21,13 @@ int main(int argc, char *argv[])
 
     pthread_t t1, t2;
 
-    inicializar_estructuras_kernel(); // ahora esta en utilsKernel.c
+    inicializar_estructuras_kernel();
 
     pthread_create(&t1, NULL, (void *)conectarCpuDispatch, NULL);
     pthread_create(&t2, NULL, (void *)conectarCpuInterrupt, NULL);
 
     pthread_join(t2, NULL);
 
-    //./bin/kernel [archivo_pseudocodigo] [tamanio_proceso] [...args]
     sem_wait(&bin_memoria);
     int socket = conectarMemoria();
     int tam_proc = atoi(argv[2]);
@@ -47,7 +36,6 @@ int main(int argc, char *argv[])
     sem_post(&binario_corto_plazo);
     pcb *proceso_nuevo = crear_pcb(0, argv[1], tam_proc, socket);
     inicializar_hilos_planificacion();
-    //printf("liiiiiiiiiiiiiiiibre sooooooy? o es algo que me quieren hacer creer?\n");
 
     liberar_conexion(conexion_memoria);
     liberar_conexion(conexion_dispatch);

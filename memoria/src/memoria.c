@@ -10,7 +10,7 @@ char *path_instrucciones;
 uint32_t retardo_rta;
 char *esquema;
 char *algoritmo_busqueda;
-char *particiones; // VER SI ESTA BIEN CON *CHAR
+char *particiones;
 char *log_level;
 char *puerto_filesystem;
 
@@ -20,9 +20,9 @@ void *memoria;
 
 void levantar_config_memoria()
 {
-     config_memoria = config_create("configs/memoriaPlani.config");
+    config_memoria = config_create("configs/memoriaPlani.config");
     //  config_memoria = config_create("configs/memoriaRC.config");
-    // config_memoria = config_create("configs/memoriaParticionesFijas.config");
+    // config_memoria = config_create("configs/memoriaPaurticionesFijas.config");
     //config_memoria = config_create("configs/memoriaParticionesDinamicas.config");
     // config_memoria = config_create("configs/memoriaFS.config");
     //config_memoria = config_create("configs/memoriaTEM.config");
@@ -83,7 +83,6 @@ int main(int argc, char *argv[])
 
         int id_modulo;
         recv(socket_cliente, &id_modulo, sizeof(int), 0);
-        // log_info(logger, "id_modulo: %i", id_modulo);
 
         switch (id_modulo)
         {
@@ -137,7 +136,7 @@ int atenderCpu(int *socket_cpu)
 
             char *instruccion = buscar_instruccion(pid_fetch, tid_fetch, program_counter);
 
-            log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%s>", pid_fetch, tid_fetch, instruccion); // VER LOS ARGS
+            log_info(logger_memoria, "Obtener instrucción - (PID:TID) - (<%i>:<%i>) - Instrucción: <%s>", pid_fetch, tid_fetch, instruccion);
 
             enviar_mensaje(instruccion, *socket_cpu);
             free(buffer);
@@ -156,7 +155,7 @@ int atenderCpu(int *socket_cpu)
 
             usleep(retardo_rta * 1000);
 
-            t_proceso *proceso = buscar_proceso(procesos_memoria, pid_PC); // si tira error ver malloc
+            t_proceso *proceso = buscar_proceso(procesos_memoria, pid_PC);
             t_hilo *hilo = buscar_hilo(proceso, tid_solicitado);
 
             t_paquete *mandar_contexto = crear_paquete(PEDIR_CONTEXTO);
@@ -172,11 +171,12 @@ int atenderCpu(int *socket_cpu)
             int pid_AC = buffer_read_uint32(buffer);
             uint32_t tid_a_actualizar = buffer_read_uint32(buffer);
             t_registros_cpu registros_a_actualizar = recibir_contexto(registros_a_actualizar, buffer);
+
             free(buffer);
 
             usleep(retardo_rta * 1000);
 
-            t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid_AC); // si tira error ver malloc
+            t_proceso *proceso_ctx = buscar_proceso(procesos_memoria, pid_AC);
             t_hilo *hilo_ctx = buscar_hilo(proceso_ctx, tid_a_actualizar);
 
             actualizar_contexto_en_memoria(proceso_ctx, hilo_ctx, registros_a_actualizar);
@@ -215,7 +215,6 @@ int atenderCpu(int *socket_cpu)
             enviar_paquete(paquete_dato, *socket_cpu);
             eliminar_paquete(paquete_dato);
 
-            // enviar_mensaje("OK", *socket_cpu);
             free(dato_a_retornar);
 
             break;
@@ -235,7 +234,6 @@ int atenderCpu(int *socket_cpu)
             log_info(logger_memoria, "TID: <%i> - Acción: <ESCRIBIR> - Dirección física: <%i> - Tamaño <4>", tid_mem, dir_fisica);
             usleep(retardo_rta * 1000);
 
-            // enviar_mensaje("OK", *socket_cpu);
             int confirmacion = 1;
             send(*socket_cpu, &confirmacion, sizeof(int), 0);
 
@@ -290,7 +288,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                          
                 }
             }
             else if (strcmp(algoritmo_busqueda, "BEST") == 0)
@@ -302,7 +300,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                        
                 }
             }
             else if (strcmp(algoritmo_busqueda, "WORST") == 0)
@@ -314,7 +312,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                        
                 }
             }
             else
@@ -335,7 +333,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                         
                 }
             }
             else if (strcmp(algoritmo_busqueda, "BEST") == 0)
@@ -347,7 +345,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                        
                 }
             }
             else if (strcmp(algoritmo_busqueda, "WORST") == 0)
@@ -359,7 +357,7 @@ int atenderKernel(int *socket_kernel)
                     log_info(logger_memoria, "No hay hueco en memoria disponible");
                     confirmacion = 0;
                     send(*socket_kernel, &confirmacion, sizeof(int), 0); // Avisamos a kernel que NO pudimos reservar espacio
-                    break;                                               // chequear si esta bien el return o un exit                                           // ver como salir del case
+                    break;                                               // chequear si esta bien el return o un exit                                    
                 }
             }
             else
@@ -380,8 +378,6 @@ int atenderKernel(int *socket_kernel)
         strcat(path_script_completo, path_kernel);        // concatena path_kernel a path_script_completo
 
         usleep(retardo_rta * 1000);
-
-        // printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
 
         FILE *f;
         if (!(f = fopen(path_script_completo, "r")))
@@ -436,10 +432,10 @@ int atenderKernel(int *socket_kernel)
         int pid_IH = buffer_read_uint32(buffer);
         int tid_IH = buffer_read_uint32(buffer);
         path_hilo = buffer_read_string(buffer);
-        // path_hilo[size_path_hilo] = '\0'; // aseguramos que la cadena termine en un carácter nulo
+
         free(buffer);
 
-        char *path_hilo_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_hilo) + 1); // VER QUE ONDA PATH INSTRUCCIONES
+        char *path_hilo_completo = (char *)malloc(strlen(path_instrucciones) + strlen(path_hilo) + 1);
         if (path_hilo_completo == NULL)
         {
             log_info(logger_memoria, "Error al asignar memoria para path_script_completo\n");
@@ -450,8 +446,6 @@ int atenderKernel(int *socket_kernel)
         strcat(path_hilo_completo, path_hilo);
 
         usleep(retardo_rta * 1000);
-
-        // printf("PATH: %s\n", path_script_completo); // debería mostrar el path completo, chequear que muestre bien
 
         FILE *file_hilo;
         if (!(file_hilo = fopen(path_hilo_completo, "r")))
@@ -465,7 +459,7 @@ int atenderKernel(int *socket_kernel)
         free(path_script_completo);
         free(path_hilo);
 
-        t_proceso *proceso_padre = buscar_proceso(procesos_memoria, pid_IH); // si tira error ver malloc
+        t_proceso *proceso_padre = buscar_proceso(procesos_memoria, pid_IH);
         t_hilo *hilo_nuevo = malloc(sizeof(t_hilo));
 
         inicializar_hilo(proceso_padre, tid_IH, hilo_nuevo, file_hilo);
@@ -499,12 +493,11 @@ int atenderKernel(int *socket_kernel)
 
         confirmacion = 1;
         send(*socket_kernel, &confirmacion, sizeof(int), 0);
-        // MANDAR OK
+
         break;
     case DUMP_MEMORY:
         int size_dump;
         t_buffer *buffer_dump = recibir_buffer(&size_dump, *socket_kernel);
-        // pthread_t t_fs;
 
         int socket_FS = conectarFS();
         if (buffer_dump == NULL)
@@ -539,7 +532,6 @@ int atenderKernel(int *socket_kernel)
         agregar_a_paquete_solo(paquete_dump, &pid_DP, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_dump, &tid_DP, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_dump, &proceso_dump->limite, sizeof(uint32_t));
-        // agregar_a_paquete_solo(paquete_dump, contenido_memoria, proceso_dump->limite);
         enviar_paquete(paquete_dump, socket_FS);
         eliminar_paquete(paquete_dump);
         send(socket_FS, contenido_memoria, proceso_dump->limite, 0);
@@ -562,7 +554,6 @@ int atenderKernel(int *socket_kernel)
         break;
 
     default:
-        // log_warning(logger_memoria, "Operacion desconocida. No quieras meter la pata\n");
         printf("Cod Op: %i", cod_op);
         break;
     }

@@ -65,7 +65,6 @@ extern pthread_mutex_t m_lista_procesos_new;
 extern pthread_mutex_t m_lista_de_bloqueados;
 extern pthread_mutex_t m_lista_multinivel;
 extern pthread_mutex_t m_lista_finalizados;
-//extern pthread_mutex_t m_lista_prioridad;
 extern pthread_mutex_t m_syscall_solicitada;
 extern pthread_mutex_t m_lista_io;
 extern pthread_mutex_t m_bloqueados_por_dump;

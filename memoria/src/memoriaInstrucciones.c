@@ -1,7 +1,6 @@
 #include "memoriaInstrucciones.h"
 
 t_list *procesos_memoria;
-// t_list *particiones_fijas;
 t_list *lista_particiones;
 
 pthread_mutex_t mutex_listas;
@@ -26,7 +25,8 @@ void inicializar_estructuras()
 	pthread_mutex_init(&m_lista_particiones, NULL);
 }
 
-void finalizar_estructuras_memoria() {
+void finalizar_estructuras_memoria()
+{
 
 	list_destroy(procesos_memoria);
 	list_destroy(lista_particiones);
@@ -73,7 +73,6 @@ char *buscar_instruccion(int pid, int tid, uint32_t program_counter)
 			pthread_mutex_lock(&mutex_instrucciones);
 			char *instruccion = list_get(hilo->instrucciones, program_counter); // devuelve instruccion de la lista segun PC
 			pthread_mutex_unlock(&mutex_instrucciones);
-			//printf(" %s\n", instruccion);
 			return instruccion;
 		}
 		printf("NO ENCONTRE EL HILO");
@@ -124,12 +123,10 @@ void eliminar_proceso(int pid)
 	t_proceso *proceso_a_eliminar = buscar_proceso(procesos_memoria, pid);
 	log_info(logger_memoria, "Proceso <Destruido> -  PID: <%i> - Tamaño: <%i>", pid, proceso_a_eliminar->limite);
 	liberar_espacio_memoria(proceso_a_eliminar);
-	//printf("Salio de liberar espacio");
 	pthread_mutex_lock(&m_proc_mem);
 	list_remove_element(procesos_memoria, proceso_a_eliminar);
 	pthread_mutex_unlock(&m_proc_mem);
 	liberar_proceso(proceso_a_eliminar);
-	//printf("Salio de liberar proceso");
 }
 
 void liberar_proceso(t_proceso *proceso)
@@ -148,7 +145,7 @@ void eliminar_hilo(int pid, int tid)
 {
 	t_proceso *proceso_padre = buscar_proceso(procesos_memoria, pid);
 	t_hilo *hilo_a_eliminar = buscar_hilo(proceso_padre, tid);
-	list_remove_element(proceso_padre->tids,hilo_a_eliminar);
+	list_remove_element(proceso_padre->tids, hilo_a_eliminar);
 	liberar_hilo(hilo_a_eliminar);
 }
 

@@ -3,7 +3,7 @@
 void inicializar_hilo(t_proceso *proceso_padre, int tid, t_hilo *hilo_a_inicializar, FILE *f)
 {
 	hilo_a_inicializar->tid = tid;
-	hilo_a_inicializar->pid_padre = proceso_padre->pid; // nose si hace falta
+	hilo_a_inicializar->pid_padre = proceso_padre->pid;
 	inicializar_registros(hilo_a_inicializar, proceso_padre);
 	guardar_instrucciones(hilo_a_inicializar, f);
 }
@@ -387,7 +387,6 @@ void liberar_espacio_memoria(t_proceso *proceso)
 
 void verificar_particiones_vecinas(t_list *lista)
 {
-	// ordenar_lista_original(lista);
 	for (int i = list_size(lista) - 1; i >= 0; i--)
 	{
 		t_particiones *particion = list_get(lista, i);

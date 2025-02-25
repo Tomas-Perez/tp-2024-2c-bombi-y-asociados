@@ -18,6 +18,7 @@ int tid_interrupt;
 int socket_memoria;
 int conexion_dispatch;
 int conexion_interrupt;
+
 int main(int argc, char *argv[])
 {
 
@@ -33,7 +34,7 @@ int main(int argc, char *argv[])
     pthread_create(&t2, NULL, (void *)atenderCpuDispatch, NULL);
     pthread_create(&t3, NULL, (void *)atenderCpuInterrupt, NULL);
 
-    pthread_join(t3, NULL); // PRUEBAS
+    pthread_join(t3, NULL);
 
     return 0;
 }
@@ -64,7 +65,6 @@ int atenderCpuDispatch()
     log_info(logger_cpu, "Servidor listo para recibir al cliente");
     conexion_dispatch = esperar_cliente(server_cpud);
 
-    // t_list* lista;
     while (conexion_dispatch)
     {
         int cod_op = recibir_operacion(conexion_dispatch);
@@ -91,7 +91,6 @@ int atenderCpuDispatch()
             break;
         }
     }
-    // return EXIT_SUCCESS;
 }
 
 int atenderCpuInterrupt()
@@ -100,7 +99,6 @@ int atenderCpuInterrupt()
     log_info(logger_cpu, "Servidor listo para recibir al cliente");
     conexion_interrupt = esperar_cliente(server_cpui);
 
-    // t_list* lista;
     while (conexion_interrupt)
     {
         int cod_op = recibir_operacion(conexion_interrupt);
@@ -112,11 +110,8 @@ int atenderCpuInterrupt()
             motivo_interrupt = buffer_read_uint32(buffer);
             pid_interrupt = buffer_read_uint32(buffer);
             tid_interrupt = buffer_read_uint32(buffer);
-            //log_info(logger_cpu, "case DESALOJAR_PROCESO: pid interrupt: %d pid %d \n",pid_interrupt, pid);
-            //log_info(logger_cpu, "case DESALOJAR_PROCESO: tid interrupt: %d tid %d \n",tid_interrupt, tid);
             if ((pid_interrupt == pid) && (tid_interrupt == tid))
             {
-                //log_info(logger_cpu, "Llega interrupción al puerto Interrupt tid_interrupt %d tid %d", tid_interrupt, tid);
                 pthread_mutex_lock(&m_interrupcion);
                 interrupcion = true;
                 pthread_mutex_unlock(&m_interrupcion);
@@ -131,7 +126,6 @@ int atenderCpuInterrupt()
             break;
         }
     }
-    // return EXIT_SUCCESS;
 }
 
 void levantar_config_cpu()

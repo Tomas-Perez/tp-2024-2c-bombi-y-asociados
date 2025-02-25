@@ -4,25 +4,25 @@ void mostrar_parametros(instruccion *inst, int cant_parametros)
 {
     if (cant_parametros == 0)
     {
-        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <>",pid, tid, get_motivo(inst->identificador));
+        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <>", pid, tid, get_motivo(inst->identificador));
     }
     if (cant_parametros == 1)
     {
         char *param1 = list_get(inst->parametros, 0);
-        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <%s>",pid, tid, get_motivo(inst->identificador), param1);
+        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <%s>", pid, tid, get_motivo(inst->identificador), param1);
     }
     if (cant_parametros == 2)
     {
         char *param1 = list_get(inst->parametros, 0);
         char *param2 = list_get(inst->parametros, 1);
-        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <%s,%s>\n",pid, tid, get_motivo(inst->identificador), param1, param2);
+        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <%s,%s>\n", pid, tid, get_motivo(inst->identificador), param1, param2);
     }
     if (cant_parametros == 3)
     {
         char *param1 = list_get(inst->parametros, 0);
         char *param2 = list_get(inst->parametros, 1);
         char *param3 = list_get(inst->parametros, 2);
-        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <%s,%s,%s>\n",pid, tid, get_motivo(inst->identificador), param1, param2, param3);
+        log_info(logger_cpu, "PID: <%i> - TID: <%u> - Ejecutando: <%s> - <%s,%s,%s>\n", pid, tid, get_motivo(inst->identificador), param1, param2, param3);
     }
 }
 
@@ -227,7 +227,7 @@ void pedir_contexto_cpu(int pid, int tid)
     enviar_paquete(contexto, socket_memoria);
     eliminar_paquete(contexto);
 
-    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Solicito Contexto Ejecución",pid, tid);
+    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Solicito Contexto Ejecución", pid, tid);
 
     int size = 0;
 
@@ -259,9 +259,10 @@ void devolver_contexto_de_ejecucion(int pid, int tid)
     eliminar_paquete(dev_contexto);
 
     int conf;
-    recv(socket_memoria,&conf,sizeof(int),MSG_WAITALL);
-    if (conf==1){
-    log_info(logger_cpu, "PID: <%i> - TID: <%i> - Actualizo Contexto Ejecución",pid, tid);
+    recv(socket_memoria, &conf, sizeof(int), MSG_WAITALL);
+    if (conf == 1)
+    {
+        log_info(logger_cpu, "PID: <%i> - TID: <%i> - Actualizo Contexto Ejecución", pid, tid);
     }
 }
 
@@ -282,38 +283,34 @@ void empaquetar_contexto(t_paquete *paquete)
 
 void devolver_lista_instrucciones(int motivo, instruccion *info)
 {
-
     t_paquete *paquete_instrucciones = crear_paquete(SYSCALL);
 
-    int cant_parametros = list_size(info->parametros); 
+    int cant_parametros = list_size(info->parametros);
     agregar_a_paquete_solo(paquete_instrucciones, &motivo, sizeof(uint32_t));
     agregar_a_paquete_solo(paquete_instrucciones, &cant_parametros, sizeof(uint32_t));
     for (int i = 0; i < cant_parametros; i++)
     {
         char *aux = list_get(info->parametros, i);
-        // printf("parametro %d: %s\n",i,aux);
         agregar_a_paquete(paquete_instrucciones, aux, strlen(aux) + 1);
     }
-    //devolver_contexto_de_ejecucion(pid, tid);
-    enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
+    enviar_paquete(paquete_instrucciones, conexion_dispatch);
     eliminar_paquete(paquete_instrucciones);
 }
 
+void empaquetar_contexto_kl(int motivo, instruccion *info)
+{
+    t_paquete *paquete_contexto = crear_paquete(SYSCALL);
 
-void  empaquetar_contexto_kl( int motivo, instruccion *info){
-	//agregar_a_paquete_solo(paquete_contexto, (&program_counter), sizeof(int));
-	t_paquete *paquete_contexto  = crear_paquete(SYSCALL);
-   
-	agregar_a_paquete_solo(paquete_contexto, &motivo, sizeof(int)); // SE LE SUMA EL MOTIVO
-	
+    agregar_a_paquete_solo(paquete_contexto, &motivo, sizeof(int));
+
     agregar_a_paquete_solo(paquete_contexto, &(info->cant_parametros), sizeof(int));
 
-	for (int i = 0; i < info->cant_parametros; i++)
-	{
-		char *parametro = list_get(info->parametros, i);
-		agregar_a_paquete(paquete_contexto, parametro, strlen(parametro) + 1);
-	}
+    for (int i = 0; i < info->cant_parametros; i++)
+    {
+        char *parametro = list_get(info->parametros, i);
+        agregar_a_paquete(paquete_contexto, parametro, strlen(parametro) + 1);
+    }
 
-	enviar_paquete(paquete_contexto, conexion_dispatch); // CAMBIAR NOMBRE
+    enviar_paquete(paquete_contexto, conexion_dispatch);
     eliminar_paquete(paquete_contexto);
 }

@@ -19,4 +19,5 @@ void inicializarBitmap();
 void archivocheq();
 void bitmap_check();
 int crear_archivo(char* nombre, int size,int,void*);
+
 #endif

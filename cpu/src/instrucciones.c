@@ -29,27 +29,19 @@ void check_interrupt(instruccion *inst)
         pthread_mutex_lock(&m_ejecutando_un_proceso);
         ejecutando_un_proceso = false;
         pthread_mutex_unlock(&m_ejecutando_un_proceso);
-        // log_info("entra en check interrupt pid: %d tid: %d\n", pid, tid);
         devolver_contexto_de_ejecucion(pid, tid);
-
-        /*int confirmacion = 1;
-        send(conexion_dispatch, &confirmacion, sizeof(int), 0);*/
 
         t_paquete *paquete_instrucciones = crear_paquete(SYSCALL);
 
         uint32_t cant_parametros = 0;
-        // printf("Motivo interrupt (tiene que ser 30): %d\n", motivo_interrupt);
         agregar_a_paquete_solo(paquete_instrucciones, &motivo_interrupt, sizeof(uint32_t));
         agregar_a_paquete_solo(paquete_instrucciones, &cant_parametros, sizeof(uint32_t));
-
-        // devolver_contexto_de_ejecucion(pid, tid);
-        enviar_paquete(paquete_instrucciones, conexion_dispatch); // ver q reconozca conexion dispatch
-        // printf("Se envio syscall %d a kernel. conexion dispatch %d \n", motivo_interrupt, conexion_dispatch);
+        enviar_paquete(paquete_instrucciones, conexion_dispatch);
         eliminar_paquete(paquete_instrucciones);
     }
 
     pthread_mutex_unlock(&m_interrupcion);
-    // hay interrupcion y un proceso en ejecucion
+    // Hay interrupcion y un proceso en ejecucion
     pthread_mutex_lock(&m_interrupcion);
     interrupcion = false;
     pthread_mutex_unlock(&m_interrupcion);
@@ -57,8 +49,6 @@ void check_interrupt(instruccion *inst)
     for (int i = 0; i < list_size(inst->parametros); i++)
     {
         list_remove(inst->parametros, i);
-        //free(list_get(inst->parametros, i));
-        // free(parametro);
     } // liberar cada parametro de instruccion
     list_destroy(inst->parametros);
     free(inst);
@@ -71,13 +61,10 @@ char *fetch()
     agregar_a_paquete_solo(paquete, &pid, sizeof(int));
     agregar_a_paquete_solo(paquete, &tid, sizeof(int));
     agregar_a_paquete_solo(paquete, &registros_cpu.PC, sizeof(uint32_t));
-
     enviar_paquete(paquete, socket_memoria);
 
     char *instruccion_a_ejecutar = recibir_instruccion(socket_memoria);
-    // printf("me llego %s \n",instruccion_a_ejecutar);
     registros_cpu.PC++;
-    // log_info(logger_cpu, "Program Counter actualizado: %d", registros_cpu.PC);
     eliminar_paquete(paquete);
     return instruccion_a_ejecutar;
 }
@@ -90,8 +77,6 @@ instruccion *decode(char *inst)
 
     u_int8_t identificador = get_identificador(vector_terminos[0]);
 
-    // printf("IDENTIFICADOR INSTRUCCION: %i\n", identificador);
-
     for (int i = 0; i < string_array_size(vector_terminos); i++)
     {
         free(vector_terminos[i]);
@@ -100,7 +85,7 @@ instruccion *decode(char *inst)
     free(vector_terminos);
 
     instruccion_decodificada->identificador = identificador;
-    instruccion_decodificada->cant_parametros = get_cant_parametros(identificador); // ver esta funcion
+    instruccion_decodificada->cant_parametros = get_cant_parametros(identificador);
     instruccion_decodificada->parametros = get_parametros(inst, instruccion_decodificada->cant_parametros);
     free(inst);
     return instruccion_decodificada;
@@ -265,7 +250,7 @@ void read_mem(instruccion *inst)
         agregar_a_paquete_solo(paquete_sf, &cant_parametros, sizeof(uint32_t));
         enviar_paquete(paquete_sf, conexion_dispatch);
         eliminar_paquete(paquete_sf);
-        // devolver_lista_instrucciones(SEGMENTATION_FAULT, inst);
+
         pthread_mutex_lock(&m_ejecutando_un_proceso);
         ejecutando_un_proceso = false;
         pthread_mutex_unlock(&m_ejecutando_un_proceso);
@@ -310,7 +295,7 @@ void write_mem(instruccion *inst)
         agregar_a_paquete_solo(paquete_sf, &cant_parametros, sizeof(uint32_t));
         enviar_paquete(paquete_sf, conexion_dispatch);
         eliminar_paquete(paquete_sf);
-        // devolver_lista_instrucciones(SEGMENTATION_FAULT, inst);
+
         pthread_mutex_lock(&m_ejecutando_un_proceso);
         ejecutando_un_proceso = false;
         pthread_mutex_unlock(&m_ejecutando_un_proceso);
@@ -323,8 +308,6 @@ void write_mem(instruccion *inst)
     agregar_a_paquete_solo(paquete_write, datos, sizeof(uint32_t));
     enviar_paquete(paquete_write, socket_memoria);
     eliminar_paquete(paquete_write);
-
-    // recibir_mensaje(socket_memoria, logger_cpu);
 
     int confirmacion;
     recv(socket_memoria, &confirmacion, sizeof(int), MSG_WAITALL);
@@ -378,8 +361,6 @@ void thread_create(instruccion *inst)
     pthread_mutex_lock(&m_ejecutando_un_proceso);
     ejecutando_un_proceso = false;
     pthread_mutex_unlock(&m_ejecutando_un_proceso);
-
-    // empaquetar_contexto_kl(THREAD_CREATE, inst);
 }
 
 void thread_join(instruccion *inst)
